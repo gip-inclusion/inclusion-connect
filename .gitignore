@@ -1,0 +1,75 @@
+# Environment variables
+.envrc
+
+# Config
+docker-compose-prod.yml
+
+# Project specific
+inclusion_connect/static_collected/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+/.local/
+
+# Mac Os
+.DS_Store
+
+# C extensions
+*.so
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Django stuff:
+*.log
+
+# dotenv
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
+Pipfile*
+
+# mypy
+.mypy_cache/
+
+# IPython
+.ipython
+
+# Code quality
+.pylint.d
+*.isorted
+
+# Editors
+.tm_properties
+
+# Jetbrains / Pycharm
+*.iml
+.idea
+
+# Clever Cloud
+.clever.json
+
+# Debugger files
+.pdbhistory

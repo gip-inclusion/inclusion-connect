@@ -1,0 +1,3 @@
+[run]
+  source = inclusion_connect
+  omit = */migrations/*
