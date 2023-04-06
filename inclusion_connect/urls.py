@@ -15,11 +15,13 @@ Including another URLconf
 """
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.contrib.auth.views import LoginView
+from django.urls import include, path, re_path
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    re_path(r"^accounts/login/$", LoginView.as_view(), name="login"),
 ]
 
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:

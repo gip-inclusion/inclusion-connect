@@ -1,0 +1,76 @@
+{% load static %}
+{% load theme_inclusion %}
+
+<footer class="s-footer" role="contentinfo" id="footer">
+    <section class="s-footer-nav">
+        <div class="s-footer-nav__container container">
+            <div class="s-footer-nav__row row">
+                <div class="s-footer-nav__col col-6 d-flex align-items-center">
+                    <div class="s-footer-nav__logo">
+                        <img src="{% static_theme_images 'logo-republique-francaise.svg' %}" alt="Rébublique Française" class="img-fluid">
+                    </div>
+                </div>
+                <div class="s-footer-nav__col col-12 col-lg-6 d-flex align-items-center small">
+                    <div>
+                        <p class="mb-3">
+                            Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
+                        </p>
+                        <ul>
+                            <li>
+                                <a target="_blank" href="https://legifrance.gouv.fr">
+                                    legifrance.gouv.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank" href="https://gouvernement.fr">
+                                    gouvernement.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank" href="https://service-public.fr">
+                                    service-public.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank" href="https://data.gouv.fr">
+                                    data.gouv.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="fr-footer__content col-12 col-lg-6 d-flex align-items-center">
+                    <p class="fr-footer__content-desc"></p>
+                    <ul class="fr-footer__content-list">
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="s-footer-legal">
+        <div class="s-footer-legal__container container">
+            <div class="s-footer-legal__row row">
+                <div class="s-footer-legal__col col-xs-12 col-lg-8">
+                    <ul>
+                        <li>
+                            <a href="{% static "terms/Politique de confidentialité_20230302.pdf" %}" target="_blank">
+                                Politique de confidentialité<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% static "terms/CGU_20230302.pdf" %}" target="_blank">
+                                CGU<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% static "terms/Mentions légales_20230302.pdf" %}" target="_blank">
+                                Mentions légales<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</footer>
