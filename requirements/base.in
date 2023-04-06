@@ -1,0 +1,38 @@
+psycopg2  # https://github.com/psycopg/psycopg2
+requests  # https://github.com/psf/requests
+
+# Django
+# ------------------------------------------------------------------------------
+
+django==4.1.*  # https://www.djangoproject.com/
+
+# Django oauth toolkit
+django-oauth-toolkit==2.2.*  # https://github.com/jazzband/django-oauth-toolkit
+
+# django-anymail
+django-anymail  # https://github.com/anymail/django-anymail
+
+# django-cors-headers
+django-cors-headers  # https://github.com/adamchainz/django-cors-headers
+
+# Third party applications
+# ------------------------------------------------------------------------------
+
+PyJWT  # https://github.com/jpadilla/pyjwt
+
+# Front-end
+# ------------------------------------------------------------------------------
+
+# Bootstrap 4 for Django
+django-bootstrap4==22.1  # https://github.com/zostera/django-bootstrap4
+
+# Env variables
+# ------------------------------------------------------------------------------
+
+# To automatically load .env files at the root of the project
+python-dotenv  # https://github.com/theskumar/python-dotenv
+
+# Production requirements
+# ------------------------------------------------------------------------------
+uwsgi==2.0.*  # https://github.com/unbit/uwsgi
+sentry-sdk  # https://github.com/getsentry/sentry-python
