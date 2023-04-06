@@ -1,0 +1,64 @@
+{% load theme_inclusion %}
+{% load bootstrap4 %}
+{% load static %}
+<!DOCTYPE HTML>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <title>Inclusion Connect</title>
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <link rel="icon" href="{% static "img/illustration-bg-ic.svg" %}" type="image/svg+xml">
+        <link rel="icon" href="{% static "img/favicon.ico" %}" type="image/ico">
+        <link rel="stylesheet" href="{% static "vendor/dsfr/utility/utility.min.css" %}" type="text/css">
+        <link rel="stylesheet" href="{% static "vendor/dsfr/dsfr/dsfr.min.css" %}" type="text/css">
+        <link rel="stylesheet" href="{% static "vendor/theme-inclusion/stylesheets/app.css" %}" type="text/css">
+        <link rel="stylesheet" href="{% static "css/inclusion_connect.css" %}" type="text/css">
+
+        {% block extra_head %}{% endblock %}
+    </head>
+    <body>
+        {% include "layout/_header.html" %}
+
+        <main id="main" role="main" class="s-main">
+
+            <div class="container container-messages">
+                {% block messages %}
+                    {% bootstrap_messages %}
+                {% endblock %}
+            </div>
+
+            <section class="s-section pt-lg-3">
+                <div class="s-section__container container">
+                    <div class="s-section__row row no-gutters">
+                        <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+                            <div class="bg-white p-3 py-lg-7 px-lg-8">
+                                {% block content %}{% endblock %}
+                            </div>
+                        </div>
+                        <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                            <img class="img-fluid" src="{% static 'img/illustration-ic.svg' %}" alt="" loading="lazy">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+        </main>
+
+        {% include "layout/_footer.html" %}
+
+        {# Add matomo #}
+        {# Add tarteaucitron #}
+        {# Add Je donne mon avis or NPS #}
+
+        <script src="{% static "vendor/bootstrap-4.3.1/popper.min.js" %}"></script>
+        <script src="{% static "vendor/bootstrap-4.3.1/bootstrap.min.js" %}"></script>
+        <script src="{% static "vendor/theme-inclusion/javascripts/app.js" %}"></script>
+
+        {% block script %}
+            <script src="{% static "js/prevent_multiple_submit.js" %}"></script>
+        {% endblock %}
+    </body>
+</html>

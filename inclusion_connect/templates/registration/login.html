@@ -1,0 +1,37 @@
+{% extends "layout/base.html" %}
+{% load bootstrap4 %}
+
+{% block content %}
+
+    <h1 class="fr-h4">Connexion</h1>
+
+    <form method="post" action="{% url 'login' %}" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <fieldset>
+            <div class="row">
+                <div class="col-12">
+                    {% bootstrap_form_errors form type="all" %}
+                    {% bootstrap_field form.username form_group_class="form-group" %}
+                    {# FIXME intégrer au dessus, ou collé à la barre d'input #}
+                    <span class="fr-hint-text">Format attendu : nom@domaine.fr</span>
+
+                    {% bootstrap_field form.password form_group_class="form-group" %}
+                    {% comment %}
+                    <div class="form-group">
+                        <a href="{% url 'account_reset_password' %}" class="btn-link fs-sm">Mot de passe oublié ?</a>
+                    </div>
+                    {% endcomment %}
+
+                </div>
+            </div>
+        </fieldset>
+        <div>{% bootstrap_button "Connexion" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
+    </form>
+
+    <hr class="my-3 my-lg-4">
+    <div class="text-center">
+        <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
+        <a href="" class="btn btn-link">Créer mon compte</a>
+    </div>
+
+{% endblock %}

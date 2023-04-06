@@ -240,6 +240,14 @@ LOGGING = {
 
 AUTH_USER_MODEL = "users.User"
 
+BOOTSTRAP4 = {
+    "required_css_class": "form-group-required",
+    # Remove the default `.is-valid` class that Bootstrap will style in green
+    # otherwise empty required fields will be marked as valid. This might be
+    # a bug in django-bootstrap4, it should be investigated.
+    "success_css_class": "",
+}
+
 # Inclusion Connect settings
 # --------------------------
 
