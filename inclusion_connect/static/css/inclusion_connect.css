@@ -1,0 +1,50 @@
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex-grow: 1;
+  background-color: #fff;
+  background-image: url('../img/illustration-bg-ic.svg');
+  background-repeat: no-repeat;
+  background-position: top -120px left;
+}
+
+.fr-hint-text ul {
+  padding: 0;
+  list-style: none;
+}
+
+#length-criteria,
+#number-criteria,
+#capital-criteria,
+#character-criteria {
+  display: none;
+}
+
+.pre-register {
+  display: block;
+}
+
+.register-form {
+  display: none;
+}
+
+.ic-text-underline {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ic-text-center {
+  text-align: center;
+}
+
+@media (min-width: 62em) {
+  .ic-block-img-lg {
+    display: flex !important;
+    justify-content: center;
+    align-content: center;
+  }
+}
