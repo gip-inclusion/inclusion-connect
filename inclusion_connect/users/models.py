@@ -24,6 +24,7 @@ class User(AbstractUser):
         db_index=True,
         unique=True,
     )
+    password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
 
     def __str__(self):
         return f"{self.get_full_name()} — {self.email}"
