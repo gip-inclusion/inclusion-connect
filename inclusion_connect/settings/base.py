@@ -178,6 +178,9 @@ SESSION_COOKIE_HTTPONLY = True
 
 SESSION_COOKIE_SECURE = True
 
+# Don't interfer with other local django apps
+SESSION_COOKIE_NAME = "INCLUSION_CONNECT"
+
 # Force browser to end session when closing.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
@@ -294,7 +297,9 @@ OAUTH2_PROVIDER = {
     "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
     "SCOPES": {
         "openid": "OpenID Connect scope",
-        # ... any other scopes that you use
+        "profile": "Profil utilisateur",
+        "email": "Email de l'utilisateur",
     },
-    # ... any other settings you want
+    "PKCE_REQUIRED": False,
+    "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oauth_overrides.validators.CustomOAuth2Validator",
 }
