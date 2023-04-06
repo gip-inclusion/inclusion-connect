@@ -1,12 +1,11 @@
 [
   {
     "model": "users.user",
-    "pk": "f00ba15b-16af-445b-a881-5725b76cee5d",
     "fields": {
       "password": "pbkdf2_sha256$260000$7SMYXy9OTGSwYOs5myl9bP$GVwB+ayk8qAxkWOmP62sO+qGm1qyzivafdADRDip2/w=",
       "last_login": "2021-10-07T15:28:36.090Z",
       "is_superuser": true,
-      "username": "admin",
+      "username": "f00ba15b-16af-445b-a881-5725b76cee5d",
       "first_name": "",
       "last_name": "",
       "is_staff": true,

@@ -15,8 +15,8 @@ class User(AbstractUser):
     Auth is managed with django-oauth-tooklit (for OIDC users)
     """
 
-    # Change default id to uuid4 (used as sub in OIDC protocol)
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Change default id to uuid4 (used as sub in OIDC protocol) and use as pk
+    username = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, primary_key=True)
 
     email = CIEmailField(
         "Adresse e-mail",
@@ -24,9 +24,15 @@ class User(AbstractUser):
         db_index=True,
         unique=True,
     )
+    password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
 
     def __str__(self):
         return f"{self.get_full_name()} — {self.email}"
+
+    @property
+    def id(self):
+        # Required by some third party libraries that use user.id (django-oauth-toolkit)
+        return self.pk
 
     # habdle verified email with django-allauth ?
 
