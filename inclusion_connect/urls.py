@@ -28,6 +28,14 @@ urlpatterns = [
     re_path(r"^auth/logout", LogoutView.as_view(), name="oauth2_provider_logout"),
 ]
 
+for realm in settings.KEYCLOAK_REALMS:
+    urlpatterns.append(
+        re_path(
+            rf"^realms/{realm}/protocol/openid-connect/",
+            include("inclusion_connect.keycloak_compat.urls", namespace=f"keycloak_compat_{realm}"),
+        )
+    )
+
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     import debug_toolbar
 

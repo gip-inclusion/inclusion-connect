@@ -305,3 +305,6 @@ OAUTH2_PROVIDER = {
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oidc_overrides.validators.CustomOAuth2Validator",
 }
+
+# Allow relms from every keycloak instance (easier that loading from variables)
+KEYCLOAK_REALMS = ["local", "Review_apps", "Demo", "inclusion-connect"]
