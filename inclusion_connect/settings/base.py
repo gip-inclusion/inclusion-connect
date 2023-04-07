@@ -303,3 +303,6 @@ OAUTH2_PROVIDER = {
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oauth_overrides.validators.CustomOAuth2Validator",
 }
+
+
+KEYCLOAK_REALMS = ["local", "Review_apps"]
