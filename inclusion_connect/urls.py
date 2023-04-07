@@ -17,6 +17,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
+from inclusion_connect.oidc_overrides.views import LogoutView
 from inclusion_connect.www.login.views import LoginView
 
 
@@ -24,6 +25,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     re_path(r"^accounts/login/$", LoginView.as_view(), name="login"),
     re_path(r"^auth/", include("oauth2_provider.urls", namespace="oauth2_provider")),
+    re_path(r"^auth/logout", LogoutView.as_view(), name="oauth2_provider_logout"),
 ]
 
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
