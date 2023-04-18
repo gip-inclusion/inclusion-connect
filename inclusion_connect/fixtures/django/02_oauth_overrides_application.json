@@ -1,6 +1,6 @@
 [
   {
-    "model": "oauth2_provider.Application",
+    "model": "oidc_overrides.Application",
     "pk": 1,
     "fields": {
       "client_id": "local_inclusion_connect",
@@ -9,7 +9,6 @@
       "authorization_grant_type": "authorization-code",
       "client_secret": "pbkdf2_sha256$390000$gFdrmQbzl6Z4prHIHo9ryp$IV2jnKuEqT5Y+iZPnaXprkSJCV3Gnu28h0dchm08+lo=",
       "name": "local",
-      "skip_authorization": true,
       "algorithm": "RS256",
       "created": "2023-01-01T00:00:00.000Z",
       "updated": "2023-01-01T00:00:00.000Z"

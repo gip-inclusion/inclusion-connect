@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "inclusion_connect.oidc_overrides",
     "inclusion_connect.users",
     "inclusion_connect.utils",
 ]
@@ -305,6 +306,8 @@ OAUTH2_PROVIDER = {
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oidc_overrides.validators.CustomOAuth2Validator",
 }
+
+OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 
 # Allow relms from every keycloak instance (easier that loading from variables)
 KEYCLOAK_REALMS = ["local", "Review_apps", "Demo", "inclusion-connect"]
