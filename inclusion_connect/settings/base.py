@@ -244,7 +244,14 @@ LOGGING = {
 
 AUTH_USER_MODEL = "users.User"
 
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "inclusion_connect.auth.backends.EmailAuthenticationBackend",
+)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGIN_URL = "/login/"
 
 BOOTSTRAP4 = {
     "required_css_class": "form-group-required",

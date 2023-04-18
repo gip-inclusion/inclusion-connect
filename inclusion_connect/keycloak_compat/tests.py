@@ -94,7 +94,7 @@ def test_password_hasher(client):
 
     assert KeycloakPasswordHasher().verify(password=password, encoded=hashed_password)
 
-    client.login(username=user.username, password=password)
+    client.login(email=user.email, password=password)
 
     user.refresh_from_db()
     assert user.password != hashed_password

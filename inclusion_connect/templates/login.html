@@ -5,17 +5,12 @@
 
     <h1 class="fr-h4">Connexion</h1>
 
-    <form method="post" action="{% url 'login' %}" class="js-prevent-multiple-submit">
+    <form method="post" action="" class="js-prevent-multiple-submit">
         {% csrf_token %}
         <fieldset>
             <div class="row">
                 <div class="col-12">
-                    {% bootstrap_form_errors form type="all" %}
-                    {% bootstrap_field form.username form_group_class="form-group" %}
-                    {# FIXME intégrer au dessus, ou collé à la barre d'input #}
-                    <span class="fr-hint-text">Format attendu : nom@domaine.fr</span>
-
-                    {% bootstrap_field form.password form_group_class="form-group" %}
+                    {% bootstrap_form form alert_error_type="all" %}
                     {% comment %}
                     <div class="form-group">
                         <a href="{% url 'account_reset_password' %}" class="btn-link fs-sm">Mot de passe oublié ?</a>
