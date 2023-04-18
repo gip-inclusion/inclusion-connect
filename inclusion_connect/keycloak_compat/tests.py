@@ -3,9 +3,11 @@ import uuid
 import jwt
 import pytest
 from django.contrib.auth import get_user
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.urls import reverse
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
+from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
 from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -75,3 +77,25 @@ def test_keycloak_urls_compat(client, realm):
     assert get_id_token_model().objects.count() == 0
     assert get_access_token_model().objects.count() == 0
     assert get_refresh_token_model().objects.get().revoked
+
+
+def test_password_hasher(client):
+    password = "RdaRfqP7Y89vy2"
+    hashed_password = "$".join(
+        [
+            "keycloak-pbkdf2-sha256",
+            "27500",
+            "Td6XuopYK6JNfUnIlqYMOQ==",
+            "ZXVC08Hf4jBOoYzVoNWYjQijsMC2oc/OUa9LciiIJ/1XHPF/qPiY1DqwLLDN2hYFmf/1kApkveD8/Pr7GVqjgw==",
+        ]
+    )
+    user = UserFactory(password=hashed_password)
+    assert user.password == hashed_password
+
+    assert KeycloakPasswordHasher().verify(password=password, encoded=hashed_password)
+
+    client.login(username=user.username, password=password)
+
+    user.refresh_from_db()
+    assert user.password != hashed_password
+    assert PBKDF2PasswordHasher().verify(password, encoded=user.password)

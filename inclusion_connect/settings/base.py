@@ -309,5 +309,13 @@ OAUTH2_PROVIDER = {
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 
+# Keycloak Compatibility
+# ----------------------
+
 # Allow relms from every keycloak instance (easier that loading from variables)
 KEYCLOAK_REALMS = ["local", "Review_apps", "Demo", "inclusion-connect"]
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "inclusion_connect.keycloak_compat.hashers.KeycloakPasswordHasher",
+]
