@@ -1,0 +1,77 @@
+name: 🔮 CI
+
+on:
+  push:
+    branches-ignore:
+      - master_clever  # rename once we chose branch names
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: inclusion_connect.settings.dev
+      PYTHONPATH: .
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        # Docker Hub image
+        image: postgis/postgis:14-master
+        env:
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5433:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: 🐘 Non-durable PostgreSQL
+      run: |
+        psql <<SQL
+          ALTER SYSTEM SET fsync=off;
+          ALTER SYSTEM SET synchronous_commit=off;
+          ALTER SYSTEM SET full_page_writes=off;
+        SQL
+        docker kill --signal=SIGHUP ${{ job.services.postgres.id }}
+      env:
+        PGPASSWORD: password
+        PGHOST: localhost
+        PGUSER: postgres
+        PGPORT: 5433
+    - uses: actions/checkout@v3.5.2
+    - name: 🌍 Install spatial libraries
+      run: sudo apt-get update && sudo apt-get install binutils build-essential libproj-dev gdal-bin
+    - name: 💾 Create a database to check migrations
+      run: |
+        psql <<SQL
+            CREATE DATABASE inclusion_connect;
+        SQL
+      env:
+        PGPASSWORD: password
+        PGHOST: localhost
+        PGUSER: postgres
+        PGPORT: 5433
+    - name: 💂 Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: pip
+        cache-dependency-path: requirements/dev.txt
+    - name: 📥 Install dependencies
+      run: |
+        make venv
+        echo ".venv/bin" >> $GITHUB_PATH
+    - name: ✨ Black, isort, flake8 & djlint
+      run: make quality
+    - name: 🚧 Check pending migrations
+      run: django-admin makemigrations --check --dry-run --noinput
+    - name: 🤹 Django tests
+      run: make test
+      env:
+        DJANGO_DEBUG: True
+        USE_VENV: 1
