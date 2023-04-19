@@ -1,4 +1,10 @@
+from django.contrib.auth import get_user
+from django.urls import reverse
+from pytest_django.asserts import assertRedirects
+
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
+from inclusion_connect.users.factories import UserFactory
+from inclusion_connect.utils.urls import add_url_params
 
 
 def test_allow_wildcard_in_redirect_uris():
@@ -11,3 +17,22 @@ def test_allow_wildcard_in_redirect_uris():
     # We do not handle wildcard in domains
     application = ApplicationFactory(redirect_uris="http://*.mydomain.com/callback")
     assert not application.redirect_uri_allowed("http://site1.mydomain.com/callback")
+
+
+def test_logout(client):
+    auth_url = reverse("oauth2_provider:authorize")
+    response = client.get(auth_url)
+    assertRedirects(response, add_url_params(reverse("login"), {"next": auth_url}))
+
+    user = UserFactory()
+    client.force_login(user)
+    response = client.get(auth_url)
+    assert response.status_code == 400  # auth_url is missing all the arguments
+    # TODO: Add a method to quickly to the oidc dance.
+
+    assert get_user(client).is_authenticated
+    logout_params = {"id_token_hint": 111}  # bad token
+    # TODO: also try with existing token but expired
+    response = client.get(add_url_params(reverse("oauth2_provider_logout"), logout_params))
+    assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
+    assert not get_user(client).is_authenticated

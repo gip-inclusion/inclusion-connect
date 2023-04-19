@@ -17,6 +17,27 @@ class LogoutView(View):
         post_logout_redirect_uri = request.GET.get("post_logout_redirect_uri")
         id_token_hint = request.GET.get("id_token_hint")
 
+        try:
+            id_token = self._clean_token(id_token_hint)
+            # Why isn't it done in logout ?
+            # Force remove user sessions
+            # FIXME: replicate the issue in a test ?
+            [
+                s.delete()
+                for s in Session.objects.all()
+                if s.get_decoded().get("_auth_user_id") == str(id_token.user_id)
+            ]
+        except Exception:
+            pass
+
+        logout(request)
+
+        if post_logout_redirect_uri:
+            return OAuth2ResponseRedirect(post_logout_redirect_uri)
+        # FIXME: Add a 'you are logged out' page
+        return OAuth2ResponseRedirect(self.request.build_absolute_uri("/"), ["http", "https"])
+
+    def _clean_token(self, id_token_hint):
         key = CustomOAuth2Validator()._get_key_for_token(id_token_hint)
         jwt_token = jwt.JWT(key=key, jwt=id_token_hint)
         claims = json.loads(jwt_token.claims)
@@ -38,12 +59,4 @@ class LogoutView(View):
         for refresh_token in refresh_tokens_to_delete:
             refresh_token.revoke()
 
-        logout(request)
-
-        # Why isn't it done in logout ?
-        # Force remove user sessions
-        [s.delete() for s in Session.objects.all() if s.get_decoded().get("_auth_user_id") == str(id_token.user_id)]
-
-        if post_logout_redirect_uri:
-            return OAuth2ResponseRedirect(post_logout_redirect_uri)
-        return OAuth2ResponseRedirect(self.request.build_absolute_uri("/"), ["http", "https"])
+        return id_token
