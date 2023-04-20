@@ -20,10 +20,7 @@ def test_allow_wildcard_in_redirect_uris():
 
 
 def test_logout(client):
-    auth_url = reverse("oauth2_provider:authorize")
-    response = client.get(auth_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_url}))
-
+    auth_url = reverse("oidc_overrides:authorize")
     user = UserFactory()
     client.force_login(user)
     response = client.get(auth_url)
@@ -33,6 +30,38 @@ def test_logout(client):
     assert get_user(client).is_authenticated
     logout_params = {"id_token_hint": 111}  # bad token
     # TODO: also try with existing token but expired
-    response = client.get(add_url_params(reverse("oauth2_provider_logout"), logout_params))
+    response = client.get(add_url_params(reverse("oidc_overrides:logout"), logout_params))
     assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
+
+
+def test_authorize_bad_params(client):
+    auth_url = reverse("oidc_overrides:authorize")
+    auth_params = {
+        "response_type": "code",
+        "client_id": "unknown_client_id",
+        "redirect_uri": "http://localhost/callback",
+        "scope": "openid profile email",
+        "state": "state",
+        "nonce": "nonce",
+    }
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url)
+    # FIXME update the template
+    assert response.status_code == 400
+
+
+def test_authorize_not_authenticated(client):
+    application = ApplicationFactory()
+    auth_url = reverse("oidc_overrides:authorize")
+    auth_params = {
+        "response_type": "code",
+        "client_id": application.client_id,
+        "redirect_uri": "http://localhost/callback",
+        "scope": "openid profile email",
+        "state": "state",
+        "nonce": "nonce",
+    }
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_complete_url}))

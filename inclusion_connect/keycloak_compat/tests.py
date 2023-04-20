@@ -6,6 +6,7 @@ from django.contrib.auth import get_user
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.urls import reverse
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
+from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
@@ -17,9 +18,8 @@ from inclusion_connect.utils.urls import add_url_params, get_url_params
 def test_keycloak_urls_compat(client, realm):
     application = ApplicationFactory()
     user = UserFactory()
-    client.force_login(user)
 
-    # Test AUTH endpoint
+    # Test AUTH endpoint when not authenticated
     auth_url = reverse(f"keycloak_compat_{realm}:authorize")
     auth_params = {
         "response_type": "code",
@@ -29,7 +29,21 @@ def test_keycloak_urls_compat(client, realm):
         "state": "state",
         "nonce": "nonce",
     }
-    response = client.get(add_url_params(auth_url, auth_params))
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_complete_url}))
+
+    # Test AUTH endpoint when not authenticated and with bad params
+    bad_auth_params = auth_params.copy()
+    bad_auth_params["client_id"] = "toto"
+    bad_auth_complete_url = add_url_params(auth_url, bad_auth_params)
+    response = client.get(bad_auth_complete_url)
+    # FIXME update the template
+    assert response.status_code == 400
+
+    # Test AUTH endpoint when loggin
+    client.force_login(user)
+    response = client.get(auth_complete_url)
     assert response.status_code == 302
     assert response.url.startswith(auth_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)

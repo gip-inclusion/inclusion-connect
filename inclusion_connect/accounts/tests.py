@@ -13,7 +13,7 @@ from inclusion_connect.utils.urls import add_url_params
 
 
 def test_login(client):
-    redirect_url = reverse("oauth2_provider_logout")
+    redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
     user = UserFactory()
     assert not get_user(client).is_authenticated
@@ -53,7 +53,7 @@ def test_login_failed_bad_email_or_password(client):
 
 
 def test_user_creation(client):
-    redirect_url = reverse("oauth2_provider_logout")
+    redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
     user = UserFactory.build()
     assert not get_user(client).is_authenticated
@@ -83,7 +83,7 @@ def test_user_creation(client):
 def test_password_reset(client):
     user = UserFactory()
 
-    redirect_url = reverse("oauth2_provider_logout")
+    redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
     response = client.get(url)
     password_reset_url = reverse("accounts:password_reset")

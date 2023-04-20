@@ -4,10 +4,29 @@ from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.views.generic import View
 from jwcrypto import jwt
+from oauth2_provider import views as oauth2_views
+from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
+
+
+class BaseAuthorizationView(oauth2_views.base.BaseAuthorizationView):
+    """Mixin that validates authorization request.
+    This will allow us to display an error before having to login / create an account"""
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.validate_authorization_request(request)
+        except OAuthToolkitError as error:
+            # Application is not available at this time.
+            return self.error_response(error, application=None)
+        return super().dispatch(request, *args, **kwargs)
+
+
+class AuthorizationView(BaseAuthorizationView, oauth2_views.AuthorizationView):
+    pass
 
 
 class LogoutView(View):

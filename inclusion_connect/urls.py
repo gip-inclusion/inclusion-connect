@@ -17,8 +17,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from inclusion_connect.oidc_overrides.views import LogoutView
-
 
 urlpatterns = [
     # Admin
@@ -27,8 +25,8 @@ urlpatterns = [
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
     # OIDC urls
+    re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls")),
     re_path(r"^auth/", include("oauth2_provider.urls", namespace="oauth2_provider")),
-    re_path(r"^auth/logout", LogoutView.as_view(), name="oauth2_provider_logout"),
 ]
 
 for realm in settings.KEYCLOAK_REALMS:
@@ -42,4 +40,5 @@ for realm in settings.KEYCLOAK_REALMS:
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     import debug_toolbar
 
+    urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns
     urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns
