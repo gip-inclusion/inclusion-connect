@@ -244,10 +244,9 @@ LOGGING = {
 
 AUTH_USER_MODEL = "users.User"
 
-AUTHENTICATION_BACKENDS = (
-    "django.contrib.auth.backends.ModelBackend",
-    "inclusion_connect.auth.backends.EmailAuthenticationBackend",
-)
+AUTHENTICATION_BACKENDS = ("inclusion_connect.auth.backends.EmailAuthenticationBackend",)
+
+PASSWORD_RESET_TIMEOUT = 24 * 60 * 60  # 1 day in seconds
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
