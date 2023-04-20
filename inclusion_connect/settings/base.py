@@ -251,7 +251,7 @@ AUTHENTICATION_BACKENDS = (
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_URL = "/login/"
+LOGIN_URL = "/accounts/login/"
 
 BOOTSTRAP4 = {
     "required_css_class": "form-group-required",

@@ -22,7 +22,7 @@ def test_allow_wildcard_in_redirect_uris():
 def test_logout(client):
     auth_url = reverse("oauth2_provider:authorize")
     response = client.get(auth_url)
-    assertRedirects(response, add_url_params(reverse("login"), {"next": auth_url}))
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_url}))
 
     user = UserFactory()
     client.force_login(user)

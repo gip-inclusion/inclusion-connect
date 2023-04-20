@@ -9,14 +9,14 @@ from inclusion_connect.utils.urls import add_url_params
 
 def test_login(client):
     redirect_url = reverse("oauth2_provider_logout")
-    url = add_url_params(reverse("login"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
     user = UserFactory()
     assert not get_user(client).is_authenticated
 
     response = client.get(url)
     assertContains(response, "Connexion")
     assertContains(response, "Adresse e-mail")  # Ask for email, not username
-    assertContains(response, reverse("registration"))  # Link to registration page
+    assertContains(response, reverse("accounts:registration"))  # Link to registration page
 
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -24,7 +24,7 @@ def test_login(client):
 
 
 def test_login_failed_bad_email_or_password(client):
-    url = add_url_params(reverse("login"), {"next": "anything"})
+    url = add_url_params(reverse("accounts:login"), {"next": "anything"})
     user = UserFactory()
     assert not get_user(client).is_authenticated
 
@@ -49,13 +49,13 @@ def test_login_failed_bad_email_or_password(client):
 
 def test_user_creation(client):
     redirect_url = reverse("oauth2_provider_logout")
-    url = add_url_params(reverse("registration"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
     user = UserFactory.build()
     assert not get_user(client).is_authenticated
 
     response = client.get(url)
     assertContains(response, "Créer un compte")
-    assertContains(response, reverse("login"))  # Link to login page
+    assertContains(response, reverse("accounts:login"))  # Link to login page
 
     response = client.post(
         url,

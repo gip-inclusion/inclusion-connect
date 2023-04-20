@@ -18,13 +18,15 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from inclusion_connect.oidc_overrides.views import LogoutView
-from inclusion_connect.www.login.views import LoginView, RegistrationView
 
 
 urlpatterns = [
+    # Admin
     path("admin/", admin.site.urls),
-    re_path(r"^login/$", LoginView.as_view(), name="login"),
-    re_path(r"^registration/$", RegistrationView.as_view(), name="registration"),
+    # Login and registration urls
+    re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
+    re_path(r"^accounts/", include("django.contrib.auth.urls")),
+    # OIDC urls
     re_path(r"^auth/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     re_path(r"^auth/logout", LogoutView.as_view(), name="oauth2_provider_logout"),
 ]

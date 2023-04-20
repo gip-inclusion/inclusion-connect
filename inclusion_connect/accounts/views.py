@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login, views as auth_views
 from django.views.generic import CreateView
 
-from inclusion_connect.www.login.forms import LoginForm, RegistrationForm
+from inclusion_connect.accounts.forms import LoginForm, RegistrationForm
 
 
 class OidcArgumentMixin:
