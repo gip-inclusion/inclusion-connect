@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
+from django.urls import reverse_lazy
 from django.views.generic import View
 from jwcrypto import jwt
 from oauth2_provider import views as oauth2_views
@@ -22,11 +23,16 @@ class BaseAuthorizationView(oauth2_views.base.BaseAuthorizationView):
         except OAuthToolkitError as error:
             # Application is not available at this time.
             return self.error_response(error, application=None)
+
         return super().dispatch(request, *args, **kwargs)
 
 
 class AuthorizationView(BaseAuthorizationView, oauth2_views.AuthorizationView):
     pass
+
+
+class RegistrationView(BaseAuthorizationView, oauth2_views.AuthorizationView):
+    login_url = reverse_lazy("accounts:registration")
 
 
 class LogoutView(View):

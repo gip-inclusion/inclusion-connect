@@ -65,3 +65,35 @@ def test_authorize_not_authenticated(client):
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_complete_url}))
+
+
+def test_registrations_bad_params(client):
+    auth_url = reverse("oidc_overrides:registrations")
+    auth_params = {
+        "response_type": "code",
+        "client_id": "unknown_client_id",
+        "redirect_uri": "http://localhost/callback",
+        "scope": "openid profile email",
+        "state": "state",
+        "nonce": "nonce",
+    }
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url)
+    # FIXME update the template
+    assert response.status_code == 400
+
+
+def test_registrations_not_authenticated(client):
+    application = ApplicationFactory()
+    auth_url = reverse("oidc_overrides:registrations")
+    auth_params = {
+        "response_type": "code",
+        "client_id": application.client_id,
+        "redirect_uri": "http://localhost/callback",
+        "scope": "openid profile email",
+        "state": "state",
+        "nonce": "nonce",
+    }
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, add_url_params(reverse("accounts:registration"), {"next": auth_complete_url}))
