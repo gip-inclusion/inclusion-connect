@@ -1,17 +1,24 @@
 from django import forms
 from django.contrib.auth import authenticate
+from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+
+from inclusion_connect.users.models import User
+
+
+EMAIL_FIELDS_WIDGET_ATTRS = {"type": "email", "placeholder": "nom@domaine.fr", "autocomplete": "email"}
+PASSWORD_PLACEHOLDER = "**********"
 
 
 class LoginForm(forms.Form):
     email = forms.EmailField(
         label="Adresse e-mail",
-        widget=forms.TextInput(attrs={"type": "email", "placeholder": "nom@domaine.fr", "autocomplete": "email"}),
+        widget=forms.TextInput(attrs=EMAIL_FIELDS_WIDGET_ATTRS),
     )
     password = forms.CharField(
         label="Mot de passe",
         strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": "**********"}),
+        widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": PASSWORD_PLACEHOLDER}),
     )
 
     def __init__(self, request=None, *args, **kwargs):
@@ -37,3 +44,16 @@ class LoginForm(forms.Form):
 
     def get_user(self):
         return self.user_cache
+
+
+class RegistrationForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ("last_name", "first_name", "email")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for key in ["password1", "password2"]:
+            self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
+
+        self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
