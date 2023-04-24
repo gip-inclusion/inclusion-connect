@@ -1,5 +1,6 @@
 {% extends "layout/base.html" %}
 {% load bootstrap4 %}
+{% load inclusionconnect_fields %}
 
 {% block content %}
 
@@ -12,18 +13,7 @@
                 <div class="col-12">
                     {% bootstrap_form_errors form type="all" %}
                     {% bootstrap_field form.email form_group_class="form-group" %}
-                    <div class="form-group form-group-required">
-                        <label for="id_password">Mot de passe</label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" name="password" id="id_password" placeholder="**********">
-                            <div class="input-group-append">
-                                <button class="btn btn-sm btn-link btn-ico" type="button" data-password="toggle">
-                                    <i class="ri-eye-line"></i>
-                                    <span>Afficher</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    {% password_field form.password %}
                     <div class="form-group">
                         <a href="{% url 'password_reset' %}" class="btn-link fs-sm">Mot de passe oublié ?</a>
                     </div>
