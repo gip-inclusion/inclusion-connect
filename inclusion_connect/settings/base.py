@@ -291,13 +291,6 @@ ANYMAIL = {
 
 EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 
-# Requests default timeout is None... See https://blog.mathieu-leplatre.info/handling-requests-timeout-in-python.html
-# Use `httpx`, which has a default timeout of 5 seconds, when possible.
-# Otherwise, set a timeout like this:
-# requests.get(timeout=settings.REQUESTS_TIMEOUT)
-REQUESTS_TIMEOUT = 5  # in seconds
-
-
 # Django-oauth-toolkit
 # --------------------
 
