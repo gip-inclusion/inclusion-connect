@@ -23,6 +23,9 @@ export PATH := $(VIRTUAL_ENV)/bin:$(PATH)
 run:
 	docker compose up
 
+runserver: $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/python manage.py runserver
+
 $(VIRTUAL_ENV): $(REQUIREMENTS_PATH)
 	$(PYTHON_VERSION) -m venv $@
 	$@/bin/pip install -r $^
