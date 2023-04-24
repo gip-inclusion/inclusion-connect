@@ -5,12 +5,15 @@
 Pour développer sur Inclusion Connect, il vous faudra un ordinateur avec les logiciels suivants:
 - git
 - docker
+- docker-compose
 
 ## Cloner le dépôt GitHub
 
 La première étape est de cloner le dépôt sur votre ordinateur.
 
-## Base de données
+# Composants applicatifs
+
+## Base de données PostgreSQL
 
 Inclusion Connect utilise une base de données PostgreSQL.
 
@@ -19,26 +22,34 @@ C'est le fichier ``docker-compose.yml`` qui s'occupe de tout pour créer celle-c
 NB: le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port
 `5432` soit déjà utilisé.
 
-## Serveur mail de test
+## Serveur mail de test MailHog
 
 Afin d'avoir accès aux mails envoyés par Inclusion Connect en local, notre `docker-compose.yml` lance une image docker de [MailHog](https://github.com/mailhog/MailHog).
 
-MailHog donne accès à un faux webmail à l'addresse http://0.0.0.0:8025 qui permet d'afficher tous les emails qui sont envoyés.
+MailHog donne accès à un faux webmail à l'addresse http://127.0.0.1:8025 qui permet d'afficher tous les emails qui sont envoyés.
 Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse email.
 
-## Variables d'environnement
+## Démarrer PostgreSQL et MailHog
 
-/!\ A RE-ECRIRE
-
-## Lancer le service en local
-
-Il ne reste plus qu'à lancer les images dockers depuis la racine du dépôt :
+Lancer les images dockers depuis la racine du dépôt :
 
 ```bash
 docker-compose up
 ```
 
-## Configuration du service
+## Serveur de développement
+
+```sh
+make runserver
+```
+
+## Tests
+
+```sh
+make test
+```
+
+# Configuration du service
 
 La première fois que vous lancez le service, il faudra configurer Inclusion Connect
 
@@ -55,14 +66,7 @@ Pour utiliser le service il faut les identifiantes suivants :
 
 ## Normalement tout est bon !
 
-Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://0.0.0.0:8080/admin`
+Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://127.0.0.1:8080/admin`
 et aux autres urls.
 
 Il faudra utiliser le couple `local_inclusion_connect`/`password` comme indiqué précédement pour se connecter avec un client OpenID Connect
-
-## En cas de soucis
-
-### La base de données est mal initialisée
-
-Rencontré typiquement si les variables d'environnement sont mal configurée, il faudra :
-/!\ A RE-ECRIRE
