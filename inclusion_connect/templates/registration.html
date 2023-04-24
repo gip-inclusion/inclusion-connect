@@ -13,7 +13,36 @@
         {% csrf_token %}
         <fieldset>
             <div class="row">
-                <div class="col-12">{% bootstrap_form form alert_error_type="all" %}</div>
+                <div class="col-12">
+                    {% bootstrap_form_errors form type="all" %}
+                    {% bootstrap_field form.last_name form_group_class="form-group" %}
+                    {% bootstrap_field form.first_name form_group_class="form-group" %}
+                    {% bootstrap_field form.email form_group_class="form-group" %}
+                    <div class="form-group form-group-required">
+                        <label for="id_password1">Mot de passe</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="password1" id="id_password1" placeholder="**********">
+                            <div class="input-group-append">
+                                <button class="btn btn-sm btn-link btn-ico" type="button" data-password="toggle">
+                                    <i class="ri-eye-line"></i>
+                                    <span>Afficher</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group form-group-required">
+                        <label for="id_password2">Confirmation du mot de passe</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" name="password2" id="id_password2" placeholder="**********">
+                            <div class="input-group-append">
+                                <button class="btn btn-sm btn-link btn-ico" type="button" data-password="toggle">
+                                    <i class="ri-eye-line"></i>
+                                    <span>Afficher</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </fieldset>
         <div>{% bootstrap_button "S'inscrire" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
