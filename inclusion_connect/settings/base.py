@@ -104,7 +104,7 @@ RUN_SERVER_PORT = 8080
 # Note how we use Clever Cloud environment variables here. No way for now to alias them :/
 DATABASES = {
     "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("POSTGRESQL_ADDON_DB"),
         # FIXME(vperron): We should get rid of those Clever Cloud proprietary values in our code
         # and alias them as soon as we can in our pre-build and pre-run scripts. But those scripts
