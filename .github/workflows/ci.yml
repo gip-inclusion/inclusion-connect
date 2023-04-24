@@ -73,4 +73,3 @@ jobs:
       run: make test
       env:
         DJANGO_DEBUG: True
-        USE_VENV: 1
