@@ -80,7 +80,7 @@ populate_db:
 test: $(VIRTUAL_ENV)
 	pytest --numprocesses=logical --create-db $(TARGET)
 
-coverage:
+coverage: $(VIRTUAL_ENV)
 	coverage run -m pytest
 
 # Docker shell.
