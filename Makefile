@@ -84,49 +84,18 @@ populate_db:
 .PHONY: coverage test
 
 test: $(VIRTUAL_ENV)
-	$(EXEC_CMD) pytest --numprocesses=logical --create-db $(TARGET)
+	pytest --numprocesses=logical --create-db $(TARGET)
 
 coverage:
-	$(EXEC_CMD) coverage run -m pytest
+	coverage run -m pytest
 
 # Docker shell.
 # =============================================================================
 
-.PHONY: shell_on_django_container shell_on_django_container_as_root shell_on_postgres_container
-
-shell_on_django_container:
-	docker exec -ti inclusion_connect /bin/bash
-
-shell_on_django_container_as_root:
-	docker exec -ti --user root inclusion_connect /bin/bash
+.PHONY: shell_on_postgres_container
 
 shell_on_postgres_container:
 	docker exec -ti inclusion_connect_postgres /bin/bash
-
-# Postgres CLI.
-# =============================================================================
-
-.PHONY: psql_inclusion_connect psql_root psql_to_csv
-
-# Connect to the `inclusion_connect` database as the `inclusion_connect` user.
-psql:
-	docker exec -ti -e PGPASSWORD=password inclusion_connect_postgres psql -U inclusion_connect -d inclusion_connect
-
-# Postgres (backup / restore).
-# Inspired by:
-# https://cookiecutter-django.readthedocs.io/en/latest/docker-postgres-backups.html
-# =============================================================================
-
-.PHONY: postgres_backup postgres_backups_cp_locally postgres_backups_list postgres_backup_restore postgres_restore_latest_backup postgres_backups_clean postgres_dump_cities
-
-postgres_backup:
-	docker compose exec postgres backup
-
-postgres_backups_cp_locally:
-	docker cp itou_postgres:/backups ~/Desktop/backups
-
-postgres_backups_list:
-	docker compose exec postgres backups
 
 # Deployment
 # =============================================================================

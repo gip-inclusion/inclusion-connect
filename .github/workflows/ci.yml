@@ -16,8 +16,7 @@ jobs:
       cancel-in-progress: true
     services:
       postgres:
-        # Docker Hub image
-        image: postgis/postgis:14-master
+        image: postgres:14
         env:
           POSTGRES_PASSWORD: password
         ports:

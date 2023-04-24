@@ -2,38 +2,20 @@ version: "3.7"
 
 services:
 
-  # https://github.com/appropriate/docker-postgis
-  # https://hub.docker.com/r/mdillon/postgis/tags
   postgres:
+    image: postgres:14
     container_name: inclusion_connect_postgres
     # Disable some safety switches for a faster postgres: https://www.postgresql.org/docs/current/non-durability.html
     command: -c fsync=off -c full_page_writes=off -c synchronous_commit=off
     environment:
-      # Required by the "_/postgres" image used by "postgis/postgis"
-      # https://registry.hub.docker.com/_/postgres/
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      # Avoid a log error when starting the itou_postgres container:
-      # > Role "root" does not exist.
-      # Without this variable, the default Unix account ('root')
-      # is used automatically when starting postgres.
-      # https://www.postgresql.org/docs/current/libpq-envars.html
-      - PGUSER=postgres
-      - PGPASSWORD=password
-      # Set the name of the database, this used by the scripts we add to the image (ie. psql_init.sh, backup, ...)
-      - IC_POSTGRES_DATABASE_NAME=inclusion_connect
-    # The default memory setting (64M) is not enough anymore due to the size of the database we import
-    # https://stackoverflow.com/questions/56839975/docker-shm-size-dev-shm-resizing-shared-memory
-    shm_size: 1g
-    build:
-      context: .
-      dockerfile: ./docker/dev/postgres/Dockerfile
+      - POSTGRES_DB=inclusion_connect
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - postgres_data_backups:/backups
-      - ./docker/dev/postgres/psql_init.sh:/docker-entrypoint-initdb.d/postgres-init.sh
     restart: always
     ports:
-      - "${POSTGRES_PORT_ON_DOCKER_HOST:-5433}:5432"
+      - "127.0.0.1:${POSTGRES_PORT_ON_DOCKER_HOST:-5433}:5432"
 
   smtp:
     container_name: inclusion_connect_smtp
@@ -65,4 +47,3 @@ services:
 
 volumes:
   postgres_data:
-  postgres_data_backups:

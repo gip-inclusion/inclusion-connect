@@ -7,13 +7,7 @@ import django.contrib.auth.validators
 import django.contrib.postgres.fields.citext
 import django.contrib.postgres.indexes
 import django.utils.timezone
-from django.contrib.postgres.operations import (
-    BtreeGistExtension,
-    CITextExtension,
-    CreateExtension,
-    TrigramExtension,
-    UnaccentExtension,
-)
+from django.contrib.postgres.operations import BtreeGistExtension, CITextExtension, TrigramExtension, UnaccentExtension
 from django.db import migrations, models
 
 
@@ -31,7 +25,6 @@ class Migration(migrations.Migration):
         BtreeGistExtension(),
         CITextExtension(),
         TrigramExtension(),
-        CreateExtension("postgis"),
         UnaccentExtension(),
         migrations.RunSQL("DROP TEXT SEARCH CONFIGURATION IF EXISTS french_unaccent"),
         migrations.RunSQL("CREATE TEXT SEARCH CONFIGURATION french_unaccent (COPY = french)"),
