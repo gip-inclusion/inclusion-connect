@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
+from django.templatetags.static import static
+from django.utils.html import format_html
 
 from inclusion_connect.users.models import User
 
@@ -46,6 +48,15 @@ class LoginForm(forms.Form):
 
 
 class RegistrationForm(auth_forms.UserCreationForm):
+    terms_accepted = forms.BooleanField(
+        label=format_html(
+            "J'ai lu et j'accepte les <a href='{}' target='_blank'>conditions générales d’utilisation du service</a> "
+            "ainsi que la <a href='{}' target='_blank'>politique de confidentialité</a>.",
+            static("terms/CGU_20230302.pdf"),
+            static("terms/Politique de confidentialité_20230302.pdf"),
+        )
+    )
+
     class Meta:
         model = User
         fields = ("last_name", "first_name", "email")
@@ -56,6 +67,10 @@ class RegistrationForm(auth_forms.UserCreationForm):
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
 
         self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
+
+    def save(self, commit=True):
+        self.instance.terms_accepted_at = self.instance.date_joined
+        return super().save(commit)
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
