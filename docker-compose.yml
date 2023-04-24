@@ -24,26 +24,5 @@ services:
       - 1025:1025
       - 8025:8025
 
-  django:
-    container_name: inclusion_connect_django
-    environment:
-      - PGHOST=postgres
-      - PGUSER=postgres
-      - PGPASSWORD=password
-      - PYTHONPATH=.
-      - DJANGO_SETTINGS_MODULE=inclusion_connect.settings.dev
-      - ITOU_LOG_LEVEL=DEBUG
-    depends_on:
-      - postgres
-    build:
-      context: .
-      dockerfile: ./docker/dev/django/Dockerfile
-    volumes:
-      # Mount the current directory into `/app` inside the running container.
-      - .:/app
-    restart: always
-    ports:
-      - "${DJANGO_PORT_ON_DOCKER_HOST:-8080}:8080"
-
 volumes:
   postgres_data:

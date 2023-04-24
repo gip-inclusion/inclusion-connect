@@ -17,13 +17,7 @@ endif
 VIRTUAL_ENV ?= .venv
 export PATH := $(VIRTUAL_ENV)/bin:$(PATH)
 
-ifeq ($(USE_VENV),1)
-	EXEC_CMD :=
-else
-	EXEC_CMD := docker exec -ti inclusion_connect_django
-endif
-
-.PHONY: run venv clean cdsitepackages quality fix pylint compile-deps
+.PHONY: run venv clean quality fix pylint compile-deps
 
 # Run Docker images
 run:
@@ -46,9 +40,6 @@ compile-deps: $(VIRTUAL_ENV)
 
 clean:
 	find . -type d -name "__pycache__" -depth -exec rm -rf '{}' \;
-
-cdsitepackages:
-	docker exec -ti -w /usr/local/lib/$(PYTHON_VERSION)/site-packages inclusion_connect_django /bin/bash
 
 quality: $(VIRTUAL_ENV)
 	black --check inclusion_connect
@@ -73,10 +64,10 @@ pylint: $(VIRTUAL_ENV)
 # make django_admin COMMAND=dbshell
 # make django_admin COMMAND=createsuperuser
 django_admin:
-	$(EXEC_CMD) django-admin $(COMMAND)
+	django-admin $(COMMAND)
 
 populate_db:
-	$(EXEC_CMD) bash -c "ls -d inclusion_connect/fixtures/django/* | xargs ./manage.py loaddata"
+	bash -c "ls -d inclusion_connect/fixtures/django/* | xargs ./manage.py loaddata"
 
 # Tests.
 # =============================================================================
