@@ -25,6 +25,7 @@ class User(AbstractUser):
         unique=True,
     )
     password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
+    terms_accepted_at = models.DateTimeField("Date de validation des CGUs", blank=True, null=True)
 
     def __str__(self):
         return f"{self.get_full_name()} — {self.email}"

@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
@@ -61,6 +63,31 @@ def test_user_creation(client):
     response = client.get(url)
     assertContains(response, "Créer un compte")
     assertContains(response, reverse("accounts:login"))  # Link to login page
+    assertContains(response, "CGU_20230302.pdf")
+    assertContains(response, quote("Politique de confidentialité_20230302.pdf"))
+
+    response = client.post(
+        url,
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": True,
+        },
+    )
+    assertRedirects(response, redirect_url, fetch_redirect_response=False)
+    assert get_user(client).is_authenticated
+    user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
+    assert user.terms_accepted_at == user.date_joined
+
+
+def test_user_creation_terms_are_required(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
+    user = UserFactory.build()
+    assert not get_user(client).is_authenticated
 
     response = client.post(
         url,
@@ -72,9 +99,8 @@ def test_user_creation(client):
             "password2": DEFAULT_PASSWORD,
         },
     )
-    assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated
-    assert User.objects.get(email=user.email)
+    assertTemplateUsed("registration.html")
+    assert "terms_accepted" in response.context["form"].errors
 
 
 # TODO: Test next url propagation in all the registration process (creation + email validation)
