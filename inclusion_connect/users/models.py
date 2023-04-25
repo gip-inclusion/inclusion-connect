@@ -20,7 +20,6 @@ class User(AbstractUser):
 
     email = CIEmailField(
         "Adresse e-mail",
-        blank=True,
         db_index=True,
         unique=True,
     )
