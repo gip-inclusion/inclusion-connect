@@ -12,7 +12,7 @@
             <div class="row">
                 <div class="col-12">
                     {% bootstrap_form_errors form type="all" %}
-                    {% bootstrap_field form.email form_group_class="form-group" %}
+                    {% bootstrap_field form.email %}
                     {% password_field form.password %}
                     <div class="form-group">
                         <a href="{% url 'password_reset' %}" class="btn-link fs-sm">Mot de passe oublié ?</a>
