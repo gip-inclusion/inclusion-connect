@@ -113,6 +113,7 @@ DATABASES = {
         "PORT": os.getenv("POSTGRESQL_ADDON_DIRECT_PORT") or os.getenv("POSTGRESQL_ADDON_PORT"),
         "USER": os.getenv("POSTGRESQL_ADDON_CUSTOM_USER") or os.getenv("POSTGRESQL_ADDON_USER"),
         "PASSWORD": os.getenv("POSTGRESQL_ADDON_CUSTOM_PASSWORD") or os.getenv("POSTGRESQL_ADDON_PASSWORD"),
+        "ATOMIC_REQUESTS": True,
         "OPTIONS": {
             "connect_timeout": 5,
         },
