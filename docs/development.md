@@ -34,7 +34,7 @@ Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse
 Lancer les images dockers depuis la racine du dépôt :
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 ## Serveur de développement
