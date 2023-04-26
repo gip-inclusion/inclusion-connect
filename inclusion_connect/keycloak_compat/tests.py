@@ -31,7 +31,8 @@ def test_keycloak_urls_compat(client, realm):
     }
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_complete_url}))
+    assertRedirects(response, reverse("accounts:login"))
+    assert client.session["next_url"] == auth_complete_url
 
     # Test AUTH endpoint when not authenticated and with bad params
     bad_auth_params = auth_params.copy()
