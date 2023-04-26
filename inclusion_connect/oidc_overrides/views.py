@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
+from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import View
 from jwcrypto import jwt
@@ -13,9 +14,41 @@ from oauth2_provider.models import get_access_token_model, get_id_token_model, g
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 
 
-class BaseAuthorizationView(oauth2_views.base.BaseAuthorizationView):
-    """Mixin that validates authorization request.
-    This will allow us to display an error before having to login / create an account"""
+class OIDCSessionMixin:
+    OIDC_SESSION_KEY = "oidc_params"
+
+    def save_session(self):
+        self.request.session[self.OIDC_SESSION_KEY] = dict(self.request.GET.items())
+        self.request.session["next_url"] = self.request.get_full_path()
+
+    def get_oidc_params(self):
+        return self.request.session.get(self.OIDC_SESSION_KEY, {})
+
+    def get_next_url(self):
+        # FIXME : When there s no next_url available, redirect to user account view
+        # We probably should add a message in this case to tell the user
+        # that something is fishy
+        return self.request.session.get("next_url")
+
+    def get_success_url(self):
+        return self.get_next_url()
+
+    def setup(self, request, *args, **kwargs):
+        next_url = request.GET.get("next")
+        if next_url:
+            request.session["next_url"] = next_url
+        return super().setup(request, *args, **kwargs)
+
+
+class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationView):
+    """Base View that improves the dispatch workflow:
+
+    First step is to validate authorization params
+    This will allow us to display an error before having to login / create an account
+
+    Then check if user is authenticated. If not store auth params so that we can retrieve cleanly in
+    the registration pages
+    """
 
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -26,12 +59,16 @@ class BaseAuthorizationView(oauth2_views.base.BaseAuthorizationView):
 
         return super().dispatch(request, *args, **kwargs)
 
+    def handle_no_permission(self):
+        self.save_session()
+        return HttpResponseRedirect(self.login_url)
 
-class AuthorizationView(BaseAuthorizationView, oauth2_views.AuthorizationView):
-    pass
+
+class AuthorizationView(BaseAuthorizationView):
+    login_url = reverse_lazy("accounts:login")
 
 
-class RegistrationView(BaseAuthorizationView, oauth2_views.AuthorizationView):
+class RegistrationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:registration")
 
 

@@ -4,29 +4,15 @@ from django.urls import reverse
 from django.views.generic import CreateView
 
 from inclusion_connect.accounts import forms
+from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 
 
-class OidcArgumentMixin:
-    def get_success_url(self):
-        # FIXME What to do if there's no next_url ?
-        # Is there a case when i would happend ?
-        # Maybe add a session token that we can pass every in every url ?
-        return self.request.session["next_url"]
-
-    def dispatch(self, request, *args, **kwargs):
-        next_url = request.GET.get("next")
-        if next_url:
-            request.session["next_url"] = next_url
-            request.session.modified = True
-        return super().dispatch(request, *args, **kwargs)
-
-
-class LoginView(OidcArgumentMixin, auth_views.LoginView):
+class LoginView(OIDCSessionMixin, auth_views.LoginView):
     form_class = forms.LoginForm
     template_name = "login.html"
 
 
-class RegistrationView(OidcArgumentMixin, CreateView):
+class RegistrationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegistrationForm
     template_name = "registration.html"
 
@@ -55,7 +41,7 @@ class PasswordResetView(auth_views.PasswordResetView):
         return reverse("accounts:login")
 
 
-class PasswordResetConfirmView(OidcArgumentMixin, auth_views.PasswordResetConfirmView):
+class PasswordResetConfirmView(OIDCSessionMixin, auth_views.PasswordResetConfirmView):
     template_name = "password_reset_confirm.html"
     form_class = forms.SetPasswordForm
     post_reset_login = True

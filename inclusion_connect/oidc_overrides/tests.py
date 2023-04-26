@@ -3,6 +3,7 @@ from django.urls import reverse
 from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
+from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.utils.urls import add_url_params
 
@@ -64,7 +65,9 @@ def test_authorize_not_authenticated(client):
     }
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": auth_complete_url}))
+    assertRedirects(response, reverse("accounts:login"))
+    assert client.session["next_url"] == auth_complete_url
+    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
 
 
 def test_registrations_bad_params(client):
@@ -96,4 +99,6 @@ def test_registrations_not_authenticated(client):
     }
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, add_url_params(reverse("accounts:registration"), {"next": auth_complete_url}))
+    assertRedirects(response, reverse("accounts:registration"))
+    assert client.session["next_url"] == auth_complete_url
+    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
