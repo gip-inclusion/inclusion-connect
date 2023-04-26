@@ -72,6 +72,10 @@ class RegistrationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:registration")
 
 
+class ActivationView(BaseAuthorizationView):
+    login_url = reverse_lazy("accounts:activation")
+
+
 class LogoutView(View):
     # We should probably just cope/paste from https://github.com/jazzband/django-oauth-toolkit/pull/1244
     # until it's merged
