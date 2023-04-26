@@ -198,9 +198,6 @@ def test_account_activation_terms_are_required(client):
     assert "terms_accepted" in response.context["form"].errors
 
 
-# TODO: Test next url propagation in all the registration process (creation + email validation)
-
-
 def test_password_reset(client):
     user = UserFactory()
 
@@ -234,6 +231,7 @@ def test_password_reset(client):
     password = "toto"
     response = client.get(password_reset_url)  # retrieve the modified url
     response = client.post(response.url, data={"new_password1": password, "new_password2": password})
-    # FIXME: skip redirection to login, go to next url !
+
+    # User is now logged in and redirected to next_url
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated

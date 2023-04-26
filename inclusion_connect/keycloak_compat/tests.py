@@ -9,8 +9,8 @@ from oauth2_provider.models import get_access_token_model, get_id_token_model, g
 from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
-from inclusion_connect.oidc_overrides.factories import ApplicationFactory
-from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory, default_password
+from inclusion_connect.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 
 
@@ -53,7 +53,7 @@ def test_login(client, realm):
     # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
         "client_id": application.client_id,
-        "client_secret": DEFAULT_PASSWORD,
+        "client_secret": DEFAULT_CLIENT_SECRET,
         "code": auth_response_params["code"],
         "grant_type": "authorization_code",
         "redirect_uri": "http://localhost/callback",
@@ -66,7 +66,7 @@ def test_login(client, realm):
     id_token = token_json["id_token"]
     decoded_id_token = jwt.decode(
         id_token,
-        key=default_password(),
+        key=default_client_secret(),
         algorithms=["HS256"],
         audience=application.client_id,
     )
@@ -96,7 +96,7 @@ def test_login(client, realm):
     assert not get_user(client).is_authenticated
     assert get_id_token_model().objects.count() == 0
     assert get_access_token_model().objects.count() == 0
-    assert get_refresh_token_model().objects.get().revoked
+    assert get_refresh_token_model().objects.get().revoked is not None
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
@@ -149,7 +149,7 @@ def test_registration(client, realm):
     # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
         "client_id": application.client_id,
-        "client_secret": DEFAULT_PASSWORD,
+        "client_secret": DEFAULT_CLIENT_SECRET,
         "code": auth_response_params["code"],
         "grant_type": "authorization_code",
         "redirect_uri": "http://localhost/callback",
@@ -162,7 +162,7 @@ def test_registration(client, realm):
     id_token = token_json["id_token"]
     decoded_id_token = jwt.decode(
         id_token,
-        key=default_password(),
+        key=default_client_secret(),
         algorithms=["HS256"],
         audience=application.client_id,
     )
@@ -192,7 +192,7 @@ def test_registration(client, realm):
     assert not get_user(client).is_authenticated
     assert get_id_token_model().objects.count() == 0
     assert get_access_token_model().objects.count() == 0
-    assert get_refresh_token_model().objects.get().revoked
+    assert get_refresh_token_model().objects.get().revoked is not None
 
 
 def test_password_hasher(client):

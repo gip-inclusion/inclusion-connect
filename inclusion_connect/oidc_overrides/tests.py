@@ -6,19 +6,10 @@ from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
+from inclusion_connect.tests import OIDC_PARAMS
 from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
-
-
-OIDC_PARAMS = {
-    "response_type": "code",
-    "client_id": "my_application",
-    "redirect_uri": "http://localhost/callback",
-    "scope": "openid profile email",
-    "state": "state",
-    "nonce": "nonce",
-}
 
 
 def test_allow_wildcard_in_redirect_uris():
