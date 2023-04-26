@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, views as auth_views
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import CreateView
 
@@ -12,11 +13,12 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
     template_name = "login.html"
 
 
-class RegistrationView(OIDCSessionMixin, CreateView):
+class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegistrationForm
-    template_name = "registration.html"
 
     def form_valid(self, form):
+        # Authenticate user after creation
+        # FIXME: change this when adding email verification
         result = super().form_valid(form)
         self.user = authenticate(
             email=form.cleaned_data["email"],
@@ -24,6 +26,54 @@ class RegistrationView(OIDCSessionMixin, CreateView):
         )
         login(self.request, self.user)
         return result
+
+
+class RegistrationView(BaseUserCreationView):
+    template_name = "registration.html"
+
+    # TODO: Remove keycloak compatibility
+    def dispatch(self, request, *args, **kwargs):
+        if all(param in self.get_oidc_params() for param in ["login_hint", "lastname", "firstname"]):
+            return HttpResponseRedirect(reverse("accounts:activation"))
+        return super().dispatch(request, *args, **kwargs)
+
+
+class AccountActivationView(BaseUserCreationView):
+    form_class = forms.AccountActivationForm
+    template_name = "account_activation.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check user info is provided
+        try:
+            self.get_user_info()
+        except KeyError:
+            return HttpResponseBadRequest()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_user_info(self, raise_exception=False):
+        params = self.get_oidc_params()
+
+        # TODO: Remove keycloak compatibility
+        try:
+            return {
+                "email": params["login_hint"],
+                "first_name": params["firstname"],
+                "last_name": params["lastname"],
+            }
+        except KeyError:
+            return {
+                "email": params["email"],
+                "first_name": params["firstname"],
+                "last_name": params["lastname"],
+            }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # TODO Get oauth2 application name from client_id
+        return context | {"application_name": "Les emplois de l'inclusion"} | self.get_user_info()
+
+    def get_initial(self):
+        return super().get_initial() | self.get_user_info()
 
 
 class PasswordResetView(auth_views.PasswordResetView):

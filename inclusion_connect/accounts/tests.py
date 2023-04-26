@@ -9,6 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from pytest_django.asserts import assertContains, assertRedirects, assertTemplateUsed
 
 from inclusion_connect.accounts.views import PasswordResetView
+from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params
@@ -74,7 +75,7 @@ def test_user_creation(client):
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": True,
+            "terms_accepted": "on",
         },
     )
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -100,6 +101,70 @@ def test_user_creation_terms_are_required(client):
         },
     )
     assertTemplateUsed(response, "registration.html")
+    assert "terms_accepted" in response.context["form"].errors
+
+
+def test_account_activation(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
+    user = UserFactory.build()
+    assert not get_user(client).is_authenticated
+
+    # If missing params in oidc session
+    response = client.get(url)
+    assert response.status_code == 400
+
+    client_session = client.session
+    client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        "email": user.email,
+        "firstname": user.first_name,
+        "lastname": user.last_name,
+    }
+    client_session.save()
+    response = client.get(url)
+    assertTemplateUsed(response, "account_activation.html")
+
+    response = client.post(
+        url,
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertRedirects(response, redirect_url, fetch_redirect_response=False)
+    assert get_user(client).is_authenticated
+    user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
+    assert user.terms_accepted_at == user.date_joined
+
+
+def test_account_activation_terms_are_required(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
+    user = UserFactory.build()
+    assert not get_user(client).is_authenticated
+    client_session = client.session
+    client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        "email": user.email,
+        "firstname": user.first_name,
+        "lastname": user.last_name,
+    }
+    client_session.save()
+
+    response = client.post(
+        url,
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+        },
+    )
+    assertTemplateUsed(response, "account_activation.html")
     assert "terms_accepted" in response.context["form"].errors
 
 

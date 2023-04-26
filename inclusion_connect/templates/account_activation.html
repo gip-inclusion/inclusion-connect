@@ -4,11 +4,15 @@
 
 {% block content %}
 
-    <h1 class="fr-h4">Créer un compte</h1>
+    <h1 class="fr-h4">Renseignez votre mot de passe</h1>
 
     <div>
-        Inclusion Connect vous permettra d’utiliser le même identifiant et mot de passe pour plusieurs services, en toute sécurité.
+        Vous pouvez réutiliser celui de votre compte sur {{ application_name }} <strong>s'il répond aux critères de sécurité</strong>.
     </div>
+
+    <hr>
+
+    {{ last_name }} {{ first_name }} ({{ email }})
 
     <form method="post" class="js-prevent-multiple-submit">
         {% csrf_token %}

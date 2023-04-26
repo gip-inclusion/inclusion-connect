@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
+from django.forms import HiddenInput
 from django.templatetags.static import static
 from django.utils.html import format_html
 
@@ -71,6 +72,13 @@ class RegistrationForm(auth_forms.UserCreationForm):
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
         return super().save(commit)
+
+
+class AccountActivationForm(RegistrationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in ["first_name", "last_name", "email"]:
+            self.fields[field].widget = HiddenInput()
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
