@@ -8,6 +8,16 @@ from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.utils.urls import add_url_params
 
 
+OIDC_PARAMS = {
+    "response_type": "code",
+    "client_id": "my_application",
+    "redirect_uri": "http://localhost/callback",
+    "scope": "openid profile email",
+    "state": "state",
+    "nonce": "nonce",
+}
+
+
 def test_allow_wildcard_in_redirect_uris():
     application = ApplicationFactory(redirect_uris="http://localhost/*")
     assert application.redirect_uri_allowed("http://localhost/callback")
@@ -36,69 +46,39 @@ def test_logout(client):
     assert not get_user(client).is_authenticated
 
 
-def test_authorize_bad_params(client):
+def test_authorize_bad_oidc_params(client):
+    # Application does not exist
     auth_url = reverse("oidc_overrides:authorize")
-    auth_params = {
-        "response_type": "code",
-        "client_id": "unknown_client_id",
-        "redirect_uri": "http://localhost/callback",
-        "scope": "openid profile email",
-        "state": "state",
-        "nonce": "nonce",
-    }
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     # FIXME update the template
     assert response.status_code == 400
 
 
 def test_authorize_not_authenticated(client):
-    application = ApplicationFactory()
+    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     auth_url = reverse("oidc_overrides:authorize")
-    auth_params = {
-        "response_type": "code",
-        "client_id": application.client_id,
-        "redirect_uri": "http://localhost/callback",
-        "scope": "openid profile email",
-        "state": "state",
-        "nonce": "nonce",
-    }
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
     assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
+    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
-def test_registrations_bad_params(client):
+def test_registrations_bad_oidc_params(client):
+    # Application does not exist
     auth_url = reverse("oidc_overrides:registrations")
-    auth_params = {
-        "response_type": "code",
-        "client_id": "unknown_client_id",
-        "redirect_uri": "http://localhost/callback",
-        "scope": "openid profile email",
-        "state": "state",
-        "nonce": "nonce",
-    }
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     # FIXME update the template
     assert response.status_code == 400
 
 
 def test_registrations_not_authenticated(client):
-    application = ApplicationFactory()
+    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     auth_url = reverse("oidc_overrides:registrations")
-    auth_params = {
-        "response_type": "code",
-        "client_id": application.client_id,
-        "redirect_uri": "http://localhost/callback",
-        "scope": "openid profile email",
-        "state": "state",
-        "nonce": "nonce",
-    }
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:registration"))
     assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
+    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
