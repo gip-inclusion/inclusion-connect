@@ -5,13 +5,13 @@ import pytest
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.urls import reverse
-from pytest_django.asserts import assertRedirects
+from pytest_django.asserts import assertContains, assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.helpers import token_are_revoked
 from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
-from tests.users.factories import UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
@@ -20,7 +20,7 @@ def test_login(client, realm):
     user = UserFactory()
 
     # Test AUTH endpoint when not authenticated
-    auth_url = reverse(f"keycloak_compat_{realm}:authorize")
+    auth_url = f"/realms/{realm}/protocol/openid-connect/auth"
     auth_params = {
         "response_type": "code",
         "client_id": application.client_id,
@@ -59,7 +59,7 @@ def test_login(client, realm):
         "redirect_uri": "http://localhost/callback",
     }
     response = client.post(
-        reverse(f"keycloak_compat_{realm}:token"),
+        f"/realms/{realm}/protocol/openid-connect/token",
         data=token_data,
     )
     token_json = response.json()
@@ -79,7 +79,7 @@ def test_login(client, realm):
 
     # Test USER INFO endpoint
     response = client.get(
-        reverse(f"keycloak_compat_{realm}:user-info"),
+        f"/realms/{realm}/protocol/openid-connect/userinfo",
         HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
     )
     assert response.json() == {
@@ -92,7 +92,7 @@ def test_login(client, realm):
     # Test LOGOUT endpoint
     assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": id_token}
-    response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
+    response = client.get(add_url_params(f"/realms/{realm}/protocol/openid-connect/logout", logout_params))
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
 
@@ -103,7 +103,7 @@ def test_registration(client, realm):
     user = UserFactory()
 
     # Test REGISTRATIONS endpoint when not authenticated
-    auth_url = reverse(f"keycloak_compat_{realm}:registrations")
+    auth_url = f"/realms/{realm}/protocol/openid-connect/registrations"
     auth_params = {
         "response_type": "code",
         "client_id": application.client_id,
@@ -153,7 +153,7 @@ def test_registration(client, realm):
         "redirect_uri": "http://localhost/callback",
     }
     response = client.post(
-        reverse(f"keycloak_compat_{realm}:token"),
+        f"/realms/{realm}/protocol/openid-connect/token",
         data=token_data,
     )
     token_json = response.json()
@@ -173,7 +173,7 @@ def test_registration(client, realm):
 
     # Test USER INFO endpoint
     response = client.get(
-        reverse(f"keycloak_compat_{realm}:user-info"),
+        f"/realms/{realm}/protocol/openid-connect/userinfo",
         HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
     )
     assert response.json() == {
@@ -186,7 +186,7 @@ def test_registration(client, realm):
     # Test LOGOUT endpoint
     assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": id_token}
-    response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
+    response = client.get(add_url_params(f"/realms/{realm}/protocol/openid-connect/logout", logout_params))
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
 
@@ -211,3 +211,22 @@ def test_password_hasher(client):
     user.refresh_from_db()
     assert user.password != hashed_password
     assert PBKDF2PasswordHasher().verify(password, encoded=user.password)
+
+
+@pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
+def test_user_account(client, realm):
+    application = ApplicationFactory()
+    user = UserFactory()
+
+    params = {
+        "referrer": application.client_id,
+        "referrer_uri": "http://localhost/callback",
+    }
+    account_url = add_url_params(f"/realms/{realm}/account", params)
+    response = client.get(account_url)
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": account_url}))
+
+    response = client.post(response.url, {"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    assert get_user(client).is_authenticated is True
+    assertRedirects(response, account_url)
+    assertContains(response, "Retour")
