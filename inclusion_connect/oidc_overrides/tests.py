@@ -1,10 +1,13 @@
 from django.contrib.auth import get_user
 from django.urls import reverse
+from django.utils import timezone
+from freezegun import freeze_time
 from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.factories import UserFactory
+from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
 
 
@@ -117,3 +120,50 @@ def test_activation_not_authenticated(client):
     assertRedirects(response, reverse("accounts:activation"))
     assert client.session["next_url"] == auth_complete_url
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
+
+
+def test_user_application_link(client):
+    application_1 = ApplicationFactory(client_id="ca713487-f4ac-4283-8429-cab7f0386a00")
+    application_2 = ApplicationFactory(client_id="05fb7023-ef66-4b24-896e-35f54a6c637f")
+    user = UserFactory()
+    client.force_login(user)
+
+    def get_user_application_link_values_list():
+        return list(
+            UserApplicationLink.objects.values_list("application_id", "user_id", "last_login").order_by(
+                "application__client_id"
+            )
+        )
+
+    auth_params_1 = OIDC_PARAMS.copy()
+    auth_params_1["client_id"] = application_1.client_id
+    auth_url_1 = add_url_params(reverse("oidc_overrides:authorize"), auth_params_1)
+    auth_params_2 = OIDC_PARAMS.copy()
+    auth_params_2["client_id"] = application_2.client_id
+    auth_url_2 = add_url_params(reverse("oidc_overrides:authorize"), auth_params_2)
+
+    assert user.linked_applications.count() == 0
+
+    with freeze_time("2023-04-27 14:06"):
+        dt_1 = timezone.now()
+        client.get(auth_url_1)
+
+    assert get_user_application_link_values_list() == [(application_1.pk, user.pk, dt_1)]
+
+    with freeze_time("2023-04-27 14:07"):
+        dt_2 = timezone.now()
+        client.get(auth_url_2)
+
+    assert get_user_application_link_values_list() == [
+        (application_2.pk, user.pk, dt_2),
+        (application_1.pk, user.pk, dt_1),
+    ]
+
+    with freeze_time("2023-04-27 14:08"):
+        dt_3 = timezone.now()
+        client.get(auth_url_1)
+
+    assert get_user_application_link_values_list() == [
+        (application_2.pk, user.pk, dt_2),
+        (application_1.pk, user.pk, dt_3),  # last_login was updated
+    ]

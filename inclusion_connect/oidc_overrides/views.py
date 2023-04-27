@@ -4,6 +4,7 @@ from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import View
 from jwcrypto import jwt
 from oauth2_provider import views as oauth2_views
@@ -11,7 +12,9 @@ from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
+from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
+from inclusion_connect.users.models import UserApplicationLink
 
 
 class OIDCSessionMixin:
@@ -62,6 +65,17 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
     def handle_no_permission(self):
         self.save_session()
         return HttpResponseRedirect(self.login_url)
+
+    def create_authorization_response(self, request, scopes, credentials, allow):
+        response = super().create_authorization_response(request, scopes, credentials, allow)
+
+        # Only link if authorization response was created
+        UserApplicationLink.objects.update_or_create(
+            user=self.request.user,
+            application=Application.objects.get(client_id=credentials["client_id"]),
+            defaults={"last_login": timezone.now()},
+        )
+        return response
 
 
 class AuthorizationView(BaseAuthorizationView):
