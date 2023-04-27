@@ -32,7 +32,7 @@ urlpatterns = [
 for realm in settings.KEYCLOAK_REALMS:
     urlpatterns.append(
         re_path(
-            rf"^realms/{realm}/protocol/openid-connect/",
+            rf"^realms/{realm}/",
             include("inclusion_connect.keycloak_compat.urls", namespace=f"keycloak_compat_{realm}"),
         )
     )
