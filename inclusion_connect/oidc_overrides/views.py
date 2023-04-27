@@ -105,7 +105,7 @@ class LogoutView(View):
             # FIXME: replicate the issue in a test ?
             [
                 s.delete()
-                for s in Session.objects.all()
+                for s in Session.objects.filter(expiry_date__gte=timezone.now())
                 if s.get_decoded().get("_auth_user_id") == str(id_token.user_id)
             ]
         except Exception:
