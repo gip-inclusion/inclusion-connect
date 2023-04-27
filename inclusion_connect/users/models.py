@@ -1,8 +1,10 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import CIEmailField
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -47,3 +49,19 @@ class User(AbstractUser):
         if exclude_pk:
             queryset = queryset.exclude(pk=exclude_pk)
         return queryset.exists()
+
+
+class UserApplicationLink(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Utilisateur",
+        related_name="linked_applications",
+        on_delete=models.CASCADE,
+    )
+    application = models.ForeignKey(
+        settings.OAUTH2_PROVIDER_APPLICATION_MODEL,
+        verbose_name="Application",
+        related_name="linked_users",
+        on_delete=models.CASCADE,
+    )
+    last_login = models.DateTimeField("Dernière connexion", default=timezone.now)
