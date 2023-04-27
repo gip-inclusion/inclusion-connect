@@ -186,13 +186,8 @@ SESSION_COOKIE_NAME = "INCLUSION_CONNECT"
 # Force browser to end session when closing.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Since some browser restore session when restarting, the previous setting may not
-# work as we want. This is why we ask Django to expire sessions in DB after 1 week
-# of inactivity.
-# -> https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_the_lifetime_of_a_cookie
-# In addition, the command shorten_active_sessions is run every week to force user to connect at least once per week
-# FIXME
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
+# Set django session ligespan to 30 minutes
+SESSION_COOKIE_AGE = 60 * 30
 
 X_FRAME_OPTIONS = "DENY"
 
