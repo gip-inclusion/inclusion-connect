@@ -36,12 +36,12 @@ def test_login_failed_bad_email_or_password(client):
     assert not get_user(client).is_authenticated
 
     response = client.post(url, data={"email": user.email, "password": "toto"})
-    assertTemplateUsed("login.html")
+    assertTemplateUsed(response, "login.html")
     assertContains(response, "Adresse e-mail ou mot de passe invalide.")
     assert not get_user(client).is_authenticated
 
     response = client.post(url, data={"email": "wrong@email.com", "password": DEFAULT_PASSWORD})
-    assertTemplateUsed("login.html")
+    assertTemplateUsed(response, "login.html")
     assertContains(response, "Adresse e-mail ou mot de passe invalide.")
     assert not get_user(client).is_authenticated
 
@@ -49,7 +49,7 @@ def test_login_failed_bad_email_or_password(client):
     user.is_active = False
     user.save()
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-    assertTemplateUsed("login.html")
+    assertTemplateUsed(response, "login.html")
     assertContains(response, "Adresse e-mail ou mot de passe invalide.")
     assert not get_user(client).is_authenticated
 
@@ -99,7 +99,7 @@ def test_user_creation_terms_are_required(client):
             "password2": DEFAULT_PASSWORD,
         },
     )
-    assertTemplateUsed("registration.html")
+    assertTemplateUsed(response, "registration.html")
     assert "terms_accepted" in response.context["form"].errors
 
 
