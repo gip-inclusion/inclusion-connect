@@ -5,6 +5,7 @@ from django.contrib.auth import get_user
 from django.core import mail
 from django.urls import reverse
 from django.utils.encoding import force_bytes
+from django.utils.html import format_html
 from django.utils.http import urlsafe_base64_encode
 from pytest_django.asserts import assertContains, assertRedirects, assertTemplateUsed
 
@@ -82,6 +83,35 @@ def test_user_creation(client):
     assert get_user(client).is_authenticated
     user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
     assert user.terms_accepted_at == user.date_joined
+
+
+def test_user_creation_fails_email_exists(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
+    user = UserFactory()
+    assert not get_user(client).is_authenticated
+
+    response = client.post(
+        url,
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertTemplateUsed(response, "registration.html")
+    assert "email" in response.context["form"].errors
+    assertContains(
+        response,
+        format_html(
+            'Un compte avec cette adresse e-mail existe déjà, <a href="{}">Se connecter</a> ?',
+            reverse("accounts:login"),
+        ),
+        html=True,
+    )
 
 
 def test_user_creation_terms_are_required(client):
