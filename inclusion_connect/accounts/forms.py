@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.forms import HiddenInput
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.html import format_html
 
 from inclusion_connect.users.models import User
@@ -61,6 +62,17 @@ class RegistrationForm(auth_forms.UserCreationForm):
     class Meta:
         model = User
         fields = ("last_name", "first_name", "email")
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email=email).exists():
+            raise ValidationError(
+                format_html(
+                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">Se connecter</a> ?',
+                    reverse("accounts:login"),
+                )
+            )
+        return email
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
