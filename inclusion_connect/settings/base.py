@@ -265,7 +265,7 @@ BOOTSTRAP4 = {
 # --------------------------
 
 # Environment, sets the type of env of the app (PROD, FAST-MACHINE, DEMO, DEV…)
-ITOU_ENVIRONMENT = os.getenv("IC_ENVIRONMENT", "PROD")
+IC_ENVIRONMENT = os.getenv("IC_ENVIRONMENT", "PROD")
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 try:
