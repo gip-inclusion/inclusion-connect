@@ -300,6 +300,7 @@ OAUTH2_PROVIDER = {
     },
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oidc_overrides.validators.CustomOAuth2Validator",
+    "REFRESH_TOKEN_EXPIRE_SECONDS": SESSION_COOKIE_AGE,
 }
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
