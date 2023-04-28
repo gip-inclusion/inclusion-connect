@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.html import format_html
 from django.utils.http import urlsafe_base64_encode
-from pytest_django.asserts import assertContains, assertRedirects, assertTemplateUsed
+from pytest_django.asserts import assertContains, assertNotContains, assertRedirects, assertTemplateUsed
 
 from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
@@ -269,4 +269,76 @@ def test_password_reset(client):
 
     # User is now logged in and redirected to next_url
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
+    assert get_user(client).is_authenticated is True
+
+
+def test_edit_user_info(client):
+    user = UserFactory()
+    client.force_login(user)
+    referrer_uri = "https://go/back/there"
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
+    change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
+
+    # Dont display return button without referrer_uri
+    response = client.get(reverse("accounts:edit_user_info"))
+    return_text = "Retour"
+    assertNotContains(response, return_text)
+
+    # with referrer_uri
+    response = client.get(edit_user_info_url)
+    assertContains(response, "<h1>\n                Informations générales\n            </h1>")
+    # Left menu contains both pages
+    assertContains(response, edit_user_info_url)
+    assertContains(response, change_password_url)
+    # Page contains return to referrer link
+    assertContains(response, return_text)
+    assertContains(response, referrer_uri)
+
+    # Edit user info
+    response = client.post(
+        edit_user_info_url,
+        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
+    )
+    assertRedirects(response, edit_user_info_url)
+    user.refresh_from_db()
+    assert user.first_name == "John"
+    assert user.last_name == "Doe"
+    assert user.email == "my@email.com"
+    assertRedirects(response, edit_user_info_url)
+
+
+def test_change_password(client):
+    user = UserFactory()
+    client.force_login(user)
+    referrer_uri = "https://go/back/there"
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
+    change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
+
+    # Dont display return button without referrer_uri
+    response = client.get(reverse("accounts:change_password"))
+    return_text = "Retour"
+    assertNotContains(response, return_text)
+
+    # with referrer_uri
+    response = client.get(change_password_url)
+    assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
+    # Left menu contains both pages
+    assertContains(response, edit_user_info_url)
+    assertContains(response, change_password_url)
+    # Page contains return to referrer link
+    assertContains(response, return_text)
+    assertContains(response, referrer_uri)
+
+    # Go change password
+    response = client.post(
+        change_password_url,
+        data={"old_password": DEFAULT_PASSWORD, "new_password1": "toto", "new_password2": "toto"},
+    )
+    assertRedirects(response, change_password_url)
+    assert get_user(client).is_authenticated is True
+
+    client.logout()
+    assert get_user(client).is_authenticated is False
+
+    response = client.post(reverse("accounts:login"), data={"email": user.email, "password": "toto"}, follow=True)
     assert get_user(client).is_authenticated is True

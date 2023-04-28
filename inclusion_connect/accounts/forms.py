@@ -118,3 +118,16 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
         super().__init__(*args, **kwargs)
         for key in ["new_password1", "new_password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
+
+
+class EditUserInfoForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("last_name", "first_name", "email")
+
+
+class PasswordChangeForm(auth_forms.PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for key in ["old_password", "new_password1", "new_password2"]:
+            self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
