@@ -1,0 +1,41 @@
+{% extends "layout/base.html" %}
+{% load bootstrap4 %}
+{% load static %}
+
+{% block left_content %}
+    <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+        <div class="bg-white p-3 py-lg-7 px-lg-8">
+            <h1>Mon compte</h1>
+            <ul>
+                <li>
+                    <a href="{{ edit_user_info_url }}">Informations générales</a>
+                </li>
+                <li>
+                    <a href="{{ edit_password_url }}">Changer mon mot de passe</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block right_content %}
+    <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+        <div class="bg-white p-3 py-lg-7 px-lg-8">
+            <h1>
+                {% block section_title %}{% endblock %}
+            </h1>
+            {% block messages %}
+                {% bootstrap_messages %}
+            {% endblock %}
+
+            {% block content %}{% endblock %}
+
+            {% if referrer_uri %}
+                <br>
+                <div class="text-center">
+                    <a href="{{ referrer_uri }}" class="btn btn-block btn-outline-primary">Retour</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

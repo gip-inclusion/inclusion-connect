@@ -1,0 +1,18 @@
+{% extends "layout/account.html" %}
+{% load bootstrap4 %}
+
+{% block section_title %}Informations générales{% endblock %}
+
+{% block content %}
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <fieldset>
+            <div class="row">
+                <div class="col-12">{% bootstrap_form form alert_error_type="all" %}</div>
+            </div>
+        </fieldset>
+        <div>
+            {% bootstrap_button "Enregistrer les modifications" button_type="submit" button_class="btn btn-block btn-primary" %}
+        </div>
+    </form>
+{% endblock %}

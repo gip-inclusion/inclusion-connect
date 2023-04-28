@@ -1,11 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth import login, views as auth_views
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.urls import reverse
-from django.views.generic import CreateView
+from django.views.generic import CreateView, FormView, UpdateView
 
 from inclusion_connect.accounts import forms
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
+from inclusion_connect.users.models import User
+from inclusion_connect.utils.urls import add_url_params
 
 
 class LoginView(OIDCSessionMixin, auth_views.LoginView):
@@ -88,3 +91,52 @@ class PasswordResetConfirmView(OIDCSessionMixin, auth_views.PasswordResetConfirm
     template_name = "password_reset_confirm.html"
     form_class = forms.SetPasswordForm
     post_reset_login = True
+
+
+class MyAccountMixin(LoginRequiredMixin):
+    # FIXME: Also handle referrer params as in keycloak
+    # - we can display the application name in the return button: "Retour vers Dora"
+    #   but it may be too long in some cases
+    # - we can log that the user came from the given application
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        referrer_uri = self.request.GET.get("referrer_uri")
+        return context | {
+            "edit_user_info_url": add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}),
+            "edit_password_url": add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri}),
+            "referrer_uri": referrer_uri,
+        }
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_success_url(self):
+        # Stay on page
+        return self.request.get_full_path()
+
+
+class EditUserInfoView(MyAccountMixin, UpdateView):
+    template_name = "edit_user_info.html"
+    form_class = forms.EditUserInfoForm
+    model = User
+
+    # FIXME Add a message on success to tell the user to click on return if he's done ?
+    def form_valid(self, form):
+        messages.success(self.request, "Votre compte a été mis à jour.")
+        return super().form_valid(form)
+
+
+class PasswordChangeView(MyAccountMixin, FormView):
+    template_name = "change_password.html"
+    form_class = forms.PasswordChangeForm
+
+    def get_form_kwargs(self):
+        return super().get_form_kwargs() | {"user": self.get_object()}
+
+    def form_valid(self, form):
+        form.save()
+        login(self.request, self.get_object())
+        messages.success(self.request, "Votre mot de passe a été mis à jour.")
+        return super().form_valid(form)
