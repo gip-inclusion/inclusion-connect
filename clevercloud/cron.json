@@ -1,2 +1,4 @@
 [
+  "0 3 * * * $ROOT/clevercloud/run_management_command.sh clearsessions",
+  "0 3 * * * $ROOT/clevercloud/run_management_command.sh cleartokens"
 ]
