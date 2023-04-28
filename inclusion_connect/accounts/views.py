@@ -76,8 +76,6 @@ class PasswordResetView(auth_views.PasswordResetView):
     form_class = forms.PasswordResetForm
 
     def get_success_url(self):
-        # FIXME: Move where the messages are displayed
-        # Or go back to default Django password_reset_done view
         messages.success(
             self.request,
             "Si un compte existe avec cette adresse e-mail, "
