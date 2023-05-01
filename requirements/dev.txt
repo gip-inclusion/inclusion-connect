@@ -842,9 +842,9 @@ stack-data==0.6.2 \
     --hash=sha256:32d2dd0376772d01b6cb9fc996f3c8b57a357089dec328ed4b6553d037eaf815 \
     --hash=sha256:cbb2a53eb64e5785878201a97ed7c7b94883f48b87bfb0bbe8b623c74679e4a8
     # via ipython
-syrupy==4.0.1 \
-    --hash=sha256:53d3107cc5e18a5def189c721879cea2cdafdee34b879f602133ca08837d0e4b \
-    --hash=sha256:60e3e94782444e0f978cd3b207de32f6da3199b15a2db32eab02f83cebb63ae8
+syrupy==4.0.2 \
+    --hash=sha256:3c75ab6866580679b2cb9abe78e74c3e2011fffc6333651c6beb2a78a716ab80 \
+    --hash=sha256:dfd1f0fad298eee753de4f2471d4346412c4435885c4b7beea648d4934c6620a
     # via -r requirements/dev.in
 tomlkit==0.11.7 \
     --hash=sha256:5325463a7da2ef0c6bbfefb62a3dc883aebe679984709aee32a317907d0a8d3c \
