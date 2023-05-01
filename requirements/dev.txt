@@ -377,9 +377,9 @@ django-oauth-toolkit==2.2.0 \
     --hash=sha256:46890decb24a34e2a5382debeaf7752e50d90b7a11716cf2a9fd067097ec0963 \
     --hash=sha256:abd85c74af525a62365ec2049113e73a2ff8b46ef906e7104a7ba968ef02a11d
     # via -r requirements/base.txt
-djlint==1.23.3 \
-    --hash=sha256:165033e5237e432c86fc90e0a3c59aeb7079df4284bdb054f84214af344899d8 \
-    --hash=sha256:68cdd6047cd8c45ca17c82782b70d9cb2bd5282c6a863fe1e1e63e697265ec85
+djlint==1.25.0 \
+    --hash=sha256:1b9e5265e51c224ef5c6b8d434151293943ddae8602fb544063f33039738d17c \
+    --hash=sha256:5d4ca41b40e8986773043eb7b857654154da91337df7c6c9aeeca256d5f0459a
     # via -r requirements/dev.in
 editorconfig==0.12.3 \
     --hash=sha256:57f8ce78afcba15c8b18d46b5170848c88d56fd38f05c2ec60dbbfcb8996e89e \
@@ -809,12 +809,6 @@ sentry-sdk==1.20.0 \
     --hash=sha256:0ad6bbbe78057b8031a07de7aca6d2a83234e51adc4d436eaf8d8c697184db71 \
     --hash=sha256:a3410381ae769a436c0852cce140a5e5e49f566a07fb7c2ab445af1302f6ad89
     # via -r requirements/base.txt
-shellcheck-py==0.9.0.2 \
-    --hash=sha256:1c29aa5864cc937f037b84b8e6b13b7016d25a45f7a07a1f1f16d38e387c76b4 \
-    --hash=sha256:6a1be188d0a7183fc4bfcf52087512d879519bb6beb67d76927e0331edb45eb1 \
-    --hash=sha256:bbaaba3044d266e793964e391c8caad4fcccafcd64e63de24e9b87a31a0c7aff \
-    --hash=sha256:ddb9b9fd4750d726b9ac24df8b63599dc742c8749477bcdfd4ed639b22de21ae
-    # via -r requirements/dev.in
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
     --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
