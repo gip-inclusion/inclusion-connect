@@ -31,10 +31,17 @@ def test_login(client):
     assert get_user(client).is_authenticated is True
 
 
+def test_login_no_next_url(client):
+    user = UserFactory()
+
+    response = client.post(reverse("accounts:login"), data={"email": user.email, "password": DEFAULT_PASSWORD})
+    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assert get_user(client).is_authenticated is True
+
+
 def test_login_failed_bad_email_or_password(client):
     url = add_url_params(reverse("accounts:login"), {"next": "anything"})
     user = UserFactory()
-    assert not get_user(client).is_authenticated
 
     response = client.post(url, data={"email": user.email, "password": "toto"})
     assertTemplateUsed(response, "login.html")
@@ -81,6 +88,24 @@ def test_user_creation(client):
     assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
     assert user.terms_accepted_at == user.date_joined
+
+
+def test_user_creation_no_next_url(client):
+    user = UserFactory.build()
+
+    response = client.post(
+        reverse("accounts:register"),
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assert get_user(client).is_authenticated is True
 
 
 def test_user_creation_fails_email_exists(client):
