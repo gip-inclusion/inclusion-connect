@@ -13,7 +13,7 @@ def test_admin_login(client):
     assert "username" in response.context["form"].fields
 
     response = client.post(admin_login_url, data={"username": user.email, "password": DEFAULT_PASSWORD})
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
 
 
 def test_authentication_backend_with_username():

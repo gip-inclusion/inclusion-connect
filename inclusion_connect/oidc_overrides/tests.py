@@ -32,7 +32,7 @@ def test_logout(client):
     assert response.status_code == 400  # auth_url is missing all the arguments
     # TODO: Add a method to quickly to the oidc dance.
 
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": 111}  # bad token
     # TODO: also try with existing token but expired
     response = client.get(add_url_params(reverse("oidc_overrides:logout"), logout_params))
