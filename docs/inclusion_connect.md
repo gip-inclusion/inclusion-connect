@@ -1,6 +1,6 @@
 # Utiliser Inclusion Connect pour authentifier des utilisateurs
 
-Afin d'implémenter Inclusion Connect, il faut un compte pour votre fournisseur de service sur les plateformes d'intégration et de production.
+Afin d'implémenter Inclusion Connect, il faut un compte pour votre <abbr>FS</abbr> (Fournisseur de Service) sur les plateformes d'intégration et de production.
 
 - Vous pouvez observer l'ensemble des parcours de connexion / création de compte / etc à [cette page](https://plateforme-inclusion.notion.site/Documentation-Produit-1253040ad01f4b939d67f056e056e7d0)
 - Pour plus de détail sur les différents _endpoints_ vous pouvez continuer à lire cette page.
