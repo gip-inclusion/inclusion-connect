@@ -90,7 +90,7 @@ def test_login(client, realm):
     }
 
     # Test LOGOUT endpoint
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": id_token}
     response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
     assert not get_user(client).is_authenticated
@@ -186,7 +186,7 @@ def test_registration(client, realm):
     }
 
     # Test LOGOUT endpoint
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": id_token}
     response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
     assert not get_user(client).is_authenticated

@@ -29,7 +29,7 @@ def test_login(client):
 
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
 
 
 def test_login_failed_bad_email_or_password(client):
@@ -80,7 +80,7 @@ def test_user_creation(client):
         },
     )
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
     assert user.terms_accepted_at == user.date_joined
 
@@ -166,7 +166,7 @@ def test_account_activation(client):
         },
     )
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
     assert user.terms_accepted_at == user.date_joined
 
@@ -234,4 +234,4 @@ def test_password_reset(client):
 
     # User is now logged in and redirected to next_url
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated
+    assert get_user(client).is_authenticated is True
