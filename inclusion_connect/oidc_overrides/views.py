@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import View
 from jwcrypto import jwt
@@ -29,10 +29,9 @@ class OIDCSessionMixin:
         return self.request.session.get(self.OIDC_SESSION_KEY, {})
 
     def get_next_url(self):
-        # FIXME : When there s no next_url available, redirect to user account view
         # We probably should add a message in this case to tell the user
         # that something is fishy
-        return self.request.session.get("next_url")
+        return self.request.session.get("next_url") or reverse("accounts:edit_user_info")
 
     def get_success_url(self):
         return self.get_next_url()
