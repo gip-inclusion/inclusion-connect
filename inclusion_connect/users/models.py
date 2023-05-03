@@ -36,20 +36,6 @@ class User(AbstractUser):
         # Required by some third party libraries that use user.id (django-oauth-toolkit)
         return self.pk
 
-    # habdle verified email with django-allauth ?
-
-    @classmethod
-    def email_already_exists(cls, email, exclude_pk=None):
-        """
-        RFC 5321 Part 2.4 states that only the domain portion of an email
-        is case-insensitive. Consider toto@toto.com and TOTO@toto.com as
-        the same email.
-        """
-        queryset = cls.objects.filter(email__iexact=email)
-        if exclude_pk:
-            queryset = queryset.exclude(pk=exclude_pk)
-        return queryset.exists()
-
 
 class UserApplicationLink(models.Model):
     user = models.ForeignKey(
