@@ -1,16 +1,22 @@
+import uuid
+
 from django.contrib import messages
 from django.contrib.auth import login, views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from django.utils import timezone
-from django.views.generic import CreateView, FormView, TemplateView, UpdateView
+from django.utils import http, timezone
+from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
 
-from inclusion_connect.accounts import forms
+from inclusion_connect.accounts import emails, forms
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.users.models import User
+from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params
+
+
+EMAIL_CONFIRM_KEY = "email_to_confirm"
 
 
 class LoginView(OIDCSessionMixin, auth_views.LoginView):
@@ -21,11 +27,21 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegisterForm
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request"] = self.request
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("accounts:confirm-email")
+
     def form_valid(self, form):
-        # FIXME: change this when adding email verification
-        result = super().form_valid(form)
-        login(self.request, form.instance)
-        return result
+        response = super().form_valid(form)
+        email = form.cleaned_data["email"]
+        email_address = EmailAddress.objects.get(email=email)
+        emails.send_verification_email(self.request, email_address)
+        self.request.session[EMAIL_CONFIRM_KEY] = email
+        return response
 
 
 class RegisterView(BaseUserCreationView):
@@ -106,6 +122,59 @@ class AcceptTermsView(LoginRequiredMixin, OIDCSessionMixin, TemplateView):
     def post(self, *args, **kwargs):
         self.request.user.terms_accepted_at = timezone.now()
         self.request.user.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class ConfirmEmailView(TemplateView):
+    template_name = "email_confirmation.html"
+
+    def setup(self, request, *args, **kwargs):
+        super().setup(request, *args, **kwargs)
+        try:
+            self.email_address = EmailAddress.objects.get(email=request.session[EMAIL_CONFIRM_KEY], verified_at=None)
+        except (KeyError, EmailAddress.DoesNotExist) as e:
+            raise Http404 from e
+
+    def post(self, request):
+        messages.success(request, "E-mail de vérification envoyé.")
+        emails.send_verification_email(request, self.email_address)
+        return HttpResponseRedirect(reverse("accounts:confirm-email"))
+
+
+class ConfirmEmailTokenView(OIDCSessionMixin, View):
+    @staticmethod
+    def decode_email(encoded_email):
+        return http.urlsafe_base64_decode(encoded_email).decode()
+
+    def get(self, request, uidb64, token):
+        try:
+            uid = uuid.UUID(http.urlsafe_base64_decode(uidb64).decode())
+        except (TypeError, ValueError, OverflowError) as e:
+            raise Http404 from e
+        one_day = 24 * 60 * 60
+        signer = TimestampSigner()
+        try:
+            encoded_email = signer.unsign(token, max_age=one_day)
+        except SignatureExpired:
+            encoded_email = signer.unsign(token)
+            email = self.decode_email(encoded_email)
+            request.session[EMAIL_CONFIRM_KEY] = email
+            messages.error(request, "Le lien de vérification d’adresse e-mail a expiré.")
+            return HttpResponseRedirect(reverse("accounts:confirm-email"))
+        except BadSignature as e:
+            raise Http404 from e
+        # Signature matched, the payload is valid.
+        email = self.decode_email(encoded_email)
+        email_address = get_object_or_404(EmailAddress.objects.select_related("user"), email=email, user_id=uid)
+        if email_address.verified_at:
+            messages.info(request, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")
+            return HttpResponseRedirect(reverse("accounts:login"))
+        email_address.verify()
+        login(request, email_address.user)
+        try:
+            del request.session[EMAIL_CONFIRM_KEY]
+        except KeyError:
+            pass
         return HttpResponseRedirect(self.get_success_url())
 
 

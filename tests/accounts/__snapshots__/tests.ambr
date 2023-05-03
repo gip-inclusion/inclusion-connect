@@ -1,0 +1,55 @@
+# serializer version: 1
+# name: TestConfirmEmailView.test_get[me@mailinator.com is present in page output]
+  '''
+  <main class="s-main" id="main" role="main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <h1 class="fr-h4">Confirmez votre adresse e-mail</h1>
+  
+      <p>
+          Un email de confirmation vient d’être envoyé à l’adresse
+          <i>me@mailinator.com</i>. Veuillez cliquer sur le
+          lien dans le corps de cet email pour activer votre compte.
+      </p>
+  
+      <p class="text-muted">
+          Si après plusieurs minutes, vous n’avez toujours pas reçu cet email,
+          vérifiez les dossiers de courriers indésirables (spam) puis réessayez
+          en cliquant sur le bouton ci-dessous.
+      </p>
+  
+      <form class="js-prevent-multiple-submit" method="post">
+          <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+          <button class="btn btn-block btn-primary" type="submit">Renvoyer l’e-mail de vérification</button>
+      </form>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  '''
+# ---

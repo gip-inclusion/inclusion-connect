@@ -20,16 +20,26 @@ class User(AbstractUser):
     # Change default id to uuid4 (used as sub in OIDC protocol) and use as pk
     username = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, primary_key=True)
 
-    email = CIEmailField(
-        "adresse e-mail",
-        db_index=True,
-        unique=True,
-    )
+    # Denormalized verified email. See EmailAddress.
+    email = CIEmailField(verbose_name="adresse e-mail", blank=True, db_index=True)
     password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                "email",
+                name="unique_email_if_not_empty",
+                condition=~models.Q(email=""),
+                violation_error_message="Cet email est déjà associé à un autre utilisateur.",
+            ),
+        ]
+
     def __str__(self):
-        return f"{self.get_full_name()} — {self.email}"
+        text = self.get_full_name()
+        if self.email:
+            text += f" — {self.email}"
+        return text
 
     @property
     def id(self):
@@ -39,6 +49,45 @@ class User(AbstractUser):
     @property
     def must_accept_terms(self):
         return self.terms_accepted_at is None or self.terms_accepted_at < settings.NEW_TERMS_DATE
+
+
+class EmailAddress(models.Model):
+    """
+    Allows validating email adresses uniqueness regardless of their verified state.
+
+    Subscription: email address not verified, user.email is None
+    Email validation: email address verified, user.email == email
+
+    Upon email change: 2 email addresses, user.email == old_email:
+        - the old email address is verified
+        - the new email address is not verified
+    When the new email is verified, the old email address is deleted, user.email == new_email
+    """
+
+    email = CIEmailField("adresse e-mail", primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_addresses")
+    created_at = models.DateTimeField(editable=False, default=timezone.now, verbose_name="date de création")
+    verified_at = models.DateTimeField(null=True, blank=True, verbose_name="date de vérification")
+
+    class Meta:
+        verbose_name = "addresse e-mail"
+        verbose_name_plural = "addresses e-mail"
+
+    def __str__(self):
+        verified = f"verified since {self.verified_at}" if self.verified_at else "not verified"
+        return f"{self.email}: {verified}"
+
+    def save(self, *args, **kwargs):
+        if self.verified_at:
+            self.user.email = self.email
+            self.user.save()
+        super().save(*args, **kwargs)
+
+    def verify(self, verified_at=None):
+        self.verified_at = verified_at or timezone.now()
+        self.save(update_fields=["verified_at"])
+        # Free unused email addresses for other users.
+        type(self).objects.filter(user_id=self.user_id).exclude(pk=self.pk).delete()
 
 
 class UserApplicationLink(models.Model):

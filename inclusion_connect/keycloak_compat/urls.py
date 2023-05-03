@@ -3,6 +3,7 @@ from oauth2_provider import views as oauth2_views
 
 from ..accounts.views import EditUserInfoView
 from ..oidc_overrides.views import AuthorizationView, LogoutView, RegistrationView
+from . import views
 
 
 app_name = "keycloak_compat"
@@ -23,4 +24,5 @@ urlpatterns = [
     re_path(r"^protocol/openid-connect/token$", oauth2_views.TokenView.as_view(), name="token"),
     re_path(r"^protocol/openid-connect/logout$", LogoutView.as_view(), name="logout"),
     re_path(r"^account$", EditUserInfoView.as_view(), name="edit_user_info"),
+    re_path(r"^login-actions/action-token$", views.ActionToken.as_view(), name="action-token"),
 ]

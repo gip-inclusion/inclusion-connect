@@ -11,13 +11,21 @@ from django.utils.encoding import force_bytes
 from django.utils.html import format_html
 from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertNotContains, assertRedirects, assertTemplateUsed
+from pytest_django.asserts import (
+    assertContains,
+    assertNotContains,
+    assertQuerysetEqual,
+    assertRedirects,
+    assertTemplateUsed,
+)
 
-from inclusion_connect.accounts.views import PasswordResetView
+from inclusion_connect.accounts.tokens import email_verification_token
+from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY, PasswordResetView
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.users.models import User
+from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
+from tests.helpers import parse_response_to_soup
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -67,10 +75,37 @@ def test_login_failed_bad_email_or_password(client):
     assert not get_user(client).is_authenticated
 
 
-def test_user_creation(client):
+def test_login_email_not_verified(client, mailoutbox):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+    user_email = "me@mailinator.com"
+    user = UserFactory(email="")
+    EmailAddress.objects.create(user=user, email=user_email)
+
+    response = client.post(url, data={"email": user_email, "password": DEFAULT_PASSWORD})
+    assert response.status_code == 200
+    assert not get_user(client).is_authenticated
+    assertContains(
+        response,
+        """
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
+            Un compte inactif avec cette adresse e-mail existe déjà, l’email de vérification vient d’être
+            envoyé à nouveau.         
+        </div>
+        """,
+        html=True,
+        count=1,
+    )
+    [email] = mailoutbox
+    assert email.to == [user_email]
+    assert email.subject == "Vérification de l’adresse e-mail"
+
+
+@freeze_time("2023-04-26 11:11:11")
+def test_user_creation(client, mailoutbox):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-    user = UserFactory.build()
 
     response = client.get(url)
     assertContains(response, "Créer un compte")
@@ -78,39 +113,48 @@ def test_user_creation(client):
     assertContains(response, "CGU_20230302.pdf")
     assertContains(response, quote("Politique de confidentialité_20230302.pdf"))
 
+    user_email = "user@mailinator.com"
     response = client.post(
         url,
         data={
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
+            "email": user_email,
+            "first_name": "Jack",
+            "last_name": "Jackson",
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
             "terms_accepted": "on",
         },
     )
-    assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-    user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
-    assert user.terms_accepted_at == user.date_joined
-
-
-def test_user_creation_no_next_url(client):
-    user = UserFactory.build()
-
-    response = client.post(
-        reverse("accounts:register"),
-        data={
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "password1": DEFAULT_PASSWORD,
-            "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
-        },
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    assert get_user(client).is_authenticated is False
+    user_from_db = User.objects.get()
+    assert user_from_db.terms_accepted_at == user_from_db.date_joined
+    assert user_from_db.first_name == "Jack"
+    assert user_from_db.last_name == "Jackson"
+    assert user_from_db.email == ""
+    assertQuerysetEqual(
+        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
+        [(user_from_db.pk, user_email, None)],
     )
-    assertRedirects(response, reverse("accounts:edit_user_info"))
-    assert get_user(client).is_authenticated is True
+
+    [email] = mailoutbox
+    assert email.to == [user_email]
+    assert email.subject == "Vérification de l’adresse e-mail"
+    uidb64 = urlsafe_base64_encode(str(user_from_db.pk).encode())
+    token = email_verification_token(user_email)
+    verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
+    verify_link = f"http://testserver{verify_path}"
+    assert email.body == (
+        "Bonjour,\n\n"
+        "Une demande de création de compte a été effectuée avec votre adresse e-mail. Si\n"
+        "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
+        "afin de vérifier votre adresse e-mail :\n\n"
+        f"{verify_link}\n\n"
+        "Ce lien expire dans 1 jour.\n\n"
+        "Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.\n\n"
+        "---\n"
+        "L’équipe d’inclusion connect\n"
+    )
 
 
 def test_user_creation_fails_email_exists(client):
@@ -141,7 +185,37 @@ def test_user_creation_fails_email_exists(client):
     )
 
 
-def test_user_creation_terms_are_required(client):
+def test_user_creation_fails_email_not_verified(client, mailoutbox):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
+    user = UserFactory(email="")
+    user_email = "me@mailinator.com"
+    EmailAddress.objects.create(user=user, email=user_email)
+
+    response = client.post(
+        url,
+        data={
+            "email": user_email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertTemplateUsed(response, "register.html")
+    assert "email" in response.context["form"].errors
+    msg = (
+        "Un compte inactif avec cette adresse e-mail existe déjà, "
+        "l’email de vérification vient d’être envoyé à nouveau."
+    )
+    assertContains(response, msg, html=True, count=1)
+    [email] = mailoutbox
+    assert email.subject == "Vérification de l’adresse e-mail"
+    assert email.to == [user_email]
+
+
+def test_user_creation_terms_are_required(client, mailoutbox):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
     user = UserFactory.build()
@@ -158,6 +232,7 @@ def test_user_creation_terms_are_required(client):
     )
     assertTemplateUsed(response, "register.html")
     assert "terms_accepted" in response.context["form"].errors
+    assert mailoutbox == []
 
 
 def test_activate_account(client):
@@ -190,10 +265,14 @@ def test_activate_account(client):
             "terms_accepted": "on",
         },
     )
-    assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-    user = User.objects.get(email=user.email)  # Previous instance was a built factory, so refresh_from_db won't work
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    assert get_user(client).is_authenticated is False
+    user = User.objects.get()  # Previous instance was a built factory, so refresh_from_db won't work
     assert user.terms_accepted_at == user.date_joined
+    email_address = EmailAddress.objects.get()
+    assert email_address.email == email_address.email
+    assert email_address.user_id == email_address.user.pk
+    assert email_address.verified_at is None
 
 
 def test_account_activation_email_already_exists(client):
@@ -393,3 +472,224 @@ def test_new_terms(client, terms_accepted_at):
 
     user.refresh_from_db()
     assert user.terms_accepted_at == timezone.now()
+
+
+class TestConfirmEmailView:
+    def test_get_anonymous(self, client):
+        response = client.get(reverse("accounts:confirm-email"))
+        assert response.status_code == 404
+
+    def test_get_with_confirmed_email(self, client):
+        user = UserFactory()
+        client.force_login(user)
+        response = client.get(reverse("accounts:confirm-email"))
+        assert response.status_code == 404
+
+    def test_get(self, client, snapshot):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        EmailAddress.objects.create(email=email, user=user)
+        session = client.session
+        session["email_to_confirm"] = email
+        session.save()
+        response = client.get(reverse("accounts:confirm-email"))
+        assert response.status_code == 200
+        assert str(parse_response_to_soup(response, selector="main")) == snapshot(
+            name="me@mailinator.com is present in page output"
+        )
+
+    def test_post(self, client, mailoutbox):
+        user = UserFactory(email="")
+        user_email = "me@mailinator.com"
+        EmailAddress.objects.create(email=user_email, user=user)
+        session = client.session
+        session["email_to_confirm"] = user_email
+        session.save()
+        email_confirmation_url = reverse("accounts:confirm-email")
+        response = client.post(email_confirmation_url)
+        assertRedirects(response, email_confirmation_url)
+        [email] = mailoutbox
+        assert email.to == [user_email]
+        assert email.subject == "Vérification de l’adresse e-mail"
+
+
+class TestConfirmEmailTokenView:
+    @staticmethod
+    def url(user, token):
+        return reverse(
+            "accounts:confirm-email-token",
+            kwargs={
+                "uidb64": urlsafe_base64_encode(str(user.pk).encode()),
+                "token": token,
+            },
+        )
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_confirm_email(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        session = client.session
+        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
+        session.save()
+        response = client.get(self.url(user, token))
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        email_address.refresh_from_db()
+        assert email_address.verified_at == timezone.now()
+        user.refresh_from_db()
+        assert user.email == "me@mailinator.com"
+        assert client.session["_auth_user_id"] == str(user.pk)
+        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
+        assert EMAIL_CONFIRM_KEY not in client.session
+
+        client.logout()
+        with freeze_time(timezone.now() + datetime.timedelta(days=1)):
+            response = client.get(self.url(user, token))
+        assertMessages(
+            response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")]
+        )
+        assertRedirects(response, reverse("accounts:login"))
+        user.refresh_from_db()
+        assert user.email == "me@mailinator.com"
+        email_address.refresh_from_db()
+        assert email_address.verified_at == datetime.datetime(2023, 4, 26, 11, 11, 11, tzinfo=datetime.timezone.utc)
+        assert "_auth_user_id" not in client.session
+        assert "_auth_user_backend" not in client.session
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_invalidates_previous_email(self, client):
+        user = UserFactory(email="old@mailinator.com")
+        email = "new@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        # User also asked to change to another email.
+        EmailAddress.objects.create(email="unused@mailinator.com", user_id=user.pk)
+        token = email_verification_token(email)
+        response = client.get(self.url(user, token))
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        # Previous and unused emails were deleted.
+        email_address = EmailAddress.objects.get()
+        assert email_address.verified_at == timezone.now()
+        assert email_address.email == "new@mailinator.com"
+        user.refresh_from_db()
+        assert user.email == "new@mailinator.com"
+        assert client.session["_auth_user_id"] == str(user.pk)
+        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
+
+    def test_expired_token(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        with freeze_time(timezone.now() - datetime.timedelta(days=1)):
+            token = email_verification_token(email)
+        response = client.get(self.url(user, token))
+        assertMessages(response, [(messages.ERROR, "Le lien de vérification d’adresse e-mail a expiré.")])
+        assert client.session[EMAIL_CONFIRM_KEY] == "me@mailinator.com"
+        assertRedirects(response, reverse("accounts:confirm-email"))
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert "_auth_user_id" not in client.session
+        assert "_auth_user_backend" not in client.session
+
+    def test_forged_uidb64(self, client):
+        user = UserFactory(email="")
+        other_user = UserFactory()
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        response = client.get(self.url(other_user, token))
+        assert response.status_code == 404
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert "_auth_user_id" not in client.session
+        assert "_auth_user_backend" not in client.session
+
+    def test_forged_token_bad_user_pk(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        response = client.get(
+            reverse(
+                "accounts:confirm-email-token",
+                kwargs={
+                    "uidb64": urlsafe_base64_encode(b"1234abc"),
+                    "token": token,
+                },
+            )
+        )
+        assert response.status_code == 404
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert "_auth_user_id" not in client.session
+        assert "_auth_user_backend" not in client.session
+
+    def test_forged_token_bad_email(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        bad_email = "evil@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        encoded_evil_email = urlsafe_base64_encode(bad_email.encode())
+        _encoded_email, timestamp, signature = token.split(":")
+        token = f"{encoded_evil_email}:{timestamp}:{signature}"
+        response = client.get(self.url(user, token))
+        assert response.status_code == 404
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert "_auth_user_id" not in client.session
+        assert "_auth_user_backend" not in client.session
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_forged_token(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        session = client.session
+        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
+        session.save()
+        token = "forged"
+        response = client.get(self.url(user, token))
+        assert response.status_code == 404
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert not get_user(client).is_authenticated
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_token_invalidated_by_email_change(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        email1 = "new1@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email1, user_id=user.pk)
+        email2 = "new2@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email2, user_id=user.pk)
+        token1 = email_verification_token(email1)
+        token2 = email_verification_token(email2)
+        response = client.get(self.url(user, token2))
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        # Confirming the email address deletes old verified emails and pending verifications.
+        email_address = EmailAddress.objects.get()
+        assert email_address.email == email2
+        assert email_address.verified_at == timezone.now()
+        user.refresh_from_db()
+        assert user.email == email2
+        assert client.session["_auth_user_id"] == str(user.pk)
+        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
+
+        # token1 is invalidated, even if user is currently logged in.
+        response = client.get(self.url(user, token1))
+        assert response.status_code == 404
+
+        # token1 is invalidated.
+        client.session.flush()
+        response = client.get(self.url(user, token1))
+        assert response.status_code == 404

@@ -1,4 +1,5 @@
 # Functional tests for all documented customer processes
+import datetime
 import re
 
 import pytest
@@ -6,9 +7,10 @@ from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
 from django.urls import reverse
-from pytest_django.asserts import assertContains, assertRedirects
+from freezegun import freeze_time
+from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
 
-from inclusion_connect.users.models import User
+from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
 from tests.helpers import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
@@ -16,19 +18,31 @@ from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
-def test_registration_endpoint(client):
+LINK_PATTERN = re.compile(r"^http://testserver(?P<path>.+/)$")
+
+
+def get_verification_link(body):
+    lines = body.split("\n")
+    for line in lines:
+        if match := LINK_PATTERN.match(line):
+            return match.group("path")
+
+
+@freeze_time("2023-05-05 11:11:11")
+def test_registration_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    user = UserFactory.build()
+    user = UserFactory.build(email="")
 
     auth_url = reverse("oidc_overrides:registrations")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
+    user_email = "email@mailinator.com"
     response = client.post(
         response.url,
         data={
-            "email": user.email,
+            "email": user_email,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
@@ -36,9 +50,24 @@ def test_registration_endpoint(client):
             "terms_accepted": "on",
         },
     )
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    assert get_user(client).is_authenticated is False
+    user = User.objects.get()
+    assert user.linked_applications.count() == 0
+
+    [email] = mailoutbox
+    assert email.subject == "Vérification de l’adresse e-mail"
+    assert email.to == [user_email]
+    verification_url = get_verification_link(email.body)
+    response = client.get(verification_url)
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
-    user = User.objects.get(email=user.email)
+    user.refresh_from_db()
+    assert user.email == user_email
+    assertQuerysetEqual(
+        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
+        [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
+    )
     assert user.linked_applications.count() == 0
 
     response = client.get(auth_complete_url)
@@ -50,17 +79,19 @@ def test_registration_endpoint(client):
     oidc_flow_followup(client, auth_response_params, user)
 
 
-def test_activation_endpoint(client):
+@freeze_time("2023-05-05 11:11:11")
+def test_activation_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    user = UserFactory.build()
+    user = UserFactory.build(email="")
 
     auth_url = reverse("oidc_overrides:activation")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
 
+    user_email = "email@mailinator.com"
     auth_url = reverse("oidc_overrides:activation")
-    auth_params = OIDC_PARAMS | {"email": "email", "firstname": "firstname", "lastname": "lastname"}
+    auth_params = OIDC_PARAMS | {"email": user_email, "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))
@@ -68,7 +99,7 @@ def test_activation_endpoint(client):
     response = client.post(
         response.url,
         data={
-            "email": user.email,
+            "email": user_email,
             "first_name": user.first_name,
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
@@ -76,9 +107,24 @@ def test_activation_endpoint(client):
             "terms_accepted": "on",
         },
     )
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    assert get_user(client).is_authenticated is False
+    user = User.objects.get()
+    assert user.linked_applications.count() == 0
+
+    [email] = mailoutbox
+    assert email.subject == "Vérification de l’adresse e-mail"
+    assert email.to == [user_email]
+    verification_url = get_verification_link(email.body)
+    response = client.get(verification_url)
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
-    user = User.objects.get(email=user.email)
+    user.refresh_from_db()
+    assert user.email == user_email
+    assertQuerysetEqual(
+        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
+        [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
+    )
     assert user.linked_applications.count() == 0
 
     response = client.get(auth_complete_url)

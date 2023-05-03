@@ -1,0 +1,24 @@
+{% extends "layout/left_content.html" %}
+{% load bootstrap4 %}
+{% load inclusionconnect_fields %}
+
+{% block content %}
+    <h1 class="fr-h4">Confirmez votre adresse e-mail</h1>
+
+    <p>
+        Un email de confirmation vient d’être envoyé à l’adresse
+        <i>{{ request.session.email_to_confirm }}</i>. Veuillez cliquer sur le
+        lien dans le corps de cet email pour activer votre compte.
+    </p>
+
+    <p class="text-muted">
+        Si après plusieurs minutes, vous n’avez toujours pas reçu cet email,
+        vérifiez les dossiers de courriers indésirables (spam) puis réessayez
+        en cliquant sur le bouton ci-dessous.
+    </p>
+
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        {% bootstrap_button "Renvoyer l’e-mail de vérification" button_type="submit" button_class="btn btn-block btn-primary" %}
+    </form>
+{% endblock %}

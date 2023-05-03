@@ -1,14 +1,22 @@
+import datetime
 import uuid
 
 import jwt
 import pytest
+from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.urls import reverse
+from django.utils import http, timezone
+from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertRedirects
 
+from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
+from inclusion_connect.keycloak_compat.models import JWTHashSecret
+from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.asserts import assertMessages
 from tests.helpers import token_are_revoked
 from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
@@ -228,3 +236,177 @@ def test_user_account(client, realm):
     assert get_user(client).is_authenticated is True
     assertRedirects(response, account_url)
     assertContains(response, "Retour")
+
+
+class TestActionToken:
+    @freeze_time("2023-04-26 11:11:11")
+    def test_verify_email(self, client):
+        secret = "secret"
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret=http.urlsafe_base64_encode(secret.encode()),
+        )
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        now = timezone.now()
+        token = jwt.encode(
+            {
+                "typ": "verify-email",
+                "sub": str(user.pk),
+                "eml": "me@mailinator.com",
+                "aud": "http://testserver/realms/local",
+                "exp": (now + datetime.timedelta(hours=6)).timestamp(),
+            },
+            secret,
+            algorithm="HS256",
+        )
+        response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        address.refresh_from_db()
+        assert address.verified_at == now
+        user.refresh_from_db()
+        assert user.email == email
+
+        # Validating again fails.
+        with freeze_time("2023-04-26 11:11:12"):
+            response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assertMessages(
+            response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")]
+        )
+        assertRedirects(response, reverse("accounts:login"))
+        address.refresh_from_db()
+        assert address.email == email
+        assert address.verified_at == now
+        user.refresh_from_db()
+        assert user.email == email
+
+    def test_verify_bad_signature(self, client):
+        secret = "secret"
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret=http.urlsafe_base64_encode(b"invalid"),
+        )
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        token = jwt.encode(
+            {
+                "typ": "verify-email",
+                "sub": str(user.pk),
+                "eml": "me@mailinator.com",
+                "aud": "http://testserver/realms/local",
+            },
+            secret,
+            algorithm="HS256",
+        )
+        response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assert response.status_code == 404
+        address.refresh_from_db()
+        assert address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+
+    def test_verify_invalid_audience(self, client):
+        secret = "secret"
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret=http.urlsafe_base64_encode(secret.encode()),
+        )
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        token = jwt.encode(
+            {
+                "typ": "verify-email",
+                "sub": str(user.pk),
+                "eml": "me@mailinator.com",
+                "aud": "http://otherserver/realms/local",
+            },
+            secret,
+            algorithm="HS256",
+        )
+        response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assert response.status_code == 404
+        address.refresh_from_db()
+        assert address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+
+    def test_verify_email_token_too_old(self, client):
+        secret = "secret"
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret=http.urlsafe_base64_encode(secret.encode()),
+        )
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        validity_end = timezone.now()
+        token = jwt.encode(
+            {
+                "typ": "verify-email",
+                "sub": str(user.pk),
+                "eml": "me@mailinator.com",
+                "aud": "http://testserver/realms/local",
+                "exp": validity_end.timestamp(),
+            },
+            secret,
+            algorithm="HS256",
+        )
+        response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assertMessages(response, [(messages.ERROR, "Le lien de vérification d’adresse e-mail a expiré.")])
+        assertRedirects(response, reverse("accounts:confirm-email"))
+        assert client.session[EMAIL_CONFIRM_KEY] == "me@mailinator.com"
+        address.refresh_from_db()
+        assert address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+
+    def test_unknown_action(self, client):
+        secret = "secret"
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret=http.urlsafe_base64_encode(secret.encode()),
+        )
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        token = jwt.encode(
+            {
+                "typ": "invalid",
+                "sub": str(user.pk),
+                "eml": "me@mailinator.com",
+                "aud": "http://otherserver/realms/local",
+            },
+            secret,
+            algorithm="HS256",
+        )
+        response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
+        assert response.status_code == 404
+        address.refresh_from_db()
+        assert address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+
+    def test_no_jwt(self, client):
+        response = client.get(reverse("keycloak_compat_local:action-token"))
+        assert response.status_code == 404
+
+    @freeze_time("2023-05-05 17:17:17")
+    def test_token_from_keycloak(self, client):
+        JWTHashSecret.objects.create(
+            realm_id="local",
+            secret="9vWa5WDqm9-Ai7a_Ke39g_lCNy_uisUjDaFsnZZDlhB_TLpgP5zeMqPOfghwpPZxb2cCi5remrm71ZzRKDXWjQ",
+        )
+        path_from_keycloak = "/realms/local/login-actions/action-token?key=eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJkMWM0NzExZS04OTJiLTRkODktODZkNy03MjkxYjVlZjIwNzQifQ.eyJleHAiOjE2ODMzNzM4MzcsImlhdCI6MTY4MzI4NzQzNywianRpIjoiYzBjMDJkNTgtYTJjNy00OWUyLTkzN2EtOTg4MjM2Y2I2NDE3IiwiaXNzIjoiaHR0cDovLzAuMC4wLjA6ODA4MC9yZWFsbXMvbG9jYWwiLCJhdWQiOiJodHRwOi8vMC4wLjAuMDo4MDgwL3JlYWxtcy9sb2NhbCIsInN1YiI6IjhmMzk1OWY1LTM1OTItNDM5ZS04MzJkLTI2MDliZDE0MjQ1MCIsInR5cCI6InZlcmlmeS1lbWFpbCIsImF6cCI6ImxvY2FsX2luY2x1c2lvbl9jb25uZWN0Iiwibm9uY2UiOiJjMGMwMmQ1OC1hMmM3LTQ5ZTItOTM3YS05ODgyMzZjYjY0MTciLCJlbWwiOiJtZUBtYWlsaW5hdG9yLmNvbSIsImFzaWQiOiIzNGNhMjQ1YS1hMWY3LTRhNjctYjE5OS03OWE0MDFiNGEwZjQuNDVVR0FuWjk5T2cuMzM4Y2JhODgtMjMwMi00NzA5LTg5ZGQtOTM2ZGViZWRkMjk5IiwiYXNpZCI6IjM0Y2EyNDVhLWExZjctNGE2Ny1iMTk5LTc5YTQwMWI0YTBmNC40NVVHQW5aOTlPZy4zMzhjYmE4OC0yMzAyLTQ3MDktODlkZC05MzZkZWJlZGQyOTkifQ.z_734YWuJIrfxYP-noCPzSOrMYgLfoHs01zu_9Ildsk&client_id=local_inclusion_connect&tab_id=45UGAnZ99Og"  # noqa: E501
+        user = UserFactory(email="", username="8f3959f5-3592-439e-832d-2609bd142450")
+        email = "me@mailinator.com"
+        address = EmailAddress.objects.create(email=email, user=user)
+        now = timezone.now()
+        response = client.get(path_from_keycloak, SERVER_NAME="0.0.0.0:8080")
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        address.refresh_from_db()
+        assert address.verified_at == now
+        user.refresh_from_db()
+        assert user.email == email

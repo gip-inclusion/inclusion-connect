@@ -1,0 +1,17 @@
+{% extends "layout/base_email_body.html" %}
+{% block body %}
+    <p>
+        Une demande de création de compte a été effectuée avec votre adresse
+        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:
+        <br>
+    </p>
+    <p>
+        <a href="{{ token_url }}">Vérifiez votre adresse email</a>.
+    </p>
+
+    <p>Ce lien expire dans 1 jour.</p>
+
+    <p>
+        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>
+    </p>
+{% endblock body %}

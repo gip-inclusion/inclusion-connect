@@ -1,0 +1,12 @@
+{% extends "layout/base_email_body.txt" %}
+{% block body %}
+Une demande de création de compte a été effectuée avec votre adresse e-mail. Si
+vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous
+afin de vérifier votre adresse e-mail :
+
+{{ token_url }}
+
+Ce lien expire dans 1 jour.
+
+Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.
+{% endblock body %}
