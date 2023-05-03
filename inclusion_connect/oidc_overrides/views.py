@@ -36,7 +36,6 @@ class OIDCSessionMixin:
     def get_success_url(self):
         # FIXME: Maybe we should move everything except the session saving into accounts app ?
         user = getattr(self, "object", self.request.user)  # in CreateView, user is stored in self.object
-        # TODO: if user email is not validated -> redirect to email validation view
         if user.must_accept_terms:
             return reverse("accounts:accept_terms")
         # TODO: if user password is temporary, redirect to password change view

@@ -1,0 +1,4 @@
+{% autoescape off %}Bonjour,
+{% block body %}{% endblock %}
+---
+L’équipe d’inclusion connect{% endautoescape %}

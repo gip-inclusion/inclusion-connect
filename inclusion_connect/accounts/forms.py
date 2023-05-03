@@ -7,7 +7,8 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
-from inclusion_connect.users.models import User
+from inclusion_connect.accounts.emails import send_verification_email
+from inclusion_connect.users.models import EmailAddress, User
 
 
 EMAIL_FIELDS_WIDGET_ATTRS = {"type": "email", "placeholder": "nom@domaine.fr", "autocomplete": "email"}
@@ -25,7 +26,7 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": PASSWORD_PLACEHOLDER}),
     )
 
-    def __init__(self, request=None, *args, **kwargs):
+    def __init__(self, request, *args, **kwargs):
         self.request = request
         super().__init__(*args, **kwargs)
 
@@ -36,14 +37,23 @@ class LoginForm(forms.Form):
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
             if self.user_cache is None:
-                raise ValidationError(
-                    (
-                        "Adresse e-mail ou mot de passe invalide."
-                        "\nSi vous n’avez pas encore créé votre compte Inclusion Connect, "
-                        "rendez-vous en bas de page et cliquez sur créer mon compte."
-                    ),
-                    code="invalid_login",
-                )
+                try:
+                    email_address = EmailAddress.objects.get(email=email, verified_at=None)
+                except EmailAddress.DoesNotExist as e:
+                    raise ValidationError(
+                        (
+                            "Adresse e-mail ou mot de passe invalide."
+                            "\nSi vous n’avez pas encore créé votre compte Inclusion Connect, "
+                            "rendez-vous en bas de page et cliquez sur créer mon compte."
+                        ),
+                        code="invalid_login",
+                    ) from e
+                else:
+                    send_verification_email(self.request, email_address)
+                    raise ValidationError(
+                        "Un compte inactif avec cette adresse e-mail existe déjà, "
+                        "l’email de vérification vient d’être envoyé à nouveau."
+                    )
         return self.cleaned_data
 
     def get_user(self):
@@ -62,25 +72,40 @@ class RegisterForm(auth_forms.UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("last_name", "first_name", "email")
+        fields = ("last_name", "first_name")
 
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if User.objects.filter(email=email).exists():
-            raise ValidationError(
-                format_html(
-                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
-                    reverse("accounts:login"),
-                )
-            )
-        return email
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, request, **kwargs):
+        self.request = request
         super().__init__(*args, **kwargs)
         for key in ["password1", "password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
 
-        self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
+        # Do not record the email field on the User instance, the email must be validated first.
+        fields = forms.fields_for_model(EmailAddress, fields=["email"])
+        email_field = fields["email"]
+        email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
+        self.fields["email"] = email_field
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        try:
+            email_address = EmailAddress.objects.get(email=email)
+        except EmailAddress.DoesNotExist:
+            pass
+        else:
+            if email_address.verified_at:
+                msg = format_html(
+                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
+                    reverse("accounts:login"),
+                )
+            else:
+                send_verification_email(self.request, email_address)
+                msg = (
+                    "Un compte inactif avec cette adresse e-mail existe déjà, "
+                    "l’email de vérification vient d’être envoyé à nouveau."
+                )
+            raise ValidationError(msg)
+        return email
 
     def clean(self):
         if "email" in self.errors:
@@ -90,7 +115,9 @@ class RegisterForm(auth_forms.UserCreationForm):
 
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
-        return super().save(commit)
+        user = super().save(commit=commit)
+        EmailAddress.objects.create(email=self.cleaned_data["email"], user=user)
+        return user
 
 
 class ActivateAccountForm(RegisterForm):
