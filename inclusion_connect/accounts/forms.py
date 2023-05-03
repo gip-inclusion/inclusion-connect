@@ -68,7 +68,7 @@ class RegistrationForm(auth_forms.UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise ValidationError(
                 format_html(
-                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">Se connecter</a> ?',
+                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
                     reverse("accounts:login"),
                 )
             )

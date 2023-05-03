@@ -107,7 +107,7 @@ def test_user_creation_fails_email_exists(client):
     assertContains(
         response,
         format_html(
-            'Un compte avec cette adresse e-mail existe déjà, <a href="{}">Se connecter</a> ?',
+            'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
             reverse("accounts:login"),
         ),
         html=True,
