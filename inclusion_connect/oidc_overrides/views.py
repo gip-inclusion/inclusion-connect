@@ -11,6 +11,7 @@ from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import OAuthToolkitError
 from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
+from oauth2_provider.settings import oauth2_settings
 
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
@@ -113,9 +114,11 @@ class LogoutView(View):
         logout(request)
 
         if post_logout_redirect_uri:
-            return OAuth2ResponseRedirect(post_logout_redirect_uri)
+            return OAuth2ResponseRedirect(post_logout_redirect_uri, oauth2_settings.ALLOWED_REDIRECT_URI_SCHEMES)
         # FIXME: Add a 'you are logged out' page
-        return OAuth2ResponseRedirect(self.request.build_absolute_uri("/"), ["http", "https"])
+        return OAuth2ResponseRedirect(
+            self.request.build_absolute_uri("/"), oauth2_settings.ALLOWED_REDIRECT_URI_SCHEMES
+        )
 
     def _clean_token(self, id_token_hint):
         key = CustomOAuth2Validator()._get_key_for_token(id_token_hint)
