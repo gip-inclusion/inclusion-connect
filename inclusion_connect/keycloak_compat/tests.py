@@ -10,7 +10,7 @@ from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.oidc_overrides.factories import ApplicationFactory
-from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
+from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory, default_password
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 
 
@@ -64,7 +64,12 @@ def test_login(client, realm):
     )
     token_json = response.json()
     id_token = token_json["id_token"]
-    decoded_id_token = jwt.decode(id_token, algorithms=["RS256"], options={"verify_signature": False})
+    decoded_id_token = jwt.decode(
+        id_token,
+        key=default_password(),
+        algorithms=["HS256"],
+        audience=application.client_id,
+    )
     assert decoded_id_token["nonce"] == auth_params["nonce"]
     assert decoded_id_token["sub"] == str(user.pk)
     assert uuid.UUID(decoded_id_token["sub"]), "Sub should be an uuid"
@@ -155,7 +160,12 @@ def test_registration(client, realm):
     )
     token_json = response.json()
     id_token = token_json["id_token"]
-    decoded_id_token = jwt.decode(id_token, algorithms=["RS256"], options={"verify_signature": False})
+    decoded_id_token = jwt.decode(
+        id_token,
+        key=default_password(),
+        algorithms=["HS256"],
+        audience=application.client_id,
+    )
     assert decoded_id_token["nonce"] == auth_params["nonce"]
     assert decoded_id_token["sub"] == str(user.pk)
     assert uuid.UUID(decoded_id_token["sub"]), "Sub should be an uuid"
