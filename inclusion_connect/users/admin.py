@@ -7,3 +7,4 @@ from .models import User
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
+    readonly_fields = ["username"]
