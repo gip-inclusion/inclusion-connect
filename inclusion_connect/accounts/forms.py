@@ -95,7 +95,7 @@ class AccountActivationForm(RegistrationForm):
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
     # email subject in templates/registration/password_reset_subject.txt
-    # email body in templateS/registration/password_reset_email.html
+    # email body in templates/registration/password_reset_email.html
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -105,7 +105,7 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
     # email subject in templates/registration/password_reset_subject.txt
-    # email body in templateS/registration/password_reset_email.html
+    # email body in templates/registration/password_reset_email.html
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
