@@ -29,13 +29,13 @@ class RegistrationView(BaseUserCreationView):
     # TODO: Remove keycloak compatibility
     def dispatch(self, request, *args, **kwargs):
         if all(param in self.get_oidc_params() for param in ["login_hint", "lastname", "firstname"]):
-            return HttpResponseRedirect(reverse("accounts:activation"))
+            return HttpResponseRedirect(reverse("accounts:activate"))
         return super().dispatch(request, *args, **kwargs)
 
 
-class AccountActivationView(BaseUserCreationView):
-    form_class = forms.AccountActivationForm
-    template_name = "account_activation.html"
+class ActivateAccountView(BaseUserCreationView):
+    form_class = forms.ActivateAccountForm
+    template_name = "activate_account.html"
 
     def dispatch(self, request, *args, **kwargs):
         # Check user info is provided
