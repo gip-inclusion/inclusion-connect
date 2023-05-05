@@ -1,0 +1,33 @@
+{% extends "layout/left_content.html" %}
+{% load bootstrap4 %}
+{% load inclusionconnect_fields %}
+{% load static %}
+
+{% block content %}
+
+    <h1 class="fr-h4">Conditions d’utilisation et confidentialité</h1>
+
+    <div>
+        <p>
+            Pour utiliser votre compte Inclusion Connect, vous devez accepter les conditions générales d’utilisation du service ainsi que la politique de confidentialité.
+        </p>
+
+        <ul>
+            <li>
+                <a href="{% static "terms/CGU_20230302.pdf" %}" target="_blank">Conditions générales d’utilisation</a>
+            </li>
+            <li>
+                <a href="{% static "terms/Politique de confidentialité_20230302.pdf" %}" target="_blank">
+                    Politique de confidentialité
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <div>{% bootstrap_button "Accepter" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
+    </form>
+
+
+{% endblock %}
