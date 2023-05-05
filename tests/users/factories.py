@@ -2,6 +2,7 @@ import functools
 
 import factory
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 
 from inclusion_connect.users.models import User
 
@@ -24,3 +25,4 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker("last_name")
     email = factory.Sequence("email{}@domain.com".format)
     password = factory.LazyFunction(default_password)
+    terms_accepted_at = factory.LazyFunction(timezone.now)

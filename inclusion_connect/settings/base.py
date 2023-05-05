@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import datetime
 import os
 from pathlib import Path
 
@@ -272,6 +273,9 @@ if SENTRY_DSN:
     from ._sentry import sentry_init
 
     sentry_init(dsn=SENTRY_DSN, traces_sample_rate=_sentry_traces_sample_rate)
+
+new_terms_date_str = os.getenv("NEW_TERMS_DATE", "2023-03-02T00:00:00+00:00")
+NEW_TERMS_DATE = datetime.datetime.fromisoformat(new_terms_date_str)
 
 # Email
 # -----

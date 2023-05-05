@@ -1,12 +1,16 @@
+import datetime
 from urllib.parse import quote
 
+import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.html import format_html
 from django.utils.http import urlsafe_base64_encode
+from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertNotContains, assertRedirects, assertTemplateUsed
 
 from inclusion_connect.accounts.views import PasswordResetView
@@ -367,3 +371,21 @@ def test_change_password(client):
 
     response = client.post(reverse("accounts:login"), data={"email": user.email, "password": "toto"}, follow=True)
     assert get_user(client).is_authenticated is True
+
+
+@pytest.mark.parametrize("terms_accepted_at", (None, datetime.datetime(2022, 1, 1, tzinfo=datetime.UTC)))
+@freeze_time("2023-05-09 14:01:56")
+def test_new_terms(client, terms_accepted_at):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+    user = UserFactory(terms_accepted_at=terms_accepted_at)
+
+    response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+    assertRedirects(response, reverse("accounts:accept_terms"))
+    assert get_user(client).is_authenticated is True
+
+    response = client.post(reverse("accounts:accept_terms"))
+    assertRedirects(response, redirect_url, fetch_redirect_response=False)
+
+    user.refresh_from_db()
+    assert user.terms_accepted_at == timezone.now()

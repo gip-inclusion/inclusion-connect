@@ -36,6 +36,10 @@ class User(AbstractUser):
         # Required by some third party libraries that use user.id (django-oauth-toolkit)
         return self.pk
 
+    @property
+    def must_accept_terms(self):
+        return self.terms_accepted_at is None or self.terms_accepted_at < settings.NEW_TERMS_DATE
+
 
 class UserApplicationLink(models.Model):
     user = models.ForeignKey(

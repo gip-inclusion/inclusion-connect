@@ -4,7 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.views.generic import CreateView, FormView, UpdateView
+from django.utils import timezone
+from django.views.generic import CreateView, FormView, TemplateView, UpdateView
 
 from inclusion_connect.accounts import forms
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
@@ -97,6 +98,15 @@ class PasswordResetConfirmView(OIDCSessionMixin, auth_views.PasswordResetConfirm
     template_name = "password_reset_confirm.html"
     form_class = forms.SetPasswordForm
     post_reset_login = True
+
+
+class AcceptTermsView(LoginRequiredMixin, OIDCSessionMixin, TemplateView):
+    template_name = "accept_terms.html"
+
+    def post(self, *args, **kwargs):
+        self.request.user.terms_accepted_at = timezone.now()
+        self.request.user.save()
+        return HttpResponseRedirect(self.get_success_url())
 
 
 class MyAccountMixin(LoginRequiredMixin):
