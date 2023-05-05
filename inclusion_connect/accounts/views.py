@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, views as auth_views
+from django.contrib.auth import login, views as auth_views
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import CreateView
@@ -17,14 +17,9 @@ class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegistrationForm
 
     def form_valid(self, form):
-        # Authenticate user after creation
         # FIXME: change this when adding email verification
         result = super().form_valid(form)
-        self.user = authenticate(
-            email=form.cleaned_data["email"],
-            password=form.cleaned_data["password1"],
-        )
-        login(self.request, self.user)
+        login(self.request, form.instance)
         return result
 
 
