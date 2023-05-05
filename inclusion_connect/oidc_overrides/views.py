@@ -15,7 +15,7 @@ from oauth2_provider.settings import oauth2_settings
 
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
-from inclusion_connect.users.models import UserApplicationLink
+from inclusion_connect.users.models import User, UserApplicationLink
 
 
 class OIDCSessionMixin:
@@ -100,12 +100,17 @@ class LogoutView(View):
 
         try:
             id_token = self._clean_token(id_token_hint)
-            # Why isn't it done in logout ?
-            # Force remove user sessions
-            # FIXME: replicate the issue in a test ?
+
+            user = User.objects.get(username=id_token.user_id)
+            request.user = user
+
+            # FIXME: the call may come from the relying part instead of the user browser.
+            # Therefore the request user and sessions may not be the one we want to clear.
+            # We can get the user, but it will not help us clear the django session from
+            # the login flow. Delete the user sessions manually
             [
                 s.delete()
-                for s in Session.objects.filter(expiry_date__gte=timezone.now())
+                for s in Session.objects.filter(expire_date__gte=timezone.now())
                 if s.get_decoded().get("_auth_user_id") == str(id_token.user_id)
             ]
         except Exception:
@@ -143,3 +148,6 @@ class LogoutView(View):
             refresh_token.revoke()
 
         return id_token
+
+    def post(self, *args, **kwargs):
+        return self.get(*args, **kwargs)
