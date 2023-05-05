@@ -49,7 +49,7 @@ class LoginForm(forms.Form):
         return self.user_cache
 
 
-class RegistrationForm(auth_forms.UserCreationForm):
+class RegisterForm(auth_forms.UserCreationForm):
     terms_accepted = forms.BooleanField(
         label=format_html(
             "J'ai lu et j'accepte les <a href='{}' target='_blank'>conditions générales d’utilisation du service</a> "
@@ -86,7 +86,7 @@ class RegistrationForm(auth_forms.UserCreationForm):
         return super().save(commit)
 
 
-class ActivateAccountForm(RegistrationForm):
+class ActivateAccountForm(RegisterForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in ["first_name", "last_name", "email"]:

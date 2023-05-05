@@ -14,7 +14,7 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
 
 
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
-    form_class = forms.RegistrationForm
+    form_class = forms.RegisterForm
 
     def form_valid(self, form):
         # FIXME: change this when adding email verification
@@ -23,8 +23,8 @@ class BaseUserCreationView(OIDCSessionMixin, CreateView):
         return result
 
 
-class RegistrationView(BaseUserCreationView):
-    template_name = "registration.html"
+class RegisterView(BaseUserCreationView):
+    template_name = "register.html"
 
     # TODO: Remove keycloak compatibility
     def dispatch(self, request, *args, **kwargs):

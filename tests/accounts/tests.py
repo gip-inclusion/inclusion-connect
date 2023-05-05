@@ -24,7 +24,7 @@ def test_login(client):
     response = client.get(url)
     assertContains(response, "Connexion")
     assertContains(response, "Adresse e-mail")  # Ask for email, not username
-    assertContains(response, reverse("accounts:registration"))  # Link to registration page
+    assertContains(response, reverse("accounts:register"))  # Link to registration page
 
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -57,7 +57,7 @@ def test_login_failed_bad_email_or_password(client):
 
 def test_user_creation(client):
     redirect_url = reverse("oidc_overrides:logout")
-    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
     user = UserFactory.build()
 
     response = client.get(url)
@@ -85,7 +85,7 @@ def test_user_creation(client):
 
 def test_user_creation_fails_email_exists(client):
     redirect_url = reverse("oidc_overrides:logout")
-    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
     user = UserFactory()
 
     response = client.post(
@@ -99,7 +99,7 @@ def test_user_creation_fails_email_exists(client):
             "terms_accepted": "on",
         },
     )
-    assertTemplateUsed(response, "registration.html")
+    assertTemplateUsed(response, "register.html")
     assert "email" in response.context["form"].errors
     assertContains(
         response,
@@ -113,7 +113,7 @@ def test_user_creation_fails_email_exists(client):
 
 def test_user_creation_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
-    url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
     user = UserFactory.build()
 
     response = client.post(
@@ -126,7 +126,7 @@ def test_user_creation_terms_are_required(client):
             "password2": DEFAULT_PASSWORD,
         },
     )
-    assertTemplateUsed(response, "registration.html")
+    assertTemplateUsed(response, "register.html")
     assert "terms_accepted" in response.context["form"].errors
 
 
