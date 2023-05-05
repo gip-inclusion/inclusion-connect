@@ -114,7 +114,7 @@ def test_registration(client, realm):
     }
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:registration"))
+    assertRedirects(response, reverse("accounts:register"))
     assert client.session["next_url"] == auth_complete_url
 
     # Test REGISTRATIONS endpoint when not authenticated and with bad oidc params

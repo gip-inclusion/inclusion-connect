@@ -137,7 +137,7 @@ def test_registrations_not_authenticated(client):
     auth_url = reverse("oidc_overrides:registrations")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:registration"))
+    assertRedirects(response, reverse("accounts:register"))
     assert client.session["next_url"] == auth_complete_url
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 

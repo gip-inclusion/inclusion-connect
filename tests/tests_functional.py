@@ -22,7 +22,7 @@ def test_registration_endpoint(client):
     auth_url = reverse("oidc_overrides:registrations")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:registration"))
+    assertRedirects(response, reverse("accounts:register"))
 
     response = client.post(
         response.url,
