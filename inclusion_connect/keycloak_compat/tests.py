@@ -5,11 +5,11 @@ import pytest
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.urls import reverse
-from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from inclusion_connect.test import token_are_revoked
 from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 
@@ -94,9 +94,7 @@ def test_login(client, realm):
     logout_params = {"id_token_hint": id_token}
     response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
     assert not get_user(client).is_authenticated
-    assert get_id_token_model().objects.count() == 0
-    assert get_access_token_model().objects.count() == 0
-    assert get_refresh_token_model().objects.get().revoked is not None
+    assert token_are_revoked(user)
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
@@ -190,9 +188,7 @@ def test_registration(client, realm):
     logout_params = {"id_token_hint": id_token}
     response = client.get(add_url_params(reverse(f"keycloak_compat_{realm}:logout"), logout_params))
     assert not get_user(client).is_authenticated
-    assert get_id_token_model().objects.count() == 0
-    assert get_access_token_model().objects.count() == 0
-    assert get_refresh_token_model().objects.get().revoked is not None
+    assert token_are_revoked(user)
 
 
 def test_password_hasher(client):

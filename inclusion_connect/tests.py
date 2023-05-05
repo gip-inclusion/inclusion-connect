@@ -1,71 +1,18 @@
 # Functional tests for all documented customer processes
 import re
-import uuid
 
-import jwt
+import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
 from django.urls import reverse
-from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 from pytest_django.asserts import assertContains, assertRedirects
 
-from inclusion_connect.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from inclusion_connect.oidc_overrides.factories import ApplicationFactory
+from inclusion_connect.test import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
 from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
-
-
-OIDC_PARAMS = {
-    "response_type": "code",
-    "client_id": "my_application",
-    "redirect_uri": "http://localhost/callback",
-    "scope": "openid profile email",
-    "state": "state",
-    "nonce": "nonce",
-}
-
-
-def oidc_flow_followup(client, auth_response_params, user):
-    # Call TOKEN endpoint
-    # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
-    token_data = {
-        "client_id": OIDC_PARAMS["client_id"],
-        "client_secret": DEFAULT_CLIENT_SECRET,
-        "code": auth_response_params["code"],
-        "grant_type": "authorization_code",
-        "redirect_uri": OIDC_PARAMS["redirect_uri"],
-    }
-    response = client.post(reverse("oauth2_provider:token"), data=token_data)
-
-    token_json = response.json()
-    id_token = token_json["id_token"]
-    decoded_id_token = jwt.decode(
-        id_token,
-        key=default_client_secret(),
-        algorithms=["HS256"],
-        audience=OIDC_PARAMS["client_id"],
-    )
-    assert decoded_id_token["nonce"] == OIDC_PARAMS["nonce"]
-    assert decoded_id_token["sub"] == str(user.pk)
-    assert uuid.UUID(decoded_id_token["sub"]), "Sub should be an uuid"
-    assert decoded_id_token["given_name"] == user.first_name
-    assert decoded_id_token["family_name"] == user.last_name
-    assert decoded_id_token["email"] == user.email
-
-    # Call USER INFO endpoint
-    response = client.get(
-        reverse("oauth2_provider:user-info"),
-        HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
-    )
-    assert response.json() == {
-        "sub": str(user.pk),
-        "given_name": user.first_name,
-        "family_name": user.last_name,
-        "email": user.email,
-    }
-
-    return token_json["id_token"]
 
 
 def test_registration_endpoint(client):
@@ -210,7 +157,8 @@ def test_login_after_password_reset(client):
     oidc_flow_followup(client, auth_response_params, user)
 
 
-def test_logout_no_confirmation_get(client):
+@pytest.mark.parametrize("method", ["get", "post"])
+def test_logout_no_confirmation(client, method):
     """Logout without confirmation requires the id_token"""
 
     user = UserFactory()
@@ -229,16 +177,13 @@ def test_logout_no_confirmation_get(client):
 
     assert get_user(client).is_authenticated is True
     logout_params = {"id_token_hint": id_token}
-    response = client.get(add_url_params(reverse("oidc_overrides:logout"), logout_params))
+    logout_method = getattr(client, method)
+    response = logout_method(add_url_params(reverse("oidc_overrides:logout"), logout_params))
     assert not get_user(client).is_authenticated
-    assert get_id_token_model().objects.count() == 0
-    assert get_access_token_model().objects.count() == 0
-    assert get_refresh_token_model().objects.get().revoked is not None
+    assert token_are_revoked(user)
 
-
-def test_logout_no_confirmation_post(client):
-    # FIXME: currently not working
-    pass
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:login"))
 
 
 def test_logout_with_confirmation(client):
