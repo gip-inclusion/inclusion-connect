@@ -157,7 +157,7 @@ def test_activation_missing_user_info(client):
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     # The user is redirected to the activation view as the oidc parameters are valid
-    assertRedirects(response, reverse("accounts:activation"), fetch_redirect_response=False)
+    assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
     assert client.session["next_url"] == auth_complete_url
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
@@ -172,7 +172,7 @@ def test_activation_not_authenticated(client):
     auth_url = reverse("oidc_overrides:activation")
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:activation"))
+    assertRedirects(response, reverse("accounts:activate"))
     assert client.session["next_url"] == auth_complete_url
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
 

@@ -88,7 +88,7 @@ class RegistrationView(BaseAuthorizationView):
 
 
 class ActivationView(BaseAuthorizationView):
-    login_url = reverse_lazy("accounts:activation")
+    login_url = reverse_lazy("accounts:activate")
 
 
 class LogoutView(View):

@@ -62,7 +62,7 @@ def test_activation_endpoint(client):
     auth_params = OIDC_PARAMS | {"email": "email", "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:activation"))
+    assertRedirects(response, reverse("accounts:activate"))
 
     response = client.post(
         response.url,

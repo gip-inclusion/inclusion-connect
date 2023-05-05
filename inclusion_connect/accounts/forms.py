@@ -86,7 +86,7 @@ class RegistrationForm(auth_forms.UserCreationForm):
         return super().save(commit)
 
 
-class AccountActivationForm(RegistrationForm):
+class ActivateAccountForm(RegistrationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in ["first_name", "last_name", "email"]:

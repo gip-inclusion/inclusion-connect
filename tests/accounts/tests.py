@@ -130,9 +130,9 @@ def test_user_creation_terms_are_required(client):
     assert "terms_accepted" in response.context["form"].errors
 
 
-def test_account_activation(client):
+def test_activate_account(client):
     redirect_url = reverse("oidc_overrides:logout")
-    url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
     user = UserFactory.build()
 
     # If missing params in oidc session
@@ -147,7 +147,7 @@ def test_account_activation(client):
     }
     client_session.save()
     response = client.get(url)
-    assertTemplateUsed(response, "account_activation.html")
+    assertTemplateUsed(response, "activate_account.html")
 
     response = client.post(
         url,
@@ -166,9 +166,9 @@ def test_account_activation(client):
     assert user.terms_accepted_at == user.date_joined
 
 
-def test_account_activation_terms_are_required(client):
+def test_activate_account_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
-    url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
+    url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
     user = UserFactory.build()
 
     client_session = client.session
@@ -189,7 +189,7 @@ def test_account_activation_terms_are_required(client):
             "password2": DEFAULT_PASSWORD,
         },
     )
-    assertTemplateUsed(response, "account_activation.html")
+    assertTemplateUsed(response, "activate_account.html")
     assert "terms_accepted" in response.context["form"].errors
 
 
