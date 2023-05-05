@@ -71,5 +71,3 @@ jobs:
       run: django-admin makemigrations --check --dry-run --noinput
     - name: 🤹 Django tests
       run: make test
-      env:
-        DJANGO_DEBUG: True
