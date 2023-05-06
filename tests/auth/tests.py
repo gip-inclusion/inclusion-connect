@@ -2,7 +2,7 @@ from django.contrib.auth import get_user
 from django.urls import reverse
 
 from inclusion_connect.auth.backends import EmailAuthenticationBackend
-from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 def test_admin_login(client):

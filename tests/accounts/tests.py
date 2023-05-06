@@ -11,9 +11,9 @@ from pytest_django.asserts import assertContains, assertRedirects, assertTemplat
 
 from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 def test_login(client):

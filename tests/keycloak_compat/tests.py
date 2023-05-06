@@ -8,10 +8,10 @@ from django.urls import reverse
 from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
-from inclusion_connect.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
-from inclusion_connect.test import token_are_revoked
-from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.helpers import token_are_revoked
+from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from tests.users.factories import UserFactory
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])

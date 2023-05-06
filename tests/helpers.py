@@ -6,9 +6,9 @@ from django.urls import reverse
 from django.utils import timezone
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
-from inclusion_connect.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
-from inclusion_connect.users.factories import DEFAULT_PASSWORD
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from tests.users.factories import DEFAULT_PASSWORD
 
 
 OIDC_PARAMS = {
