@@ -1,6 +1,6 @@
 from django.urls import reverse
 
-from .factories import UserFactory
+from tests.users.factories import UserFactory
 
 
 class TestUserAdmin:

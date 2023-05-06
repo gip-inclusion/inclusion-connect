@@ -8,11 +8,11 @@ from django.core import mail
 from django.urls import reverse
 from pytest_django.asserts import assertContains, assertRedirects
 
-from inclusion_connect.oidc_overrides.factories import ApplicationFactory
-from inclusion_connect.test import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
-from inclusion_connect.users.factories import DEFAULT_PASSWORD, UserFactory
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.helpers import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
+from tests.oidc_overrides.factories import ApplicationFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 def test_registration_endpoint(client):

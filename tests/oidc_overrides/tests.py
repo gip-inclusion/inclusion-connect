@@ -6,12 +6,12 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertRedirects
 
-from inclusion_connect.oidc_overrides.factories import ApplicationFactory
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.test import OIDC_PARAMS, has_ongoing_sessions, oidc_complete_flow, token_are_revoked
-from inclusion_connect.users.factories import UserFactory
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
+from tests.helpers import OIDC_PARAMS, has_ongoing_sessions, oidc_complete_flow, token_are_revoked
+from tests.oidc_overrides.factories import ApplicationFactory
+from tests.users.factories import UserFactory
 
 
 def test_allow_wildcard_in_redirect_uris():
