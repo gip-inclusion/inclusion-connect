@@ -255,9 +255,9 @@ requests==2.28.2 \
     # via
     #   django-anymail
     #   django-oauth-toolkit
-sentry-sdk==1.21.1 \
-    --hash=sha256:092888f3abf7a2ea78f0bfcefc3e0465caee2b6f0efb26f538ccc60f95dca179 \
-    --hash=sha256:99c15556a23621be9f18c2955f7ce63321713bf1c0ad396b27b61399bac5f458
+sentry-sdk==1.22.1 \
+    --hash=sha256:052dff5069c6f0d836ee014323576824a9b40836fc003fb12489a1f19c60a3c9 \
+    --hash=sha256:c6c6946f8c927adb00af1c5ab6921df38775b2199b9003816d5935a1310352d5
     # via -r requirements/base.in
 soupsieve==2.4.1 \
     --hash=sha256:1c1bfee6819544a3447586c889157365a27e10d88cde3ad3da0cf0ddf646feb8 \
