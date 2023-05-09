@@ -166,6 +166,46 @@ def test_activate_account(client):
     assert user.terms_accepted_at == user.date_joined
 
 
+def test_account_activation_email_already_exists(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
+    user = UserFactory()
+
+    # If missing params in oidc session
+    response = client.get(url)
+    assert response.status_code == 400
+
+    client_session = client.session
+    client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        "email": user.email,
+        "firstname": user.first_name,
+        "lastname": user.last_name,
+    }
+    client_session.save()
+    response = client.get(url)
+    assertTemplateUsed(response, "activate_account.html")
+
+    response = client.post(
+        url,
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertContains(
+        response,
+        format_html(
+            'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
+            reverse("accounts:login"),
+        ),
+    )
+    assert get_user(client).is_authenticated is False
+
+
 def test_activate_account_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})

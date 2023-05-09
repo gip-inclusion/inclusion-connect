@@ -12,7 +12,6 @@
 
     <hr>
 
-    {{ last_name }} {{ first_name }} ({{ email }})
 
     <form method="post" class="js-prevent-multiple-submit">
         {% csrf_token %}
@@ -20,6 +19,7 @@
             <div class="row">
                 <div class="col-12">
                     {% bootstrap_form_errors form type="all" %}
+                    <p>{{ last_name }} {{ first_name }} ({{ email }})</p>
                     {% bootstrap_field form.last_name %}
                     {% bootstrap_field form.first_name %}
                     {% bootstrap_field form.email %}

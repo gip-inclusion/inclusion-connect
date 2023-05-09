@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.forms import HiddenInput
+from django.forms.forms import NON_FIELD_ERRORS
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -80,6 +81,12 @@ class RegisterForm(auth_forms.UserCreationForm):
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
 
         self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
+
+    def clean(self):
+        if "email" in self.errors:
+            self.errors.setdefault(NON_FIELD_ERRORS, [])
+            self.errors[NON_FIELD_ERRORS] += self.errors["email"]
+        return super().clean()
 
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
