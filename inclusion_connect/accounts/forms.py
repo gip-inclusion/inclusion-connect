@@ -165,6 +165,10 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
         for key in ["new_password1", "new_password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
 
+    def save(self, commit=True):
+        self.user.must_reset_password = False
+        return super().save(commit)
+
 
 class EditUserInfoForm(forms.ModelForm):
     class Meta:

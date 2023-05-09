@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
                         db_index=True, max_length=254, unique=True, verbose_name="adresse e-mail"
                     ),
                 ),
-                ("password", models.CharField(max_length=256, verbose_name="password")),
+                ("password", models.CharField(max_length=256, verbose_name="mot de passe")),
                 (
                     "groups",
                     models.ManyToManyField(

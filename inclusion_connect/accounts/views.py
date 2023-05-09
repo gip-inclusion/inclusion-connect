@@ -1,7 +1,7 @@
 import uuid
 
 from django.contrib import messages
-from django.contrib.auth import login, views as auth_views
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.http import Http404, HttpResponseRedirect
@@ -11,6 +11,7 @@ from django.utils import http, timezone
 from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
 
 from inclusion_connect.accounts import emails, forms
+from inclusion_connect.accounts.helpers import login
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params
@@ -180,6 +181,23 @@ class ConfirmEmailTokenView(OIDCSessionMixin, View):
         except KeyError:
             pass
         return HttpResponseRedirect(self.get_success_url())
+
+
+class ChangeTemporaryPassword(LoginRequiredMixin, OIDCSessionMixin, FormView):
+    template_name = "password_reset_confirm.html"
+    form_class = forms.SetPasswordForm
+
+    def get_form_kwargs(self):
+        return super().get_form_kwargs() | {"user": self.request.user}
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs) | {"validlink": True}
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        messages.success(self.request, "Votre mot de passe a été mis à jour.")
+        return super().form_valid(form)
 
 
 class MyAccountMixin(LoginRequiredMixin):
