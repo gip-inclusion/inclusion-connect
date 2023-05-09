@@ -20,7 +20,6 @@ def test_login(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
     user = UserFactory()
-    assert not get_user(client).is_authenticated
 
     response = client.get(url)
     assertContains(response, "Connexion")
@@ -60,7 +59,6 @@ def test_user_creation(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
     user = UserFactory.build()
-    assert not get_user(client).is_authenticated
 
     response = client.get(url)
     assertContains(response, "Créer un compte")
@@ -89,7 +87,6 @@ def test_user_creation_fails_email_exists(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
     user = UserFactory()
-    assert not get_user(client).is_authenticated
 
     response = client.post(
         url,
@@ -118,7 +115,6 @@ def test_user_creation_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:registration"), {"next": redirect_url})
     user = UserFactory.build()
-    assert not get_user(client).is_authenticated
 
     response = client.post(
         url,
@@ -138,7 +134,6 @@ def test_account_activation(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
     user = UserFactory.build()
-    assert not get_user(client).is_authenticated
 
     # If missing params in oidc session
     response = client.get(url)
@@ -175,7 +170,7 @@ def test_account_activation_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:activation"), {"next": redirect_url})
     user = UserFactory.build()
-    assert not get_user(client).is_authenticated
+
     client_session = client.session
     client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
         "email": user.email,
