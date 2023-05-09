@@ -313,6 +313,7 @@ cryptography==40.0.2 \
     --hash=sha256:d5a1bd0e9e2031465761dfa920c16b0065ad77321d8a8c1f5ee331021fda65e9
     # via
     #   -r requirements/base.txt
+    #   django-anymail
     #   jwcrypto
 cssbeautifier==1.14.7 \
     --hash=sha256:be7f1ea7a7b009f0172c2c0d0bebb2d136346e786f7182185ea944affb52135a
@@ -353,9 +354,9 @@ django-admin-logs==1.0.2 \
     --hash=sha256:81753c20d372bc5562fe4a09090418bbb61b308388e851b19192873a472fa3d1 \
     --hash=sha256:aedb5df940d32c10423d65136343bc009727df8a5a49ed0196e65241d823a890
     # via -r requirements/dev.in
-django-anymail==9.1 \
-    --hash=sha256:339d0ada34fde4e7e8b655dd496f780a5db0e2782b1b10794f534e22c4829dc7 \
-    --hash=sha256:5f18eb6b368e11ed1ec1e3e02f5b80e6d6406b4a37493ac1c1d18b83ca4f3c57
+django-anymail==10.0 \
+    --hash=sha256:59eb4c91e201cd6465bd5e27f2cc3342e897e8178c1b1a4bc1a10871ae0b6ef3 \
+    --hash=sha256:7b7af58175b4284662f0841e90be655cdc0a6b70ec22587d62862a147c76c87f
     # via -r requirements/base.txt
 django-bootstrap4==23.1 \
     --hash=sha256:2c1ad756b44b17093d9b49d8840f5ad8537ec30cb4412834d9bf3c59e0d976ad \
@@ -865,6 +866,7 @@ urllib3==1.26.15 \
     --hash=sha256:aa751d169e23c7479ce47a0cb0da579e3ede798f994f5816a74e4f4500dcea42
     # via
     #   -r requirements/base.txt
+    #   django-anymail
     #   requests
     #   sentry-sdk
 uwsgi==2.0.21 \
