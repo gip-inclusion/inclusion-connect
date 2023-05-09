@@ -497,3 +497,18 @@ class TestUserAdmin:
         email_address = user.email_addresses.get()
         assert email_address.email == "new@mailinator.com"
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 45, 12, tzinfo=datetime.timezone.utc)
+
+    def test_admin_password_update(self, client):
+        staff_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(staff_user)
+
+        user = UserFactory()
+        password = "toto"
+        response = client.post(
+            reverse("admin:auth_user_password_change", args=(user.pk,)),
+            data={"password1": password, "password2": password},
+        )
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+
+        user.refresh_from_db()
+        assert user.must_reset_password

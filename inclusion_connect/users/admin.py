@@ -1,6 +1,8 @@
+import copy
+
 from django import forms
 from django.contrib import admin
-from django.contrib.auth import admin as auth_admin
+from django.contrib.auth import admin as auth_admin, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.db.models import Exists, F, OuterRef, Q
 from django.forms.formsets import DELETION_FIELD_NAME
@@ -45,11 +47,18 @@ class EmailAddressInline(admin.TabularInline):
     ordering = [F("verified_at").desc(nulls_last=True), "email"]
 
 
+class AdminPasswordChange(auth_forms.AdminPasswordChangeForm):
+    def save(self, commit=True):
+        self.user.must_reset_password = True
+        return super().save(commit)
+
+
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
     readonly_fields = ["username", "email"]
     inlines = [EmailAddressInline]
+    change_password_form = AdminPasswordChange
 
     def get_search_results(self, request, queryset, search_term):
         queryset, may_have_duplicates = super().get_search_results(request, queryset, search_term)
@@ -69,3 +78,10 @@ class UserAdmin(auth_admin.UserAdmin):
         if form.instance.email and not any(is_email_verified(fs) for fs in email_address_formset):
             form.instance.email = ""
             form.instance.save(update_fields=["email"])
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        assert fieldsets[0] == (None, {"fields": ("username", "password")})
+        new_fieldsets = copy.deepcopy(fieldsets)
+        new_fieldsets[0][1]["fields"] += ("must_reset_password",)
+        return new_fieldsets
