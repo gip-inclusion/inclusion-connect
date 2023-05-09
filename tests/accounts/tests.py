@@ -796,3 +796,36 @@ class TestConfirmEmailTokenView:
         response = client.get(self.url(user, token1))
         assertMessages(response, [("INFO", "Cette adresse e-mail est déjà vérifiée.")])
         assertRedirects(response, reverse("accounts:login"))
+
+
+class TestChangeTemporaryPasswordView:
+    def test_view(self, client):
+        redirect_url = reverse("oidc_overrides:logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(must_reset_password=True)
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assertRedirects(response, reverse("accounts:change_temporary_password"))
+        assert get_user(client).is_authenticated is True
+
+        response = client.post(
+            reverse("accounts:change_temporary_password"),
+            data={"new_password1": "toto", "new_password2": "toto"},
+        )
+        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+
+        user.refresh_from_db()
+        assert user.must_reset_password is False
+
+    def test_allow_same_password(self, client):
+        user = UserFactory(must_reset_password=True)
+        client.force_login(user)
+
+        response = client.post(
+            reverse("accounts:change_temporary_password"),
+            data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
+        )
+        assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
+
+        user.refresh_from_db()
+        assert user.must_reset_password is False

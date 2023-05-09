@@ -1,12 +1,12 @@
 import jwt
 from django.contrib import messages
-from django.contrib.auth import login
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import http
 from django.views.generic import View
 
+from inclusion_connect.accounts.helpers import login
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.keycloak_compat.utils import realm_from_request

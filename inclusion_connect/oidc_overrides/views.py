@@ -38,6 +38,8 @@ class OIDCSessionMixin:
         user = getattr(self, "object", self.request.user)  # in CreateView, user is stored in self.object
         if user.must_accept_terms:
             return reverse("accounts:accept_terms")
+        if user.must_reset_password:
+            return reverse("accounts:change_temporary_password")
         # TODO: if user password is temporary, redirect to password change view
         return self.get_next_url()
 

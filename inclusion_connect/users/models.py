@@ -22,7 +22,8 @@ class User(AbstractUser):
 
     # Denormalized verified email. See EmailAddress.
     email = CIEmailField(verbose_name="adresse e-mail", blank=True, db_index=True)
-    password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
+    password = models.CharField("mot de passe", max_length=256)  # allow compat with old keycloak passwords
+    must_reset_password = models.BooleanField("mot de passe temporaire", default=False)
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
     class Meta:
