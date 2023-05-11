@@ -39,7 +39,6 @@ def test_login(client, realm):
     bad_auth_params["client_id"] = "toto"
     bad_auth_complete_url = add_url_params(auth_url, bad_auth_params)
     response = client.get(bad_auth_complete_url)
-    # FIXME update the template
     assert response.status_code == 400
 
     # Test AUTH endpoint when authenticated
@@ -122,7 +121,6 @@ def test_registration(client, realm):
     bad_auth_params["client_id"] = "toto"
     bad_auth_complete_url = add_url_params(auth_url, bad_auth_params)
     response = client.get(bad_auth_complete_url)
-    # FIXME update the template
     assert response.status_code == 400
 
     # Test REGISTRATIONS endpoint when not authenticated with activation params

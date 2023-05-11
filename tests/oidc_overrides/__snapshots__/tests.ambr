@@ -1,0 +1,169 @@
+# serializer version: 1
+# name: test_activation_bad_oidc_params
+  '''
+  <main class="s-main" id="main" role="main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <div class="block-center">
+          
+              <h2>Error: invalid_request</h2>
+              <p>Invalid client_id parameter value.</p>
+          
+      </div>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  '''
+# ---
+# name: test_activation_missing_user_info
+  '''
+  <main class="s-main" id="main" role="main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <div class="block-center">
+          
+              <h2>Error: invalid_request</h2>
+              <p>Missing activation parameters</p>
+          
+      </div>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  '''
+# ---
+# name: test_authorize_bad_oidc_params
+  '''
+  <main class="s-main" id="main" role="main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <div class="block-center">
+          
+              <h2>Error: invalid_request</h2>
+              <p>Invalid client_id parameter value.</p>
+          
+      </div>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  '''
+# ---
+# name: test_registrations_bad_oidc_params
+  '''
+  <main class="s-main" id="main" role="main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <div class="block-center">
+          
+              <h2>Error: invalid_request</h2>
+              <p>Invalid client_id parameter value.</p>
+          
+      </div>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  '''
+# ---

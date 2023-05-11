@@ -53,6 +53,8 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
     the registration pages
     """
 
+    template_name = "oidc_authorize.html"
+
     def dispatch(self, request, *args, **kwargs):
         try:
             self.validate_authorization_request(request)

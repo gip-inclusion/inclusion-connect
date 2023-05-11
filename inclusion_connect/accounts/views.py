@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth import login, views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import CreateView, FormView, UpdateView
 
@@ -45,10 +46,15 @@ class ActivateAccountView(BaseUserCreationView):
         try:
             self.get_user_info()
         except KeyError:
-            return HttpResponseBadRequest()
+            return render(
+                request,
+                "oidc_authorize.html",
+                {"error": {"error": "invalid_request", "description": "Missing activation parameters"}},
+                status=400,
+            )
         return super().dispatch(request, *args, **kwargs)
 
-    def get_user_info(self, raise_exception=False):
+    def get_user_info(self):
         params = self.get_oidc_params()
 
         # TODO: Remove keycloak compatibility
