@@ -1,6 +1,7 @@
 import uuid
 
 import jwt
+from bs4 import BeautifulSoup
 from django.contrib.sessions.models import Session
 from django.urls import reverse
 from django.utils import timezone
@@ -95,3 +96,21 @@ def token_are_revoked(user):
         and not get_access_token_model().objects.filter(user=user).exists()
         and get_refresh_token_model().objects.get().revoked is not None
     )
+
+
+def parse_response_to_soup(response, selector=None, no_html_body=False, status_code=200):
+    soup = BeautifulSoup(response.content, "html5lib", from_encoding=response.charset or "utf-8")
+    if no_html_body:
+        # If the provided HTML does not contain <html><body> tags
+        # html5lib will always add them around the response:
+        # ignore them
+        soup = soup.body
+    if selector is not None:
+        [soup] = soup.select(selector)
+    for csrf_token_input in soup.find_all("input", attrs={"name": "csrfmiddlewaretoken"}):
+        csrf_token_input["value"] = "NORMALIZED_CSRF_TOKEN"
+    if "nonce" in soup.attrs:
+        soup["nonce"] = "NORMALIZED_CSP_NONCE"
+    for csp_nonce_script in soup.find_all("script", {"nonce": True}):
+        csp_nonce_script["nonce"] = "NORMALIZED_CSP_NONCE"
+    return soup
