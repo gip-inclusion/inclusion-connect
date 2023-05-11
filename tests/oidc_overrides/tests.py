@@ -12,7 +12,13 @@ from pytest_django.asserts import assertRedirects
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
-from tests.helpers import OIDC_PARAMS, has_ongoing_sessions, oidc_complete_flow, token_are_revoked
+from tests.helpers import (
+    OIDC_PARAMS,
+    has_ongoing_sessions,
+    oidc_complete_flow,
+    parse_response_to_soup,
+    token_are_revoked,
+)
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -107,13 +113,13 @@ def test_logout_bad_login_hint(client, method, other_client):
         assert has_ongoing_sessions(user) is False
 
 
-def test_authorize_bad_oidc_params(client):
+def test_authorize_bad_oidc_params(client, snapshot):
     # Application does not exist
     auth_url = reverse("oidc_overrides:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
-    # FIXME update the template
     assert response.status_code == 400
+    assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
 
 def test_authorize_not_authenticated(client):
@@ -126,13 +132,13 @@ def test_authorize_not_authenticated(client):
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
-def test_registrations_bad_oidc_params(client):
+def test_registrations_bad_oidc_params(client, snapshot):
     # Application does not exist
     auth_url = reverse("oidc_overrides:registrations")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
-    # FIXME update the template
     assert response.status_code == 400
+    assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
 
 def test_registrations_not_authenticated(client):
@@ -145,15 +151,15 @@ def test_registrations_not_authenticated(client):
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
-def test_activation_bad_oidc_params(client):
+def test_activation_bad_oidc_params(client, snapshot):
     auth_url = reverse("oidc_overrides:activation")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
-    # FIXME update the template
     assert response.status_code == 400
+    assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
 
-def test_activation_missing_user_info(client):
+def test_activation_missing_user_info(client, snapshot):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     auth_url = reverse("oidc_overrides:activation")
     # Missing: email, firstname and lastname.
@@ -165,8 +171,8 @@ def test_activation_missing_user_info(client):
     assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
     response = client.get(response.url)
-    # FIXME update the template
     assert response.status_code == 400
+    assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
 
 def test_activation_not_authenticated(client):
