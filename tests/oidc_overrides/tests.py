@@ -1,5 +1,8 @@
+import datetime
+
 import pytest
 from django.contrib.auth import get_user
+from django.contrib.sessions.models import Session
 from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
@@ -11,7 +14,7 @@ from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
 from tests.helpers import OIDC_PARAMS, has_ongoing_sessions, oidc_complete_flow, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 def test_allow_wildcard_in_redirect_uris():
@@ -222,3 +225,42 @@ def test_user_application_link(client):
         (application_2.pk, user.pk, dt_2),
         (application_1.pk, user.pk, dt_3),  # last_login was updated
     ]
+
+
+def test_session_duration(client):
+    application_1 = ApplicationFactory()
+    application_2 = ApplicationFactory()
+    user = UserFactory()
+
+    auth_params = OIDC_PARAMS.copy()
+    auth_url = reverse("oidc_overrides:authorize")
+
+    auth_params["client_id"] = application_1.client_id
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    with freeze_time("2023/05/12 10:39"):
+        now = timezone.now()
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
+        response = client.post(
+            response.url,
+            data={
+                "email": user.email,
+                "password": DEFAULT_PASSWORD,
+            },
+        )
+        assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
+
+    session = Session.objects.get()
+    assert session.expire_date == now + datetime.timedelta(minutes=30)
+
+    # 1O minutes later
+    auth_params["client_id"] = application_2.client_id
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    with freeze_time("2023/05/12 10:49"):
+        response = client.get(auth_complete_url)
+        assert response.status_code == 302
+        assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+
+    # No change in expire_date
+    session = Session.objects.get()
+    assert session.expire_date == now + datetime.timedelta(minutes=30)
