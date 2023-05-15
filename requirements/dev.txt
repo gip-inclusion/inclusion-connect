@@ -378,9 +378,9 @@ django-oauth-toolkit==2.2.0 \
     --hash=sha256:46890decb24a34e2a5382debeaf7752e50d90b7a11716cf2a9fd067097ec0963 \
     --hash=sha256:abd85c74af525a62365ec2049113e73a2ff8b46ef906e7104a7ba968ef02a11d
     # via -r requirements/base.txt
-djlint==1.25.0 \
-    --hash=sha256:1b9e5265e51c224ef5c6b8d434151293943ddae8602fb544063f33039738d17c \
-    --hash=sha256:5d4ca41b40e8986773043eb7b857654154da91337df7c6c9aeeca256d5f0459a
+djlint==1.27.2 \
+    --hash=sha256:e84239bf7c4f722b80cf3b623a47a1bf00de8c1c55674d583f61aa71b26ada42 \
+    --hash=sha256:ff221e6ff7b31ab20d38342a46915a4a5051c906a338b61e592f1b06528d367b
     # via -r requirements/dev.in
 editorconfig==0.12.3 \
     --hash=sha256:57f8ce78afcba15c8b18d46b5170848c88d56fd38f05c2ec60dbbfcb8996e89e \
@@ -479,6 +479,10 @@ jsbeautifier==1.14.7 \
     # via
     #   cssbeautifier
     #   djlint
+json5==0.9.14 \
+    --hash=sha256:740c7f1b9e584a468dbb2939d8d458db3427f2c93ae2139d05f47e453eae964f \
+    --hash=sha256:9ed66c3a6ca3510a976a9ef9b8c0787de24802724ab1860bc0153c7fdd589b02
+    # via djlint
 jwcrypto==1.4.2 \
     --hash=sha256:80a35e9ed1b3b2c43ce03d92c5d48e6d0b6647e2aa2618e4963448923d78a37b
     # via
