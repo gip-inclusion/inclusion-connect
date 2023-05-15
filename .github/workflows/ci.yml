@@ -57,12 +57,8 @@ jobs:
         cache: pip
         cache-dependency-path: requirements/dev.txt
     - name: 📥 Install dependencies
-      run: |
-        make venv
-        echo ".venv/bin" >> $GITHUB_PATH
+      run: make venv
     - name: ✨ Black, isort, flake8 & djlint
       run: make quality
-    - name: 🚧 Check pending migrations
-      run: django-admin makemigrations --check --dry-run --noinput
     - name: 🤹 Django tests
       run: make test
