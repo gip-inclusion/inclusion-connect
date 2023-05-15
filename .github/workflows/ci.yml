@@ -44,10 +44,7 @@ jobs:
         PGPORT: 5433
     - uses: actions/checkout@v3.5.2
     - name: 💾 Create a database to check migrations
-      run: |
-        psql <<SQL
-            CREATE DATABASE inclusion_connect;
-        SQL
+      run: createdb inclusion_connect
       env:
         PGPASSWORD: password
         PGHOST: localhost
