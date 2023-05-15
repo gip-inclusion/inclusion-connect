@@ -49,6 +49,7 @@ quality: $(VIRTUAL_ENV)
 	isort --check inclusion_connect
 	flake8 --count --show-source --statistics inclusion_connect
 	djlint --lint --check inclusion_connect
+	django-admin makemigrations --check --dry-run --noinput
 
 fix: $(VIRTUAL_ENV)
 	black inclusion_connect
