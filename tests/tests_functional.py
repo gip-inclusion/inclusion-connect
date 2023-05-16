@@ -13,7 +13,7 @@ from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRed
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
-from tests.helpers import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
+from tests.helpers import OIDC_PARAMS, call_logout, oidc_flow_followup, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -207,8 +207,7 @@ def test_login_after_password_reset(client):
     oidc_flow_followup(client, auth_response_params, user)
 
 
-@pytest.mark.parametrize("method", ["get", "post"])
-def test_logout_no_confirmation(client, method):
+def test_logout_no_confirmation(client):
     """Logout without confirmation requires the id_token"""
 
     user = UserFactory()
@@ -226,9 +225,8 @@ def test_logout_no_confirmation(client, method):
     id_token = oidc_flow_followup(client, auth_response_params, user)
 
     assert get_user(client).is_authenticated is True
-    logout_params = {"id_token_hint": id_token}
-    logout_method = getattr(client, method)
-    response = logout_method(add_url_params(reverse("oidc_overrides:logout"), logout_params))
+    response = call_logout(client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"})
+    assertRedirects(response, "https://callback/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
 
