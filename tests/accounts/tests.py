@@ -829,3 +829,45 @@ class TestChangeTemporaryPasswordView:
 
         user.refresh_from_db()
         assert user.must_reset_password is False
+
+
+class TestMiddleware:
+    def test_post_login_actions(self, client):
+        user = UserFactory(
+            terms_accepted_at=None,
+            must_reset_password=True,
+        )
+        client.force_login(user)
+        response = client.get(reverse("accounts:edit_user_info"))
+        assertRedirects(response, reverse("accounts:accept_terms"))
+
+        client.post(reverse("accounts:accept_terms"))
+        response = client.get(reverse("accounts:edit_user_info"))
+        assertRedirects(response, reverse("accounts:change_temporary_password"))
+
+        client.post(
+            reverse("accounts:change_temporary_password"),
+            data={"new_password1": "toto", "new_password2": "toto"},
+        )
+        response = client.get(reverse("accounts:edit_user_info"))
+        assert response.status_code == 200
+
+    def test_staff_users_are_not_concerned(self, client):
+        user = UserFactory(
+            terms_accepted_at=None,
+            must_reset_password=True,
+            is_staff=True,
+        )
+        client.force_login(user)
+        response = client.get(reverse("admin:index"))
+        assert response.status_code == 200
+
+    def test_logout_is_whitelisted(self, client):
+        user = UserFactory(
+            terms_accepted_at=None,
+            must_reset_password=True,
+        )
+        client.force_login(user)
+        response = client.get(add_url_params(reverse("oidc_overrides:logout"), {"state": "random_string"}))
+        # FIXME: Replace with status_code == 200 when using django-oauth-toolkit logout
+        assertRedirects(response, "http://testserver/", fetch_redirect_response=False)

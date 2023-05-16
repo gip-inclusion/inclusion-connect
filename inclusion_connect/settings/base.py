@@ -71,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "inclusion_connect.middleware.never_cache",
+    "inclusion_connect.accounts.middleware.post_login_actions",
 ]
 
 ROOT_URLCONF = "inclusion_connect.urls"
