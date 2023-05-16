@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="user",
             name="terms_accepted_at",
-            field=models.DateTimeField(blank=True, null=True, verbose_name="Date de validation des CGUs"),
+            field=models.DateTimeField(blank=True, null=True, verbose_name="date de validation des CGUs"),
         ),
     ]

@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 (
                     "last_login",
-                    models.DateTimeField(default=django.utils.timezone.now, verbose_name="Dernière connexion"),
+                    models.DateTimeField(default=django.utils.timezone.now, verbose_name="dernière connexion"),
                 ),
                 (
                     "application",
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="linked_users",
                         to=settings.OAUTH2_PROVIDER_APPLICATION_MODEL,
-                        verbose_name="Application",
+                        verbose_name="application",
                     ),
                 ),
                 (
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="linked_applications",
                         to=settings.AUTH_USER_MODEL,
-                        verbose_name="Utilisateur",
+                        verbose_name="utilisateur",
                     ),
                 ),
             ],

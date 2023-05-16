@@ -21,12 +21,12 @@ class User(AbstractUser):
     username = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, primary_key=True)
 
     email = CIEmailField(
-        "Adresse e-mail",
+        "adresse e-mail",
         db_index=True,
         unique=True,
     )
     password = models.CharField("password", max_length=256)  # allow compat with old keycloak passwords
-    terms_accepted_at = models.DateTimeField("Date de validation des CGUs", blank=True, null=True)
+    terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
     def __str__(self):
         return f"{self.get_full_name()} — {self.email}"
@@ -44,14 +44,14 @@ class User(AbstractUser):
 class UserApplicationLink(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        verbose_name="Utilisateur",
+        verbose_name="utilisateur",
         related_name="linked_applications",
         on_delete=models.CASCADE,
     )
     application = models.ForeignKey(
         settings.OAUTH2_PROVIDER_APPLICATION_MODEL,
-        verbose_name="Application",
+        verbose_name="application",
         related_name="linked_users",
         on_delete=models.CASCADE,
     )
-    last_login = models.DateTimeField("Dernière connexion", default=timezone.now)
+    last_login = models.DateTimeField("dernière connexion", default=timezone.now)
