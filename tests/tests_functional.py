@@ -10,6 +10,7 @@ from pytest_django.asserts import assertContains, assertRedirects
 
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.asserts import assertMessages
 from tests.helpers import OIDC_PARAMS, oidc_flow_followup, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
@@ -134,13 +135,16 @@ def test_login_after_password_reset(client):
     response = client.post(reverse("accounts:password_reset"), data={"email": user.email})
     assertRedirects(response, reverse("accounts:login"))
 
-    assert list(messages.get_messages(response.wsgi_request)) == [
-        messages.storage.base.Message(
-            messages.SUCCESS,
-            "Si un compte existe avec cette adresse e-mail, "
-            "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-        ),
-    ]
+    assertMessages(
+        response,
+        [
+            (
+                messages.SUCCESS,
+                "Si un compte existe avec cette adresse e-mail, "
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+            )
+        ],
+    )
 
     reset_url_regex = reverse("accounts:password_reset_confirm", args=("string", "string")).replace("string", "[^/]*")
     reset_url = re.search(reset_url_regex, mail.outbox[0].body)[0]
