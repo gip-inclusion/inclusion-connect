@@ -114,3 +114,12 @@ def parse_response_to_soup(response, selector=None, no_html_body=False, status_c
     for csp_nonce_script in soup.find_all("script", {"nonce": True}):
         csp_nonce_script["nonce"] = "NORMALIZED_CSP_NONCE"
     return soup
+
+
+def call_logout(client, method, params):
+    url = reverse("oidc_overrides:logout")
+    if method == "get":
+        return client.get(add_url_params(url, params))
+    elif method == "post":
+        return client.post(url, data=params)
+    raise ValueError

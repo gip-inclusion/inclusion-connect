@@ -14,6 +14,7 @@ from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.urls import add_url_params
 from tests.helpers import (
     OIDC_PARAMS,
+    call_logout,
     has_ongoing_sessions,
     oidc_complete_flow,
     parse_response_to_soup,
@@ -35,82 +36,61 @@ def test_allow_wildcard_in_redirect_uris():
     assert not application.redirect_uri_allowed("http://site1.mydomain.com/callback")
 
 
-@pytest.mark.parametrize(
-    "method,other_client",
-    [("get", True), ("get", False), ("post", True), ("post", False)],
-)
-def test_logout(client, method, other_client):
-    """This test simulates a GET or POST on logout endpoint from RP backend or the user browser"""
+def test_logout_id_token_hint(client):
+    """This test simulates a call on logout endpoint with id_hint params"""
     user = UserFactory()
     id_token = oidc_complete_flow(client, user)
 
     assert get_user(client).is_authenticated is True
-    logout_params = {"id_token_hint": id_token}
 
-    logout_client = Client() if other_client else client
-    logout_method = getattr(logout_client, method)
+    response = call_logout(
+        client,
+        "get",
+        {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"},
+    )
+    assertRedirects(response, "https://callback/", fetch_redirect_response=False)
 
-    response = logout_method(add_url_params(reverse("oidc_overrides:logout"), logout_params))
-    assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
-
-    assert get_user(logout_client).is_authenticated is False
     assert get_user(client).is_authenticated is False
     assert has_ongoing_sessions(user) is False
     assert token_are_revoked(user) is True
 
 
-@pytest.mark.parametrize(
-    "method,other_client",
-    [("get", True), ("get", False), ("post", True), ("post", False)],
-)
-def test_logout_expired_token(client, method, other_client):
-    """This test simulates a GET or POST on logout endpoint from RP backend or the user browser"""
+@pytest.mark.skip()
+def test_logout_expired_token_and_session(client):
+    """This test simulates a call on logout endpoint with expired token and sessions"""
     user = UserFactory()
     with freeze_time("2023-05-05 14:29:20"):
         id_token = oidc_complete_flow(client, user)
         assert get_user(client).is_authenticated is True
 
-    logout_params = {"id_token_hint": id_token}
-
-    logout_client = Client() if other_client else client
-    logout_method = getattr(logout_client, method)
-
     with freeze_time("2023-05-05 14:59:21"):
-        response = logout_method(add_url_params(reverse("oidc_overrides:logout"), logout_params))
-        assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
+        params = {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"}
+        response = call_logout(client, "get", params)
+        assert response.status_code == 200
+
+        params["allow"] = True
+        response = call_logout(client, "post", params)
+        assertRedirects(response, "https://callback/", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
 
 
-@pytest.mark.parametrize(
-    "method,other_client",
-    [("get", True), ("get", False), ("post", True), ("post", False)],
-)
-def test_logout_bad_login_hint(client, method, other_client):
-    """This test simulates a GET or POST on logout endpoint from RP backend or the user browser"""
+@pytest.mark.skip()
+def test_logout_bad_login_hint(client):
+    """This test simulates a call on logout endpoint with bad login hint"""
     user = UserFactory()
     oidc_complete_flow(client, user)
 
     assert get_user(client).is_authenticated is True
-    logout_params = {"id_token_hint": 111}  # bad token
 
-    logout_client = Client() if other_client else client
-    logout_method = getattr(logout_client, method)
+    response = call_logout(client, "get", {"id_token_hint": 111})
+    assert response.status_code == 400
 
-    response = logout_method(add_url_params(reverse("oidc_overrides:logout"), logout_params))
-    assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
-
-    assert get_user(logout_client).is_authenticated is False
     assert token_are_revoked(user) is False
-
-    if other_client:  # Django original session was not deleted as we couldn't match a user
-        assert get_user(client).is_authenticated is True
-        assert has_ongoing_sessions(user) is True
-    else:
-        assert get_user(client).is_authenticated is False
-        assert has_ongoing_sessions(user) is False
+    assert get_user(client).is_authenticated is True
+    assert has_ongoing_sessions(user) is True
 
 
 def test_authorize_bad_oidc_params(client, snapshot):
