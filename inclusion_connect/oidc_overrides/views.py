@@ -13,6 +13,7 @@ from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 from oauth2_provider.settings import oauth2_settings
 
+from inclusion_connect.accounts.middleware import get_user_next_action_url
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
@@ -34,14 +35,8 @@ class OIDCSessionMixin:
         return self.request.session.get("next_url") or reverse("accounts:edit_user_info")
 
     def get_success_url(self):
-        # FIXME: Maybe we should move everything except the session saving into accounts app ?
         user = getattr(self, "object", self.request.user)  # in CreateView, user is stored in self.object
-        if user.must_accept_terms:
-            return reverse("accounts:accept_terms")
-        if user.must_reset_password:
-            return reverse("accounts:change_temporary_password")
-        # TODO: if user password is temporary, redirect to password change view
-        return self.get_next_url()
+        return get_user_next_action_url(user) or self.get_next_url()
 
     def setup(self, request, *args, **kwargs):
         next_url = request.GET.get("next")
