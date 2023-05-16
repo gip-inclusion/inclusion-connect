@@ -1,6 +1,9 @@
 import pytest
 
 
+pytest.register_assert_rewrite("tests.asserts")
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     """Automatically add pytest db marker if needed."""

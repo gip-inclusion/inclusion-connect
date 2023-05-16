@@ -17,6 +17,7 @@ from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params
+from tests.asserts import assertMessages
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -276,13 +277,16 @@ def test_password_reset(client):
 
     response = client.post(password_reset_url, data={"email": user.email})
     assertRedirects(response, reverse("accounts:login"))
-    assert list(messages.get_messages(response.wsgi_request)) == [
-        messages.storage.base.Message(
-            messages.SUCCESS,
-            "Si un compte existe avec cette adresse e-mail, "
-            "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-        ),
-    ]
+    assertMessages(
+        response,
+        [
+            (
+                messages.SUCCESS,
+                "Si un compte existe avec cette adresse e-mail, "
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+            ),
+        ],
+    )
 
     # Check sent email
     assert len(mail.outbox) == 1
