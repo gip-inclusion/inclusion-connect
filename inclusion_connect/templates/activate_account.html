@@ -18,7 +18,7 @@
         <fieldset>
             <div class="row">
                 <div class="col-12">
-                    {% bootstrap_form_errors form type="all" %}
+                    {% bootstrap_form_errors form type="non_fields" %}
                     <p>{{ last_name }} {{ first_name }} ({{ email }})</p>
                     {% bootstrap_field form.last_name %}
                     {% bootstrap_field form.first_name %}
