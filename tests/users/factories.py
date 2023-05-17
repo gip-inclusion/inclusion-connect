@@ -19,8 +19,16 @@ class EmailAddressFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = EmailAddress
 
-    user = factory.SubFactory("tests.users.factories.UserFactory")
-    email = factory.SelfAttribute(".user.email")
+    user = factory.SubFactory(
+        "tests.users.factories.UserFactory",
+        email_address=False,
+        email=factory.Maybe(
+            decider=factory.SelfAttribute("..verified_at"),
+            yes_declaration=factory.SelfAttribute("..email"),
+            no_declaration="",
+        ),
+    )
+    email = factory.Sequence("email{}@domain.com".format)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -38,4 +46,4 @@ class UserFactory(factory.django.DjangoModelFactory):
     @factory.post_generation
     def email_address(obj, create, extracted, **kwargs):
         if create and extracted is None and obj.email:
-            EmailAddressFactory(user=obj, verified_at=timezone.now(), **kwargs)
+            EmailAddressFactory(user=obj, email=obj.email, verified_at=timezone.now(), **kwargs)
