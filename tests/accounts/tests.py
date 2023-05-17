@@ -237,7 +237,7 @@ def test_user_creation_email_already_exists_and_not_verified(client):
     login_url = reverse("accounts:login")
     msg = f'Un compte avec cette adresse e-mail existe déjà, <a href="{login_url}">se connecter</a> ?'
     # Displayed in bootstrap_form_errors type="all" and next to the field.
-    assertContains(response, msg, count=2)
+    assertContains(response, msg, count=1)
 
 
 def test_user_creation_terms_are_required(client, mailoutbox):

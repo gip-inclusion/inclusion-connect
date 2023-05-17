@@ -11,7 +11,7 @@
         <fieldset>
             <div class="row">
                 <div class="col-12">
-                    {% bootstrap_form_errors form type="all" %}
+                    {% bootstrap_form_errors form type="non_fields" %}
                     {% bootstrap_field form.email %}
                     {% password_field form.password %}
                     <div class="form-group">
