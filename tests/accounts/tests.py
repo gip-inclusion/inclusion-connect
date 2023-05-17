@@ -315,6 +315,42 @@ def test_account_activation_email_already_exists(client):
     assert get_user(client).is_authenticated is False
 
 
+def test_account_activation_email_already_exists_not_verified(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
+    user = UserFactory(email="")
+    user_email = "me@mailinator.com"
+    EmailAddress.objects.create(user=user, email=user_email)
+
+    client_session = client.session
+    client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        "email": user_email,
+        "firstname": user.first_name,
+        "lastname": user.last_name,
+    }
+    client_session.save()
+    response = client.post(
+        url,
+        data={
+            "email": user_email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+        follow=True,
+    )
+    print(response.content.decode())
+    assertContains(
+        response,
+        "Un compte inactif avec cette adresse e-mail existe déjà, "
+        "l’email de vérification vient d’être envoyé à nouveau.",
+        count=1,
+    )
+    assert get_user(client).is_authenticated is False
+
+
 def test_activate_account_terms_are_required(client):
     redirect_url = reverse("oidc_overrides:logout")
     url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
