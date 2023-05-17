@@ -72,6 +72,14 @@ class EmailAddress(models.Model):
     class Meta:
         verbose_name = "addresse e-mail"
         verbose_name_plural = "addresses e-mail"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=~models.Q(verified_at=None),
+                name="unique_email_verified_per_user",
+                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails vérifiés.",
+            ),
+        ]
 
     def __str__(self):
         verified = f"verified since {self.verified_at}" if self.verified_at else "not verified"
@@ -84,10 +92,10 @@ class EmailAddress(models.Model):
         super().save(*args, **kwargs)
 
     def verify(self, verified_at=None):
-        self.verified_at = verified_at or timezone.now()
-        self.save(update_fields=["verified_at"])
         # Free unused email addresses for other users.
         type(self).objects.filter(user_id=self.user_id).exclude(pk=self.pk).delete()
+        self.verified_at = verified_at or timezone.now()
+        self.save(update_fields=["verified_at"])
 
 
 class UserApplicationLink(models.Model):
