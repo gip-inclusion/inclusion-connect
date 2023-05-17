@@ -2,7 +2,6 @@ from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.forms import HiddenInput
-from django.forms.forms import NON_FIELD_ERRORS
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
@@ -107,12 +106,6 @@ class RegisterForm(auth_forms.UserCreationForm):
             raise ValidationError(msg)
         return email
 
-    def clean(self):
-        if "email" in self.errors:
-            self.errors.setdefault(NON_FIELD_ERRORS, [])
-            self.errors[NON_FIELD_ERRORS] += self.errors["email"]
-        return super().clean()
-
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
         user = super().save(commit=commit)
@@ -125,6 +118,16 @@ class ActivateAccountForm(RegisterForm):
         super().__init__(*args, **kwargs)
         for field in ["first_name", "last_name", "email"]:
             self.fields[field].widget = HiddenInput()
+
+    def clean(self):
+        super().clean()
+        try:
+            error = self.errors["email"]
+        except KeyError:
+            pass
+        else:
+            # The email field is hidden, users can’t see the error message on the field.
+            self.add_error(None, error)
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):

@@ -26,7 +26,7 @@ from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
 from tests.helpers import parse_response_to_soup
-from tests.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
 def test_login(client):
@@ -213,6 +213,31 @@ def test_user_creation_fails_email_not_verified(client, mailoutbox):
     [email] = mailoutbox
     assert email.subject == "Vérification de l’adresse e-mail"
     assert email.to == [user_email]
+
+
+def test_user_creation_email_already_exists_and_not_verified(client):
+    redirect_url = reverse("oidc_overrides:logout")
+    url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
+    user_email = "me@mailinator.com"
+    EmailAddressFactory.create(email=user_email, verified_at=timezone.now())
+
+    response = client.post(
+        url,
+        data={
+            "email": user_email,
+            "first_name": "Manuel",
+            "last_name": "Calavera",
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assertTemplateUsed(response, "register.html")
+    assert "email" in response.context["form"].errors
+    login_url = reverse("accounts:login")
+    msg = f'Un compte avec cette adresse e-mail existe déjà, <a href="{login_url}">se connecter</a> ?'
+    # Displayed in bootstrap_form_errors type="all" and next to the field.
+    assertContains(response, msg, count=2)
 
 
 def test_user_creation_terms_are_required(client, mailoutbox):
