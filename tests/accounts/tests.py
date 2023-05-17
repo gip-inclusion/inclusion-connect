@@ -5,6 +5,7 @@ import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
+from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -447,6 +448,7 @@ def test_password_reset(client):
 
 def test_edit_user_info(client):
     user = UserFactory()
+    verified_email = user.email
     client.force_login(user)
     referrer_uri = "https://go/back/there"
     edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
@@ -456,6 +458,12 @@ def test_edit_user_info(client):
     response = client.get(reverse("accounts:edit_user_info"))
     return_text = "Retour"
     assertNotContains(response, return_text)
+    assertContains(
+        response,
+        f'<input type="email" name="email" value="{user.email}" type="email" placeholder="nom@domaine.fr" '
+        'autocomplete="email" class="form-control" title="" required id="id_email">',
+        count=1,
+    )
 
     # with referrer_uri
     response = client.get(edit_user_info_url)
@@ -470,14 +478,53 @@ def test_edit_user_info(client):
     # Edit user info
     response = client.post(
         edit_user_info_url,
-        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
+        data={"last_name": "Doe", "first_name": "John", "email": user.email},
     )
     assertRedirects(response, edit_user_info_url)
     user.refresh_from_db()
     assert user.first_name == "John"
     assert user.last_name == "Doe"
-    assert user.email == "my@email.com"
-    assertRedirects(response, edit_user_info_url)
+    assert user.email == verified_email
+
+
+def test_edit_user_info_email(client):
+    user = UserFactory()
+    verified_email = user.email
+    client.force_login(user)
+
+    # Edit user info
+    response = client.post(
+        reverse("accounts:edit_user_info"),
+        data={"last_name": "Doe", "first_name": "John", "email": "jo-with-typo@email.com"},
+    )
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    user.refresh_from_db()
+    assert user.first_name == "John"
+    assert user.last_name == "Doe"
+    assert user.email == verified_email
+    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
+    assert old.verified_at is not None
+    assert old.email == verified_email
+    assert new.verified_at is None
+    assert new.email == "jo-with-typo@email.com"
+    assert client.session[EMAIL_CONFIRM_KEY] == "jo-with-typo@email.com"
+
+    # Now, fix the typo.
+    response = client.post(
+        reverse("accounts:edit_user_info"),
+        data={"last_name": "Doe", "first_name": "John", "email": "joe@email.com"},
+    )
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    user.refresh_from_db()
+    assert user.first_name == "John"
+    assert user.last_name == "Doe"
+    assert user.email == verified_email
+    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
+    assert old.verified_at is not None
+    assert old.email == verified_email
+    assert new.verified_at is None
+    assert new.email == "joe@email.com"
+    assert client.session[EMAIL_CONFIRM_KEY] == "joe@email.com"
 
 
 def test_change_password(client):

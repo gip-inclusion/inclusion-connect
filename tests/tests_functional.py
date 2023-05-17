@@ -5,10 +5,12 @@ import re
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
+from django.db.models import F
 from django.urls import reverse
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
 
+from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
@@ -238,8 +240,9 @@ def test_logout_with_confirmation(client):
     pass
 
 
-def test_edit_user_info_and_password(client):
+def test_edit_user_info_and_password(client, mailoutbox):
     user = UserFactory()
+    verified_email = user.email
     referrer_uri = "https://go/back/there"
     edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
     change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
@@ -260,10 +263,22 @@ def test_edit_user_info_and_password(client):
         edit_user_info_url,
         data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
     )
+    assertRedirects(response, reverse("accounts:confirm-email"))
     user.refresh_from_db()
     assert user.first_name == "John"
     assert user.last_name == "Doe"
-    assert user.email == "my@email.com"
+    assert user.email == verified_email
+    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
+    assert old.verified_at is not None
+    assert old.email == verified_email
+    assert new.verified_at is None
+    assert new.email == "my@email.com"
+    assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
+    [verification_email] = mailoutbox
+    assert verification_email.to == ["my@email.com"]
+    assert verification_email.subject == "Vérification de l’adresse e-mail"
+    verification_url = get_verification_link(verification_email.body)
+    response = client.get(verification_url)
     assertRedirects(response, edit_user_info_url)
 
     # Go change password
@@ -279,5 +294,5 @@ def test_edit_user_info_and_password(client):
     assert get_user(client).is_authenticated is False
 
     # User may login with new password
-    response = client.post(reverse("accounts:login"), data={"email": user.email, "password": "toto"}, follow=True)
+    response = client.post(reverse("accounts:login"), data={"email": "my@email.com", "password": "toto"}, follow=True)
     assert get_user(client).is_authenticated is True
