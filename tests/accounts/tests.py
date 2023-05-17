@@ -91,7 +91,7 @@ def test_login_email_not_verified(client, mailoutbox):
         <div class="alert alert-danger alert-dismissible" role="alert">
             <button class="close" type="button" data-dismiss="alert" aria-label="close">&#215;</button>
             Un compte inactif avec cette adresse e-mail existe déjà, l’email de vérification vient d’être
-            envoyé à nouveau.         
+            envoyé à nouveau.
         </div>
         """,
         html=True,

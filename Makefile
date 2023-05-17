@@ -14,6 +14,10 @@ else
 	REQUIREMENTS_PATH := requirements/dev.in
 endif
 
+PY_PACKAGES := \
+	inclusion_connect \
+	tests
+
 VIRTUAL_ENV ?= .venv
 export PATH := $(VIRTUAL_ENV)/bin:$(PATH)
 
@@ -45,19 +49,19 @@ clean:
 	find . -type d -name "__pycache__" -depth -exec rm -rf '{}' \;
 
 quality: $(VIRTUAL_ENV)
-	black --check inclusion_connect
-	isort --check inclusion_connect
-	flake8 --count --show-source --statistics inclusion_connect
+	black --check $(PY_PACKAGES)
+	isort --check $(PY_PACKAGES)
+	flake8 --count --show-source --statistics $(PY_PACKAGES)
 	djlint --lint --check inclusion_connect
 	python manage.py makemigrations --check --dry-run --noinput
 
 fix: $(VIRTUAL_ENV)
-	black inclusion_connect
-	isort inclusion_connect
+	black $(PY_PACKAGES)
+	isort $(PY_PACKAGES)
 	djlint --reformat inclusion_connect
 
 pylint: $(VIRTUAL_ENV)
-	pylint inclusion_connect
+	pylint $(PY_PACKAGES)
 
 # Django.
 # =============================================================================
