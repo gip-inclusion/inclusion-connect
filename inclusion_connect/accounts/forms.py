@@ -169,7 +169,25 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
 class EditUserInfoForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("last_name", "first_name", "email")
+        fields = ("last_name", "first_name")
+
+    def __init__(self, *args, initial, instance, **kwargs):
+        initial["email"] = instance.email
+        super().__init__(*args, initial=initial, instance=instance, **kwargs)
+        self.fields["email"] = verified_email_field()
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if EmailAddress.objects.exclude(user=self.instance).filter(email=email).exists():
+            raise ValidationError("Un compte avec cette adresse e-mail existe déjà.")
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        email = self.cleaned_data["email"]
+        if email != user.email:
+            save_unverified_email(user, email)
+        return user
 
 
 class PasswordChangeForm(auth_forms.PasswordChangeForm):

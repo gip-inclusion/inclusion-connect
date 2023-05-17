@@ -213,8 +213,16 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
 
     # FIXME Add a message on success to tell the user to click on return if he's done ?
     def form_valid(self, form):
-        messages.success(self.request, "Votre compte a été mis à jour.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        user = self.object
+        email = form.cleaned_data["email"]
+        if user.email != email:
+            # Do not hit the database again, we have all necessary information.
+            email_address = EmailAddress(user=user, email=email)
+            emails.send_verification_email(self.request, email_address)
+            self.request.session[EMAIL_CONFIRM_KEY] = email
+            return HttpResponseRedirect(reverse("accounts:confirm-email"))
+        return response
 
 
 class PasswordChangeView(MyAccountMixin, FormView):
