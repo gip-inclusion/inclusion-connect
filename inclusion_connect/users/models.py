@@ -75,6 +75,12 @@ class EmailAddress(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["user"],
+                condition=models.Q(verified_at=None),
+                name="unique_email_not_verified_per_user",
+                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails non vérifiés.",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
                 condition=~models.Q(verified_at=None),
                 name="unique_email_verified_per_user",
                 violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails vérifiés.",

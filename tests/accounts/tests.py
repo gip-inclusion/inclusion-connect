@@ -607,9 +607,7 @@ class TestConfirmEmailTokenView:
         client.logout()
         with freeze_time(timezone.now() + datetime.timedelta(days=1)):
             response = client.get(self.url(user, token))
-        assertMessages(
-            response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")]
-        )
+        assertMessages(response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée.")])
         assertRedirects(response, reverse("accounts:login"))
         user.refresh_from_db()
         assert user.email == "me@mailinator.com"
@@ -623,8 +621,6 @@ class TestConfirmEmailTokenView:
         user = UserFactory(email="old@mailinator.com")
         email = "new@mailinator.com"
         email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        # User also asked to change to another email.
-        EmailAddress.objects.create(email="unused@mailinator.com", user_id=user.pk)
         token = email_verification_token(email)
         response = client.get(self.url(user, token))
         assertRedirects(response, reverse("accounts:edit_user_info"))
@@ -729,28 +725,28 @@ class TestConfirmEmailTokenView:
     @freeze_time("2023-04-26 11:11:11")
     def test_token_invalidated_by_email_change(self, client):
         user = UserFactory(email="me@mailinator.com")
-        email1 = "new1@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email1, user_id=user.pk)
-        email2 = "new2@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email2, user_id=user.pk)
-        token1 = email_verification_token(email1)
-        token2 = email_verification_token(email2)
+        email = "new@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token1 = email_verification_token(email)
+        token2 = email_verification_token(email)
         response = client.get(self.url(user, token2))
         assertRedirects(response, reverse("accounts:edit_user_info"))
         # Confirming the email address deletes old verified emails and pending verifications.
         email_address = EmailAddress.objects.get()
-        assert email_address.email == email2
+        assert email_address.email == email
         assert email_address.verified_at == timezone.now()
         user.refresh_from_db()
-        assert user.email == email2
+        assert user.email == email
         assert client.session["_auth_user_id"] == str(user.pk)
         assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
 
         # token1 is invalidated, even if user is currently logged in.
         response = client.get(self.url(user, token1))
-        assert response.status_code == 404
+        assertMessages(response, [("INFO", "Cette adresse e-mail est déjà vérifiée.")])
+        assertRedirects(response, reverse("accounts:edit_user_info"))
 
         # token1 is invalidated.
         client.session.flush()
         response = client.get(self.url(user, token1))
-        assert response.status_code == 404
+        assertMessages(response, [("INFO", "Cette adresse e-mail est déjà vérifiée.")])
+        assertRedirects(response, reverse("accounts:login"))

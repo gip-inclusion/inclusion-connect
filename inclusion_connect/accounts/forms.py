@@ -59,6 +59,13 @@ class LoginForm(forms.Form):
         return self.user_cache
 
 
+def save_unverified_email(user, email):
+    """Maintain a single unverified email address per user."""
+    matched = EmailAddress.objects.filter(user=user, verified_at=None).update(email=email)
+    if not matched:
+        EmailAddress.objects.create(user=user, verified_at=None, email=email)
+
+
 class RegisterForm(auth_forms.UserCreationForm):
     terms_accepted = forms.BooleanField(
         label=format_html(
@@ -109,7 +116,7 @@ class RegisterForm(auth_forms.UserCreationForm):
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
         user = super().save(commit=commit)
-        EmailAddress.objects.create(email=self.cleaned_data["email"], user=user)
+        save_unverified_email(user, self.cleaned_data["email"])
         return user
 
 
