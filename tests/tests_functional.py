@@ -2,7 +2,6 @@
 import datetime
 import re
 
-import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail

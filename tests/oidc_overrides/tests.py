@@ -3,7 +3,6 @@ import datetime
 import pytest
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
-from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
