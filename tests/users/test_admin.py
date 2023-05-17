@@ -76,7 +76,6 @@ class TestUserAdmin:
     def test_verify_email(self, client):
         user = UserFactory(email="")
         EmailAddress.objects.create(email="me@mailinator.com", user=user)
-        EmailAddress.objects.create(email="other@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
@@ -114,7 +113,6 @@ class TestUserAdmin:
     def test_verify_email_ignores_other_emails(self, client):
         user = UserFactory(email="")
         EmailAddress.objects.create(email="me@mailinator.com", user=user)
-        EmailAddress.objects.create(email="other@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
@@ -130,7 +128,7 @@ class TestUserAdmin:
                 "initial-date_joined_0": "11/05/2023",
                 "initial-date_joined_1": "10:59:39",
                 "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "2",
+                "email_addresses-INITIAL_FORMS": "1",
                 "email_addresses-MIN_NUM_FORMS": "0",
                 "email_addresses-MAX_NUM_FORMS": "1000",
                 "email_addresses-0-user": user.pk,
@@ -414,7 +412,46 @@ class TestUserAdmin:
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
-        assertContains(response, "L’utilisateur ne peut avoir qu’un seul e-mail vérifié.")
+        assertContains(response, "L’utilisateur ne peut avoir qu’une seule adresse e-mail vérifiée.")
+        user.refresh_from_db()
+        assert user.email == "me@mailinator.com"
+        email_address = user.email_addresses.get()
+        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, tzinfo=datetime.timezone.utc)
+        assert email_address.email == "me@mailinator.com"
+
+    @freeze_time("2023-05-12T16:00:00+02:00")
+    def test_save_two_unverified_emails_error(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
+        response = client.post(
+            url,
+            data={
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_active": "on",
+                "last_login_0": "11/05/2023",
+                "last_login_1": "11:01:25",
+                "date_joined_0": "11/05/2023",
+                "date_joined_1": "10:59:39",
+                "initial-date_joined_0": "11/05/2023",
+                "initial-date_joined_1": "10:59:39",
+                "email_addresses-TOTAL_FORMS": "2",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "1000",
+                "email_addresses-0-user": user.pk,
+                "email_addresses-0-email": "newme@mailinator.com",
+                "email_addresses-0-verified_at_0": "",
+                "email_addresses-0-verified_at_1": "",
+                "email_addresses-1-user": user.pk,
+                "email_addresses-1-email": "anotherme@mailinator.com",
+                "email_addresses-1-verified_at_0": "",
+                "email_addresses-1-verified_at_1": "",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        assertContains(response, "L’utilisateur ne peut avoir qu’une seule adresse e-mail non vérifiée.")
         user.refresh_from_db()
         assert user.email == "me@mailinator.com"
         email_address = user.email_addresses.get()

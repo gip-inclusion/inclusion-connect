@@ -9,14 +9,6 @@ from django.utils.text import smart_split, unescape_string_literal
 from .models import EmailAddress, User
 
 
-class EmailAddressInlineForm(forms.ModelForm):
-    def save(self, commit=True):
-        instance = super().save(commit=commit)
-        if not self.initial.get("verified_at") and "verified_at" in self.changed_data:
-            self.instance.verify(self.cleaned_data["verified_at"])
-        return instance
-
-
 def is_email_verified(form):
     return not form.cleaned_data.get(DELETION_FIELD_NAME) and form.cleaned_data.get("verified_at")
 
@@ -25,18 +17,29 @@ class EmailAddressInlineFormSet(forms.BaseInlineFormSet):
     def clean(self):
         super().clean()
         verified_addresses = 0
+        unverified_addresses = 0
         for form in self.forms:
             if is_email_verified(form):
                 verified_addresses += 1
-            if verified_addresses >= 2:
-                raise ValidationError("L’utilisateur ne peut avoir qu’un seul e-mail vérifié.")
+            else:
+                unverified_addresses += 1
+        if verified_addresses >= 2 or unverified_addresses >= 2:
+            non = "non " if unverified_addresses >= 2 else ""
+            raise ValidationError(f"L’utilisateur ne peut avoir qu’une seule adresse e-mail {non}vérifiée.")
+
+    def save(self, commit=True):
+        instances = super().save(commit=True)
+        for form in self.forms:
+            if not form.initial.get("verified_at") and "verified_at" in form.changed_data:
+                form.instance.verify(form.cleaned_data["verified_at"])
+        return instances
 
 
 class EmailAddressInline(admin.TabularInline):
     extra = 0
+    max_num = 2  # 1 verified and 1 not verified.
     model = EmailAddress
     readonly_fields = ["created_at"]
-    form = EmailAddressInlineForm
     formset = EmailAddressInlineFormSet
     fields = ["email", "verified_at", "created_at"]
     ordering = [F("verified_at").desc(nulls_last=True), "email"]

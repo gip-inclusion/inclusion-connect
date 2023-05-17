@@ -271,10 +271,8 @@ class TestActionToken:
         # Validating again fails.
         with freeze_time("2023-04-26 11:11:12"):
             response = client.get(reverse("keycloak_compat_local:action-token"), data={"key": token})
-        assertMessages(
-            response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")]
-        )
-        assertRedirects(response, reverse("accounts:login"))
+        assertMessages(response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée.")])
+        assertRedirects(response, reverse("accounts:edit_user_info"))
         address.refresh_from_db()
         assert address.email == email
         assert address.verified_at == now

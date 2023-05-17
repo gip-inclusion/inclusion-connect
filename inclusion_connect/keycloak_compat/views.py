@@ -45,8 +45,12 @@ class ActionToken(OIDCSessionMixin, View):
             email = decoded["eml"]
             email_address = get_object_or_404(EmailAddress.objects.select_related("user"), user_id=uid, email=email)
             if email_address.verified_at:
-                messages.info(request, "Cette adresse e-mail est déjà vérifiée, vous pouvez vous connecter.")
-                return HttpResponseRedirect(reverse("accounts:login"))
+                messages.info(request, "Cette adresse e-mail est déjà vérifiée.")
+                if request.user.is_authenticated:
+                    url = reverse("accounts:edit_user_info")
+                else:
+                    url = reverse("accounts:login")
+                return HttpResponseRedirect(url)
             email_address.verify()
             login(request, email_address.user)
             return HttpResponseRedirect(self.get_success_url())
