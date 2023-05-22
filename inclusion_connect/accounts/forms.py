@@ -72,7 +72,7 @@ class RegisterForm(auth_forms.UserCreationForm):
             "J'ai lu et j'accepte les <a href='{}' target='_blank'>conditions générales d’utilisation du service</a> "
             "ainsi que la <a href='{}' target='_blank'>politique de confidentialité</a>.",
             static("terms/CGU_20230302.pdf"),
-            static("terms/Politique de confidentialité_20230302.pdf"),
+            static("terms/Politique de confidentialité_20230512.pdf"),
         )
     )
 
