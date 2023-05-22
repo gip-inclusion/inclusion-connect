@@ -66,6 +66,19 @@ def save_unverified_email(user, email):
         EmailAddress.objects.create(user=user, verified_at=None, email=email)
 
 
+def verified_email_field():
+    """
+    A forms.EmailField for email addresses that need verification
+
+    See :class:`inclusion_connect.models.EmailAddress` for an overview
+    of the email verification process.
+    """
+    fields = forms.fields_for_model(EmailAddress, fields=["email"])
+    email_field = fields["email"]
+    email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
+    return email_field
+
+
 class RegisterForm(auth_forms.UserCreationForm):
     terms_accepted = forms.BooleanField(
         label=format_html(
@@ -85,12 +98,8 @@ class RegisterForm(auth_forms.UserCreationForm):
         super().__init__(*args, **kwargs)
         for key in ["password1", "password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
-
         # Do not record the email field on the User instance, the email must be validated first.
-        fields = forms.fields_for_model(EmailAddress, fields=["email"])
-        email_field = fields["email"]
-        email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
-        self.fields["email"] = email_field
+        self.fields["email"] = verified_email_field()
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -144,7 +153,7 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["email"].label = "Adresse e-mail"
-        self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS
+        self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
