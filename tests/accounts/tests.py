@@ -111,7 +111,7 @@ def test_user_creation(client, mailoutbox):
     assertContains(response, "Créer un compte")
     assertContains(response, reverse("accounts:login"))  # Link to login page
     assertContains(response, "CGU_20230302.pdf")
-    assertContains(response, quote("Politique de confidentialité_20230302.pdf"))
+    assertContains(response, quote("Politique de confidentialité_20230512.pdf"))
 
     user_email = "user@mailinator.com"
     response = client.post(
