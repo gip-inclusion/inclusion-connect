@@ -810,9 +810,9 @@ respx==0.20.1 \
     --hash=sha256:372f06991c03d1f7f480a420a2199d01f1815b6ed5a802f4e4628043a93bd03e \
     --hash=sha256:cc47a86d7010806ab65abdcf3b634c56337a737bb5c4d74c19a0dfca83b3bc73
     # via -r requirements/dev.in
-sentry-sdk==1.22.2 \
-    --hash=sha256:5932c092c6e6035584eb74d77064e4bce3b7935dfc4a331349719a40db265840 \
-    --hash=sha256:cf89a5063ef84278d186aceaed6fb595bfe67d099298e537634a323664265669
+sentry-sdk==1.23.1 \
+    --hash=sha256:0300fbe7a07b3865b3885929fb863a68ff01f59e3bcfb4e7953d0bf7fd19c67f \
+    --hash=sha256:a884e2478e0b055776ea2b9234d5de9339b4bae0b3a5e74ae43d131db8ded27e
     # via -r requirements/base.txt
 six==1.16.0 \
     --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
