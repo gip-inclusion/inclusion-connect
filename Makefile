@@ -83,7 +83,7 @@ populate_db:
 .PHONY: coverage test
 
 test: $(VIRTUAL_ENV)
-	pytest --numprocesses=logical --create-db $(TARGET)
+	pytest --numprocesses=logical --create-db --verbosity=2 $(TARGET)
 
 coverage: $(VIRTUAL_ENV)
 	coverage run -m pytest
