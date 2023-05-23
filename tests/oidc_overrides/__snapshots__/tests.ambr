@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_activation_bad_oidc_params
+# name: TestActivateView.test_bad_oidc_params
   '''
   <main class="s-main" id="main" role="main">
   
@@ -41,7 +41,7 @@
           </main>
   '''
 # ---
-# name: test_activation_missing_user_info
+# name: TestActivateView.test_missing_user_info
   '''
   <main class="s-main" id="main" role="main">
   
@@ -83,7 +83,7 @@
           </main>
   '''
 # ---
-# name: test_authorize_bad_oidc_params
+# name: TestAuthorizeView.test_bad_oidc_params
   '''
   <main class="s-main" id="main" role="main">
   
@@ -125,7 +125,7 @@
           </main>
   '''
 # ---
-# name: test_registrations_bad_oidc_params
+# name: TestRegisterView.test_bad_oidc_params
   '''
   <main class="s-main" id="main" role="main">
   

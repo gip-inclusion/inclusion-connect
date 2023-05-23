@@ -30,7 +30,7 @@ def get_verification_link(body):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_registration_endpoint(client, mailoutbox):
+def test_register_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
@@ -81,7 +81,7 @@ def test_registration_endpoint(client, mailoutbox):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_activation_endpoint(client, mailoutbox):
+def test_activate_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
