@@ -367,7 +367,6 @@ def test_account_activation_email_already_exists_not_verified(client):
         },
         follow=True,
     )
-    print(response.content.decode())
     assertContains(
         response,
         "Un compte inactif avec cette adresse e-mail existe déjà, "
