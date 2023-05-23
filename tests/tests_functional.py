@@ -208,6 +208,45 @@ def test_login_after_password_reset(client):
     oidc_flow_followup(client, auth_response_params, user)
 
 
+@freeze_time("2023-05-05 11:11:11")
+def test_login_hint_is_preserved(client):
+    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+
+    user_email = "email@mailinator.com"
+    auth_url = reverse("oidc_overrides:register")
+    auth_params = OIDC_PARAMS | {"login_hint": user_email}
+    auth_complete_url = add_url_params(auth_url, auth_params)
+    response = client.get(auth_complete_url, follow=True)
+    assertContains(
+        response,
+        # Pre-filled with email address from login_hint.
+        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
+        # Disabled, users cannot change data passed by the RP.
+        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        count=1,
+    )
+
+    response = client.get(reverse("accounts:login"))
+    assertContains(
+        response,
+        # Pre-filled with email address from login_hint.
+        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
+        # Disabled, users cannot change data passed by the RP.
+        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        count=1,
+    )
+
+    response = client.get(reverse("accounts:password_reset"))
+    assertContains(
+        response,
+        # Pre-filled with email address from login_hint.
+        # Disabled, users cannot change data passed by the RP.
+        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
+        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        count=1,
+    )
+
+
 def test_logout_no_confirmation(client):
     """Logout without confirmation requires the id_token"""
 

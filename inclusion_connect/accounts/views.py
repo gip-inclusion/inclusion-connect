@@ -14,7 +14,7 @@ from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress, User
-from inclusion_connect.utils.oidc import oidc_params
+from inclusion_connect.utils.oidc import initial_from_login_hint, oidc_params
 from inclusion_connect.utils.urls import add_url_params
 
 
@@ -93,6 +93,11 @@ class ActivateAccountView(BaseUserCreationView):
 class PasswordResetView(auth_views.PasswordResetView):
     template_name = "password_reset.html"
     form_class = forms.PasswordResetForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial.update(initial_from_login_hint(self.request))
+        return initial
 
     def get_success_url(self):
         messages.success(
