@@ -10,14 +10,14 @@ from inclusion_connect.accounts.emails import send_verification_email
 from inclusion_connect.users.models import EmailAddress, User
 
 
-EMAIL_FIELDS_WIDGET_ATTRS = {"type": "email", "placeholder": "nom@domaine.fr", "autocomplete": "email"}
+EMAIL_FIELDS_WIDGET_ATTRS = {"placeholder": "nom@domaine.fr", "autocomplete": "email"}
 PASSWORD_PLACEHOLDER = "**********"
 
 
 class LoginForm(forms.Form):
     email = forms.EmailField(
         label="Adresse e-mail",
-        widget=forms.TextInput(attrs=EMAIL_FIELDS_WIDGET_ATTRS),
+        widget=forms.EmailInput(attrs=EMAIL_FIELDS_WIDGET_ATTRS),
     )
     password = forms.CharField(
         label="Mot de passe",

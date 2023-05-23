@@ -454,7 +454,7 @@ class TestEditUserInfoView:
         assertNotContains(response, return_text)
         assertContains(
             response,
-            f'<input type="email" name="email" value="{user.email}" type="email" placeholder="nom@domaine.fr" '
+            f'<input type="email" name="email" value="{user.email}" placeholder="nom@domaine.fr" '
             'autocomplete="email" class="form-control" title="" required id="id_email">',
             count=1,
         )
