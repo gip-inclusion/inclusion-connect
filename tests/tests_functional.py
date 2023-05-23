@@ -92,7 +92,7 @@ def test_activation_endpoint(client, mailoutbox):
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oidc_overrides:activation")
-    auth_params = OIDC_PARAMS | {"email": user_email, "firstname": "firstname", "lastname": "lastname"}
+    auth_params = OIDC_PARAMS | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))

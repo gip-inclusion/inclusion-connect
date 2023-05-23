@@ -74,20 +74,11 @@ class ActivateAccountView(BaseUserCreationView):
 
     def get_user_info(self):
         params = self.get_oidc_params()
-
-        # TODO: Remove keycloak compatibility
-        try:
-            return {
-                "email": params["login_hint"],
-                "first_name": params["firstname"],
-                "last_name": params["lastname"],
-            }
-        except KeyError:
-            return {
-                "email": params["email"],
-                "first_name": params["firstname"],
-                "last_name": params["lastname"],
-            }
+        return {
+            "email": params["login_hint"],
+            "first_name": params["firstname"],
+            "last_name": params["lastname"],
+        }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
