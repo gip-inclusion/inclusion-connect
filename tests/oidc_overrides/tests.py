@@ -8,8 +8,8 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertRedirects
 
-from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import UserApplicationLink
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.helpers import (
     OIDC_PARAMS,
@@ -107,7 +107,7 @@ class TestAuthorizeView:
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
 class TestRegisterView:
@@ -126,7 +126,7 @@ class TestRegisterView:
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:register"))
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
 class TestActivateView:
@@ -146,7 +146,7 @@ class TestActivateView:
         # The user is redirected to the activation view as the oidc parameters are valid
         assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
 
         response = client.get(response.url)
         assert response.status_code == 400
@@ -160,7 +160,7 @@ class TestActivateView:
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:activate"))
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
+        assert client.session[OIDC_SESSION_KEY] == auth_params
 
 
 def test_user_application_link(client):

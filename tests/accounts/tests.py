@@ -22,8 +22,8 @@ from pytest_django.asserts import (
 
 from inclusion_connect.accounts.tokens import email_verification_token
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY, PasswordResetView
-from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress, User
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
 from tests.helpers import parse_response_to_soup
@@ -267,7 +267,7 @@ class TestActivateAccountView:
         assert response.status_code == 400
 
         client_session = client.session
-        client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        client_session[OIDC_SESSION_KEY] = {
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
@@ -306,7 +306,7 @@ class TestActivateAccountView:
         assert response.status_code == 400
 
         client_session = client.session
-        client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        client_session[OIDC_SESSION_KEY] = {
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
@@ -343,7 +343,7 @@ class TestActivateAccountView:
         EmailAddress.objects.create(user=user, email=user_email)
 
         client_session = client.session
-        client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        client_session[OIDC_SESSION_KEY] = {
             "login_hint": user_email,
             "firstname": user.first_name,
             "lastname": user.last_name,
@@ -375,7 +375,7 @@ class TestActivateAccountView:
         user = UserFactory.build()
 
         client_session = client.session
-        client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
+        client_session[OIDC_SESSION_KEY] = {
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
