@@ -34,7 +34,7 @@ def test_registration_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_url = reverse("oidc_overrides:registrations")
+    auth_url = reverse("oidc_overrides:register")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
@@ -85,13 +85,13 @@ def test_activation_endpoint(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_url = reverse("oidc_overrides:activation")
+    auth_url = reverse("oidc_overrides:activate")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
 
     user_email = "email@mailinator.com"
-    auth_url = reverse("oidc_overrides:activation")
+    auth_url = reverse("oidc_overrides:activate")
     auth_params = OIDC_PARAMS | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)

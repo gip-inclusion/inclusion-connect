@@ -113,7 +113,7 @@ def test_authorize_not_authenticated(client):
 
 def test_registrations_bad_oidc_params(client, snapshot):
     # Application does not exist
-    auth_url = reverse("oidc_overrides:registrations")
+    auth_url = reverse("oidc_overrides:register")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assert response.status_code == 400
@@ -122,7 +122,7 @@ def test_registrations_bad_oidc_params(client, snapshot):
 
 def test_registrations_not_authenticated(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:registrations")
+    auth_url = reverse("oidc_overrides:register")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
@@ -131,7 +131,7 @@ def test_registrations_not_authenticated(client):
 
 
 def test_activation_bad_oidc_params(client, snapshot):
-    auth_url = reverse("oidc_overrides:activation")
+    auth_url = reverse("oidc_overrides:activate")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assert response.status_code == 400
@@ -140,7 +140,7 @@ def test_activation_bad_oidc_params(client, snapshot):
 
 def test_activation_missing_user_info(client, snapshot):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:activation")
+    auth_url = reverse("oidc_overrides:activate")
     # Missing: email, firstname and lastname.
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
@@ -157,7 +157,7 @@ def test_activation_missing_user_info(client, snapshot):
 def test_activation_not_authenticated(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
-    auth_url = reverse("oidc_overrides:activation")
+    auth_url = reverse("oidc_overrides:activate")
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))
