@@ -28,6 +28,7 @@ class LoginForm(forms.Form):
     def __init__(self, request, *args, **kwargs):
         self.request = request
         super().__init__(*args, **kwargs)
+        self.fields["email"].disabled = "email" in self.initial
 
     def clean(self):
         email = self.cleaned_data.get("email")
@@ -93,13 +94,15 @@ class RegisterForm(auth_forms.UserCreationForm):
         model = User
         fields = ("last_name", "first_name")
 
-    def __init__(self, *args, request, **kwargs):
+    def __init__(self, *args, initial, request, **kwargs):
         self.request = request
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, initial=initial, **kwargs)
         for key in ["password1", "password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
         # Do not record the email field on the User instance, the email must be validated first.
-        self.fields["email"] = verified_email_field()
+        email_field = verified_email_field()
+        email_field.disabled = "email" in initial
+        self.fields["email"] = email_field
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -150,10 +153,12 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
     # email subject in templates/registration/password_reset_subject.txt
     # email body in templates/registration/password_reset_email.html
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["email"].label = "Adresse e-mail"
-        self.fields["email"].widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
+    def __init__(self, *args, initial, **kwargs):
+        super().__init__(*args, initial=initial, **kwargs)
+        email_field = self.fields["email"]
+        email_field.label = "Adresse e-mail"
+        email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
+        email_field.disabled = "email" in initial
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):

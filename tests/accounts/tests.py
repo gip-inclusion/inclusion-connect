@@ -100,6 +100,36 @@ class TestLoginView:
         assert email.to == [user_email]
         assert email.subject == "Vérification de l’adresse e-mail"
 
+    def test_login_hint(self, client):
+        redirect_url = reverse("oidc_overrides:logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(email="me@mailinator.com")
+        client_session = client.session
+        client_session[OIDC_SESSION_KEY] = {
+            "login_hint": user.email,
+            "firstname": user.first_name,
+            "lastname": user.last_name,
+        }
+        client_session.save()
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, reverse("accounts:register"))  # Link to registration page
+        assertContains(
+            response,
+            # Pre-filled with email address from login_hint.
+            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
+            # Disabled, users cannot change data passed by the RP.
+            'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+            count=1,
+        )
+
+        # Email is simply ignored.
+        response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
+        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assert get_user(client).is_authenticated is True
+
 
 class TestRegisterView:
     @freeze_time("2023-04-26 11:11:11")
@@ -254,6 +284,72 @@ class TestRegisterView:
         assertTemplateUsed(response, "register.html")
         assert "terms_accepted" in response.context["form"].errors
         assert mailoutbox == []
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_login_hint(self, client, mailoutbox):
+        redirect_url = reverse("oidc_overrides:logout")
+        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
+
+        client_session = client.session
+        client_session[OIDC_SESSION_KEY] = {"login_hint": "me@mailinator.com"}
+        client_session.save()
+
+        response = client.get(url)
+        assertContains(response, "Créer un compte")
+        assertContains(response, reverse("accounts:login"))  # Link to login page
+        assertContains(response, "CGU_20230302.pdf")
+        assertContains(response, quote("Politique de confidentialité_20230512.pdf"))
+        assertContains(
+            response,
+            # Pre-filled with email address from login_hint.
+            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
+            # Disabled, users cannot change data passed by the RP.
+            'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+            count=1,
+        )
+
+        response = client.post(
+            url,
+            data={
+                # Email is simply ignored.
+                "email": "evil@mailinator.com",
+                "first_name": "John",
+                "last_name": "Backy",
+                "password1": DEFAULT_PASSWORD,
+                "password2": DEFAULT_PASSWORD,
+                "terms_accepted": "on",
+            },
+        )
+        assertRedirects(response, reverse("accounts:confirm-email"))
+        assert get_user(client).is_authenticated is False
+        user_from_db = User.objects.get()
+        assert user_from_db.terms_accepted_at == user_from_db.date_joined
+        assert user_from_db.first_name == "John"
+        assert user_from_db.last_name == "Backy"
+        assert user_from_db.email == ""
+        assertQuerysetEqual(
+            EmailAddress.objects.values_list("user_id", "email", "verified_at"),
+            [(user_from_db.pk, "me@mailinator.com", None)],
+        )
+
+        [email] = mailoutbox
+        assert email.to == ["me@mailinator.com"]
+        assert email.subject == "Vérification de l’adresse e-mail"
+        uidb64 = urlsafe_base64_encode(str(user_from_db.pk).encode())
+        token = email_verification_token("me@mailinator.com")
+        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
+        verify_link = f"http://testserver{verify_path}"
+        assert email.body == (
+            "Bonjour,\n\n"
+            "Une demande de création de compte a été effectuée avec votre adresse e-mail. Si\n"
+            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
+            "afin de vérifier votre adresse e-mail :\n\n"
+            f"{verify_link}\n\n"
+            "Ce lien expire dans 1 jour.\n\n"
+            "Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.\n\n"
+            "---\n"
+            "L’équipe d’inclusion connect\n"
+        )
 
 
 class TestActivateAccountView:
@@ -428,6 +524,61 @@ class TestPasswordResetView:
         token = PasswordResetView.token_generator.make_token(user)
         password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
         assert password_reset_url in mail.outbox[0].body
+
+        # Change password
+        password = "toto"
+        response = client.get(password_reset_url)  # retrieve the modified url
+        response = client.post(response.url, data={"new_password1": password, "new_password2": password})
+
+        # User is now logged in and redirected to next_url
+        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assert get_user(client).is_authenticated is True
+
+    def test_login_hint(self, client, mailoutbox):
+        user = UserFactory(email="me@mailinator.com")
+
+        redirect_url = reverse("oidc_overrides:logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+
+        client_session = client.session
+        client_session[OIDC_SESSION_KEY] = {"login_hint": user.email}
+        client_session.save()
+
+        response = client.get(url)
+        password_reset_url = reverse("accounts:password_reset")
+        assertContains(response, password_reset_url)
+        assertContains(
+            response,
+            # Pre-filled with email address from login_hint.
+            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
+            # Disabled, users cannot change data passed by the RP.
+            'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+            count=1,
+        )
+
+        response = client.get(password_reset_url)
+        assertTemplateUsed(response, "password_reset.html")
+
+        # Email is simply ignored.
+        response = client.post(password_reset_url, data={"email": "evil@mailinator.com"})
+        assertRedirects(response, reverse("accounts:login"))
+        assertMessages(
+            response,
+            [
+                (
+                    messages.SUCCESS,
+                    "Si un compte existe avec cette adresse e-mail, "
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                ),
+            ],
+        )
+
+        # Check sent email
+        [email] = mailoutbox
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = PasswordResetView.token_generator.make_token(user)
+        password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
+        assert password_reset_url in email.body
 
         # Change password
         password = "toto"

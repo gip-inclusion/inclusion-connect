@@ -17,13 +17,18 @@ from inclusion_connect.accounts.middleware import required_action_url
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
-from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, initial_from_login_hint
 
 
 class OIDCSessionMixin:
     def save_session(self):
         self.request.session[OIDC_SESSION_KEY] = dict(self.request.GET.items())
         self.request.session["next_url"] = self.request.get_full_path()
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial.update(initial_from_login_hint(self.request))
+        return initial
 
     def get_next_url(self):
         # We probably should add a message in this case to tell the user
