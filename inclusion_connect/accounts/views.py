@@ -14,6 +14,7 @@ from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress, User
+from inclusion_connect.utils.oidc import oidc_params
 from inclusion_connect.utils.urls import add_url_params
 
 
@@ -50,7 +51,7 @@ class RegisterView(BaseUserCreationView):
 
     # TODO: Remove keycloak compatibility
     def dispatch(self, request, *args, **kwargs):
-        if all(param in self.get_oidc_params() for param in ["login_hint", "lastname", "firstname"]):
+        if all(param in oidc_params(request) for param in ["login_hint", "lastname", "firstname"]):
             return HttpResponseRedirect(reverse("accounts:activate"))
         return super().dispatch(request, *args, **kwargs)
 
@@ -73,7 +74,7 @@ class ActivateAccountView(BaseUserCreationView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_user_info(self):
-        params = self.get_oidc_params()
+        params = oidc_params(self.request)
         return {
             "email": params["login_hint"],
             "first_name": params["firstname"],

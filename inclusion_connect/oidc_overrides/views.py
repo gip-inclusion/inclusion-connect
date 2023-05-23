@@ -17,17 +17,13 @@ from inclusion_connect.accounts.middleware import required_action_url
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 
 
 class OIDCSessionMixin:
-    OIDC_SESSION_KEY = "oidc_params"
-
     def save_session(self):
-        self.request.session[self.OIDC_SESSION_KEY] = dict(self.request.GET.items())
+        self.request.session[OIDC_SESSION_KEY] = dict(self.request.GET.items())
         self.request.session["next_url"] = self.request.get_full_path()
-
-    def get_oidc_params(self):
-        return self.request.session.get(self.OIDC_SESSION_KEY, {})
 
     def get_next_url(self):
         # We probably should add a message in this case to tell the user
