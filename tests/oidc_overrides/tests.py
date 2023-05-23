@@ -35,134 +35,132 @@ def test_allow_wildcard_in_redirect_uris():
     assert not application.redirect_uri_allowed("http://site1.mydomain.com/callback")
 
 
-def test_logout_id_token_hint(client):
-    """This test simulates a call on logout endpoint with id_hint params"""
-    user = UserFactory()
-    id_token = oidc_complete_flow(client, user)
-
-    assert get_user(client).is_authenticated is True
-
-    response = call_logout(
-        client,
-        "get",
-        {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"},
-    )
-    assertRedirects(response, "https://callback/", fetch_redirect_response=False)
-
-    assert get_user(client).is_authenticated is False
-    assert has_ongoing_sessions(user) is False
-    assert token_are_revoked(user) is True
-
-
-@pytest.mark.skip()
-def test_logout_expired_token_and_session(client):
-    """This test simulates a call on logout endpoint with expired token and sessions"""
-    user = UserFactory()
-    with freeze_time("2023-05-05 14:29:20"):
+class TestLogoutView:
+    def test_id_token_hint(self, client):
+        """This test simulates a call on logout endpoint with id_hint params"""
+        user = UserFactory()
         id_token = oidc_complete_flow(client, user)
+
         assert get_user(client).is_authenticated is True
 
-    with freeze_time("2023-05-05 14:59:21"):
-        params = {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"}
-        response = call_logout(client, "get", params)
-        assert response.status_code == 200
-
-        params["allow"] = True
-        response = call_logout(client, "post", params)
+        response = call_logout(
+            client,
+            "get",
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"},
+        )
         assertRedirects(response, "https://callback/", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
 
+    @pytest.mark.skip()
+    def test_expired_token_and_session(self, client):
+        """This test simulates a call on logout endpoint with expired token and sessions"""
+        user = UserFactory()
+        with freeze_time("2023-05-05 14:29:20"):
+            id_token = oidc_complete_flow(client, user)
+            assert get_user(client).is_authenticated is True
 
-@pytest.mark.skip()
-def test_logout_bad_login_hint(client):
-    """This test simulates a call on logout endpoint with bad login hint"""
-    user = UserFactory()
-    oidc_complete_flow(client, user)
+        with freeze_time("2023-05-05 14:59:21"):
+            params = {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"}
+            response = call_logout(client, "get", params)
+            assert response.status_code == 200
 
-    assert get_user(client).is_authenticated is True
+            params["allow"] = True
+            response = call_logout(client, "post", params)
+            assertRedirects(response, "https://callback/", fetch_redirect_response=False)
 
-    response = call_logout(client, "get", {"id_token_hint": 111})
-    assert response.status_code == 400
+            assert get_user(client).is_authenticated is False
+            assert has_ongoing_sessions(user) is False
+            assert token_are_revoked(user) is True
 
-    assert token_are_revoked(user) is False
-    assert get_user(client).is_authenticated is True
-    assert has_ongoing_sessions(user) is True
+    @pytest.mark.skip()
+    def test_bad_login_hint(self, client):
+        """This test simulates a call on logout endpoint with bad login hint"""
+        user = UserFactory()
+        oidc_complete_flow(client, user)
 
+        assert get_user(client).is_authenticated is True
 
-def test_authorize_bad_oidc_params(client, snapshot):
-    # Application does not exist
-    auth_url = reverse("oidc_overrides:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    assert response.status_code == 400
-    assert str(parse_response_to_soup(response, selector="main")) == snapshot
+        response = call_logout(client, "get", {"id_token_hint": 111})
+        assert response.status_code == 400
 
-
-def test_authorize_not_authenticated(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:login"))
-    assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
-
-
-def test_registrations_bad_oidc_params(client, snapshot):
-    # Application does not exist
-    auth_url = reverse("oidc_overrides:register")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    assert response.status_code == 400
-    assert str(parse_response_to_soup(response, selector="main")) == snapshot
+        assert token_are_revoked(user) is False
+        assert get_user(client).is_authenticated is True
+        assert has_ongoing_sessions(user) is True
 
 
-def test_registrations_not_authenticated(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:register")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:register"))
-    assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
+class TestAuthorizeView:
+    def test_bad_oidc_params(self, client, snapshot):
+        # Application does not exist
+        auth_url = reverse("oidc_overrides:authorize")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assert response.status_code == 400
+        assert str(parse_response_to_soup(response, selector="main")) == snapshot
+
+    def test_not_authenticated(self, client):
+        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+        auth_url = reverse("oidc_overrides:authorize")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
+        assert client.session["next_url"] == auth_complete_url
+        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
-def test_activation_bad_oidc_params(client, snapshot):
-    auth_url = reverse("oidc_overrides:activate")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    assert response.status_code == 400
-    assert str(parse_response_to_soup(response, selector="main")) == snapshot
+class TestRegisterView:
+    def test_bad_oidc_params(self, client, snapshot):
+        # Application does not exist
+        auth_url = reverse("oidc_overrides:register")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assert response.status_code == 400
+        assert str(parse_response_to_soup(response, selector="main")) == snapshot
+
+    def test_not_authenticated(self, client):
+        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+        auth_url = reverse("oidc_overrides:register")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:register"))
+        assert client.session["next_url"] == auth_complete_url
+        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
 
-def test_activation_missing_user_info(client, snapshot):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:activate")
-    # Missing: email, firstname and lastname.
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
-    response = client.get(auth_complete_url)
-    # The user is redirected to the activation view as the oidc parameters are valid
-    assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
-    assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
+class TestActivateView:
+    def test_bad_oidc_params(self, client, snapshot):
+        auth_url = reverse("oidc_overrides:activate")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assert response.status_code == 400
+        assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-    response = client.get(response.url)
-    assert response.status_code == 400
-    assert str(parse_response_to_soup(response, selector="main")) == snapshot
+    def test_missing_user_info(self, client, snapshot):
+        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+        auth_url = reverse("oidc_overrides:activate")
+        # Missing: email, firstname and lastname.
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        # The user is redirected to the activation view as the oidc parameters are valid
+        assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
+        assert client.session["next_url"] == auth_complete_url
+        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == OIDC_PARAMS
 
+        response = client.get(response.url)
+        assert response.status_code == 400
+        assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-def test_activation_not_authenticated(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
-    auth_url = reverse("oidc_overrides:activate")
-    auth_complete_url = add_url_params(auth_url, auth_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:activate"))
-    assert client.session["next_url"] == auth_complete_url
-    assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
+    def test_not_authenticated(self, client):
+        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+        auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
+        auth_url = reverse("oidc_overrides:activate")
+        auth_complete_url = add_url_params(auth_url, auth_params)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:activate"))
+        assert client.session["next_url"] == auth_complete_url
+        assert client.session[OIDCSessionMixin.OIDC_SESSION_KEY] == auth_params
 
 
 def test_user_application_link(client):

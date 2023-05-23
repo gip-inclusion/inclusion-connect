@@ -21,7 +21,7 @@ from django.urls import include, path, re_path
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
-    # Login and registration urls
+    # Login and register urls
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
     # OIDC urls
