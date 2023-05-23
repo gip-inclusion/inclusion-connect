@@ -272,7 +272,7 @@ def test_activate_account(client):
 
     client_session = client.session
     client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
-        "email": user.email,
+        "login_hint": user.email,
         "firstname": user.first_name,
         "lastname": user.last_name,
     }
@@ -312,7 +312,7 @@ def test_account_activation_email_already_exists(client):
 
     client_session = client.session
     client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
-        "email": user.email,
+        "login_hint": user.email,
         "firstname": user.first_name,
         "lastname": user.last_name,
     }
@@ -350,7 +350,7 @@ def test_account_activation_email_already_exists_not_verified(client):
 
     client_session = client.session
     client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
-        "email": user_email,
+        "login_hint": user_email,
         "firstname": user.first_name,
         "lastname": user.last_name,
     }
@@ -383,7 +383,7 @@ def test_activate_account_terms_are_required(client):
 
     client_session = client.session
     client_session[OIDCSessionMixin.OIDC_SESSION_KEY] = {
-        "email": user.email,
+        "login_hint": user.email,
         "firstname": user.first_name,
         "lastname": user.last_name,
     }

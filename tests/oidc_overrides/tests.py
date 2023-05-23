@@ -156,7 +156,7 @@ def test_activation_missing_user_info(client, snapshot):
 
 def test_activation_not_authenticated(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_params = OIDC_PARAMS | {"email": "email", "firstname": "firstname", "lastname": "lastname"}
+    auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
     auth_url = reverse("oidc_overrides:activation")
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
