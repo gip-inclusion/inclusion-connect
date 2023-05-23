@@ -13,7 +13,7 @@ from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 from oauth2_provider.settings import oauth2_settings
 
-from inclusion_connect.accounts.middleware import get_user_next_action_url
+from inclusion_connect.accounts.middleware import required_action_url
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
@@ -36,7 +36,7 @@ class OIDCSessionMixin:
 
     def get_success_url(self):
         user = getattr(self, "object", self.request.user)  # in CreateView, user is stored in self.object
-        return get_user_next_action_url(user) or self.get_next_url()
+        return required_action_url(user) or self.get_next_url()
 
     def setup(self, request, *args, **kwargs):
         next_url = request.GET.get("next")

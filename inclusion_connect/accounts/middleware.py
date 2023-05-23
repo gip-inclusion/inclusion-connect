@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 
-def get_user_next_action_url(user):
+def required_action_url(user):
     if user.must_accept_terms:
         return reverse("accounts:accept_terms")
     if user.must_reset_password:
@@ -22,7 +22,7 @@ def post_login_actions(get_response):
         path_is_whitelisted = request.path in whitelisted_urls
 
         if user.is_authenticated and user.is_staff is False and path_is_whitelisted is False:
-            next_action_url = get_user_next_action_url(user)
+            next_action_url = required_action_url(user)
             if next_action_url and not request.path == next_action_url:
                 return HttpResponseRedirect(next_action_url)
 
