@@ -44,6 +44,8 @@ class TestLoginView:
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
         assert get_user(client).is_authenticated is True
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
 
     def test_no_next_url(self, client):
         user = UserFactory()
@@ -73,6 +75,7 @@ class TestLoginView:
         assertTemplateUsed(response, "login.html")
         assertContains(response, "Adresse e-mail ou mot de passe invalide.")
         assert not get_user(client).is_authenticated
+        assert client.session["next_url"] == "anything"
 
     def test_email_not_verified(self, client, mailoutbox):
         redirect_url = reverse("oidc_overrides:logout")
@@ -99,6 +102,7 @@ class TestLoginView:
         [email] = mailoutbox
         assert email.to == [user_email]
         assert email.subject == "Vérification de l’adresse e-mail"
+        assert client.session["next_url"] == redirect_url
 
     def test_login_hint(self, client):
         redirect_url = reverse("oidc_overrides:logout")
@@ -129,6 +133,8 @@ class TestLoginView:
         response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
         assert get_user(client).is_authenticated is True
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
 
 
 class TestRegisterView:
@@ -157,6 +163,7 @@ class TestRegisterView:
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
+        assert client.session["next_url"] == redirect_url
         user_from_db = User.objects.get()
         assert user_from_db.terms_accepted_at == user_from_db.date_joined
         assert user_from_db.first_name == "Jack"
@@ -202,6 +209,7 @@ class TestRegisterView:
                 "terms_accepted": "on",
             },
         )
+        assert client.session["next_url"] == redirect_url
         assertTemplateUsed(response, "register.html")
         assert "email" in response.context["form"].errors
         assertContains(
@@ -231,6 +239,7 @@ class TestRegisterView:
                 "terms_accepted": "on",
             },
         )
+        assert client.session["next_url"] == redirect_url
         assertTemplateUsed(response, "register.html")
         assert "email" in response.context["form"].errors
         msg = (
@@ -259,6 +268,7 @@ class TestRegisterView:
                 "terms_accepted": "on",
             },
         )
+        assert client.session["next_url"] == redirect_url
         assertTemplateUsed(response, "register.html")
         assert "email" in response.context["form"].errors
         login_url = reverse("accounts:login")
@@ -281,6 +291,7 @@ class TestRegisterView:
                 "password2": DEFAULT_PASSWORD,
             },
         )
+        assert client.session["next_url"] == redirect_url
         assertTemplateUsed(response, "register.html")
         assert "terms_accepted" in response.context["form"].errors
         assert mailoutbox == []
@@ -322,6 +333,7 @@ class TestRegisterView:
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
+        assert client.session["next_url"] == redirect_url
         user_from_db = User.objects.get()
         assert user_from_db.terms_accepted_at == user_from_db.date_joined
         assert user_from_db.first_name == "John"
@@ -385,6 +397,7 @@ class TestActivateAccountView:
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
+        assert client.session["next_url"] == redirect_url
         user = User.objects.get()  # Previous instance was a built factory, so refresh_from_db won't work
         assert user.terms_accepted_at == user.date_joined
         email_address = EmailAddress.objects.get()
@@ -430,6 +443,7 @@ class TestActivateAccountView:
             ),
         )
         assert get_user(client).is_authenticated is False
+        assert client.session["next_url"] == redirect_url
 
     def test_email_already_exists_not_verified(self, client):
         redirect_url = reverse("oidc_overrides:logout")
@@ -464,6 +478,7 @@ class TestActivateAccountView:
             count=1,
         )
         assert get_user(client).is_authenticated is False
+        assert client.session["next_url"] == redirect_url
 
     def test_terms_are_required(self, client):
         redirect_url = reverse("oidc_overrides:logout")
@@ -490,6 +505,7 @@ class TestActivateAccountView:
         )
         assertTemplateUsed(response, "activate_account.html")
         assert "terms_accepted" in response.context["form"].errors
+        assert client.session["next_url"] == redirect_url
 
 
 class TestPasswordResetView:
@@ -507,6 +523,7 @@ class TestPasswordResetView:
 
         response = client.post(password_reset_url, data={"email": user.email})
         assertRedirects(response, reverse("accounts:login"))
+        assert client.session["next_url"] == redirect_url
         assertMessages(
             response,
             [
@@ -533,6 +550,8 @@ class TestPasswordResetView:
         # User is now logged in and redirected to next_url
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
         assert get_user(client).is_authenticated is True
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
 
     def test_login_hint(self, client, mailoutbox):
         user = UserFactory(email="me@mailinator.com")
@@ -572,6 +591,7 @@ class TestPasswordResetView:
                 ),
             ],
         )
+        assert client.session["next_url"] == redirect_url
 
         # Check sent email
         [email] = mailoutbox
@@ -588,6 +608,8 @@ class TestPasswordResetView:
         # User is now logged in and redirected to next_url
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
         assert get_user(client).is_authenticated is True
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
 
 
 class TestEditUserInfoView:
@@ -718,9 +740,12 @@ def test_new_terms(client, terms_accepted_at):
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, reverse("accounts:accept_terms"))
     assert get_user(client).is_authenticated is True
+    assert client.session["next_url"] == redirect_url
 
     response = client.post(reverse("accounts:accept_terms"))
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
 
     user.refresh_from_db()
     assert user.terms_accepted_at == timezone.now()
@@ -952,12 +977,15 @@ class TestChangeTemporaryPasswordView:
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, reverse("accounts:change_temporary_password"))
         assert get_user(client).is_authenticated is True
+        assert client.session["next_url"] == redirect_url
 
         response = client.post(
             reverse("accounts:change_temporary_password"),
             data={"new_password1": "toto", "new_password2": "toto"},
         )
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
 
         user.refresh_from_db()
         assert user.must_reset_password is False

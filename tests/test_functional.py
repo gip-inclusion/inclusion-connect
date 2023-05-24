@@ -314,6 +314,8 @@ def test_edit_user_info_and_password(client, mailoutbox):
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
     assertRedirects(response, edit_user_info_url)
     assertContains(response, "<h1>\n                Informations générales\n            </h1>")
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
 
     # Page contains return to referrer link
     assertContains(response, "Retour")
@@ -340,7 +342,7 @@ def test_edit_user_info_and_password(client, mailoutbox):
     assert verification_email.subject == "Vérification de l’adresse e-mail"
     verification_url = get_verification_link(verification_email.body)
     response = client.get(verification_url)
-    assertRedirects(response, edit_user_info_url)
+    assertRedirects(response, reverse("accounts:edit_user_info"))
 
     # Go change password
     response = client.get(change_password_url)
