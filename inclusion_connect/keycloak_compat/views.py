@@ -10,11 +10,11 @@ from inclusion_connect.accounts.helpers import login
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.keycloak_compat.utils import realm_from_request
-from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress
+from inclusion_connect.utils.oidc import get_next_url
 
 
-class ActionToken(OIDCSessionMixin, View):
+class ActionToken(View):
     def get(self, request):
         try:
             request_jwt = request.GET["key"]
@@ -53,5 +53,5 @@ class ActionToken(OIDCSessionMixin, View):
                 return HttpResponseRedirect(url)
             email_address.verify()
             login(request, email_address.user)
-            return HttpResponseRedirect(self.get_success_url())
+            return HttpResponseRedirect(get_next_url(request))
         raise Http404

@@ -14,7 +14,7 @@ from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import EmailAddress, User
-from inclusion_connect.utils.oidc import initial_from_login_hint, oidc_params
+from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint, oidc_params
 from inclusion_connect.utils.urls import add_url_params
 
 
@@ -117,10 +117,10 @@ class PasswordResetConfirmView(OIDCSessionMixin, auth_views.PasswordResetConfirm
 class AcceptTermsView(LoginRequiredMixin, OIDCSessionMixin, TemplateView):
     template_name = "accept_terms.html"
 
-    def post(self, *args, **kwargs):
-        self.request.user.terms_accepted_at = timezone.now()
-        self.request.user.save()
-        return HttpResponseRedirect(self.get_success_url())
+    def post(self, request, *args, **kwargs):
+        request.user.terms_accepted_at = timezone.now()
+        request.user.save()
+        return HttpResponseRedirect(get_next_url(request))
 
 
 class ConfirmEmailView(TemplateView):
@@ -139,7 +139,7 @@ class ConfirmEmailView(TemplateView):
         return HttpResponseRedirect(reverse("accounts:confirm-email"))
 
 
-class ConfirmEmailTokenView(OIDCSessionMixin, View):
+class ConfirmEmailTokenView(View):
     @staticmethod
     def decode_email(encoded_email):
         return http.urlsafe_base64_decode(encoded_email).decode()
@@ -177,7 +177,7 @@ class ConfirmEmailTokenView(OIDCSessionMixin, View):
             del request.session[EMAIL_CONFIRM_KEY]
         except KeyError:
             pass
-        return HttpResponseRedirect(self.get_success_url())
+        return HttpResponseRedirect(get_next_url(request))
 
 
 class ChangeTemporaryPassword(LoginRequiredMixin, OIDCSessionMixin, FormView):

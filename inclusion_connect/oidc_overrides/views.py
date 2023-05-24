@@ -3,7 +3,7 @@ import json
 from django.contrib.auth import logout
 from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import View
 from jwcrypto import jwt
@@ -13,11 +13,10 @@ from oauth2_provider.http import OAuth2ResponseRedirect
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 from oauth2_provider.settings import oauth2_settings
 
-from inclusion_connect.accounts.middleware import required_action_url
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
-from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, initial_from_login_hint
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
 
 
 class OIDCSessionMixin:
@@ -30,14 +29,8 @@ class OIDCSessionMixin:
         initial.update(initial_from_login_hint(self.request))
         return initial
 
-    def get_next_url(self):
-        # We probably should add a message in this case to tell the user
-        # that something is fishy
-        return self.request.session.get("next_url") or reverse("accounts:edit_user_info")
-
     def get_success_url(self):
-        user = getattr(self, "object", self.request.user)  # in CreateView, user is stored in self.object
-        return required_action_url(user) or self.get_next_url()
+        return get_next_url(self.request)
 
     def setup(self, request, *args, **kwargs):
         next_url = request.GET.get("next")
