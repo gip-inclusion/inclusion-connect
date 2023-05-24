@@ -108,13 +108,16 @@ class PasswordResetView(auth_views.PasswordResetView):
         return reverse("accounts:login")
 
 
-class PasswordResetConfirmView(OIDCSessionMixin, auth_views.PasswordResetConfirmView):
+class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     template_name = "password_reset_confirm.html"
     form_class = forms.SetPasswordForm
     post_reset_login = True
 
+    def get_success_url(self):
+        return get_next_url(self.request)
 
-class AcceptTermsView(LoginRequiredMixin, OIDCSessionMixin, TemplateView):
+
+class AcceptTermsView(LoginRequiredMixin, TemplateView):
     template_name = "accept_terms.html"
 
     def post(self, request, *args, **kwargs):
@@ -180,7 +183,7 @@ class ConfirmEmailTokenView(View):
         return HttpResponseRedirect(get_next_url(request))
 
 
-class ChangeTemporaryPassword(LoginRequiredMixin, OIDCSessionMixin, FormView):
+class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
     template_name = "password_reset_confirm.html"
     form_class = forms.SetPasswordForm
 
@@ -189,6 +192,9 @@ class ChangeTemporaryPassword(LoginRequiredMixin, OIDCSessionMixin, FormView):
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**kwargs) | {"validlink": True}
+
+    def get_success_url(self):
+        return get_next_url(self.request)
 
     def form_valid(self, form):
         user = form.save()
