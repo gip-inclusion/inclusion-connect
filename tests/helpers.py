@@ -69,6 +69,7 @@ def oidc_complete_flow(client, user):
     auth_url = reverse("oidc_overrides:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
+    assert client.session["next_url"] == auth_complete_url
     response = client.post(
         response.url,
         data={
@@ -76,6 +77,8 @@ def oidc_complete_flow(client, user):
             "password": DEFAULT_PASSWORD,
         },
     )
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
     response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
     return oidc_flow_followup(client, auth_response_params, user)

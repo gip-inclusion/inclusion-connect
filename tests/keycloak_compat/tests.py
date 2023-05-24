@@ -236,6 +236,8 @@ def test_user_account(client, realm):
     assert get_user(client).is_authenticated is True
     assertRedirects(response, account_url)
     assertContains(response, "Retour")
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
 
 
 class TestActionToken:

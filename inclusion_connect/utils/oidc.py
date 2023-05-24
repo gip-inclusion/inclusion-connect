@@ -19,9 +19,6 @@ def initial_from_login_hint(request):
 
 def get_next_url(request):
     next_url = required_action_url(request.user)
-    if not next_url:
-        try:
-            return request.session["next_url"]
-        except KeyError:
-            return reverse("accounts:edit_user_info")
-    return next_url
+    if next_url:
+        return next_url
+    return request.session.pop("next_url", reverse("accounts:edit_user_info"))
