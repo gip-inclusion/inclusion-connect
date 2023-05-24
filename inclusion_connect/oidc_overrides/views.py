@@ -17,6 +17,7 @@ from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.validators import CustomOAuth2Validator
 from inclusion_connect.users.models import User, UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
+from inclusion_connect.utils.urls import is_inclusion_connect_url
 
 
 class OIDCSessionMixin:
@@ -34,7 +35,7 @@ class OIDCSessionMixin:
 
     def setup(self, request, *args, **kwargs):
         next_url = request.GET.get("next")
-        if next_url:
+        if next_url and is_inclusion_connect_url(request, next_url):
             request.session["next_url"] = next_url
         return super().setup(request, *args, **kwargs)
 

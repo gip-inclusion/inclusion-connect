@@ -1,6 +1,6 @@
 from urllib.parse import parse_qsl, urlparse
 
-from django.utils.http import urlencode
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 
 
 def add_url_params(url: str, params: dict[str, str]) -> str:
@@ -29,3 +29,7 @@ def add_url_params(url: str, params: dict[str, str]) -> str:
 
 def get_url_params(url: str) -> dict[str, str]:
     return dict(parse_qsl(urlparse(url).query))
+
+
+def is_inclusion_connect_url(request, url):
+    return url_has_allowed_host_and_scheme(url, request.get_host(), require_https=request.is_secure())

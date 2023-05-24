@@ -2,6 +2,7 @@
 import datetime
 import re
 
+import pytest
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
@@ -30,11 +31,18 @@ def get_verification_link(body):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_register_endpoint(client, mailoutbox):
+@pytest.mark.parametrize(
+    "auth_url",
+    [
+        reverse("oidc_overrides:register"),
+        # Verify the GET parameter `next` does not override OIDC redirect_uri.
+        f"{reverse('oidc_overrides:register')}?next=http://evil.com",
+    ],
+)
+def test_register_endpoint(auth_url, client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_url = reverse("oidc_overrides:register")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
@@ -81,11 +89,18 @@ def test_register_endpoint(client, mailoutbox):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_activate_endpoint(client, mailoutbox):
+@pytest.mark.parametrize(
+    "auth_url",
+    [
+        reverse("oidc_overrides:activate"),
+        # Verify the GET parameter `next` does not override OIDC redirect_uri.
+        f"{reverse('oidc_overrides:activate')}?next=http://evil.com",
+    ],
+)
+def test_activate_endpoint(auth_url, client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_url = reverse("oidc_overrides:activate")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
@@ -137,11 +152,18 @@ def test_activate_endpoint(client, mailoutbox):
     oidc_flow_followup(client, auth_response_params, user)
 
 
-def test_login_endpoint(client):
+@pytest.mark.parametrize(
+    "auth_url",
+    [
+        reverse("oidc_overrides:authorize"),
+        # Verify the GET parameter `next` does not override OIDC redirect_uri.
+        f"{reverse('oidc_overrides:authorize')}?next=http://evil.com",
+    ],
+)
+def test_login_endpoint(auth_url, client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory()
 
-    auth_url = reverse("oidc_overrides:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
