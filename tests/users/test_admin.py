@@ -345,10 +345,13 @@ class TestUserAdmin:
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
-        assertRedirects(response, url)
+        assert response.status_code == 200
+        assertContains(response, "L’utilisateur doit avoir au moins une adresse email.")
         user.refresh_from_db()
-        assert user.email == ""
-        assert user.email_addresses.exists() is False
+        assert user.email == "old@mailinator.com"
+        email_address = user.email_addresses.get()
+        assert email_address.email == "old@mailinator.com"
+        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 0, 0, tzinfo=datetime.timezone.utc)
 
     @freeze_time("2023-05-12T16:00:00+02:00")
     def test_save_while_user_is_changing_email(self, client):

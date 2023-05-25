@@ -22,11 +22,13 @@ class EmailAddressInlineFormSet(forms.BaseInlineFormSet):
         for form in self.forms:
             if is_email_verified(form):
                 verified_addresses += 1
-            else:
+            elif not self._should_delete_form(form):
                 unverified_addresses += 1
         if verified_addresses >= 2 or unverified_addresses >= 2:
             non = "non " if unverified_addresses >= 2 else ""
             raise ValidationError(f"L’utilisateur ne peut avoir qu’une seule adresse e-mail {non}vérifiée.")
+        if verified_addresses + unverified_addresses == 0:
+            raise ValidationError("L’utilisateur doit avoir au moins une adresse email.")
 
     def save(self, commit=True):
         for i, form in enumerate(self.forms):
@@ -50,6 +52,7 @@ class EmailAddressInlineFormSet(forms.BaseInlineFormSet):
 
 class EmailAddressInline(admin.TabularInline):
     extra = 0
+    min_num = 1  # Must have an email address.
     max_num = 2  # 1 verified and 1 not verified.
     model = EmailAddress
     readonly_fields = ["created_at"]
