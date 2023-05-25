@@ -2,7 +2,7 @@ import pytest
 from django.test.client import Client
 
 
-pytest.register_assert_rewrite("tests.asserts")
+pytest.register_assert_rewrite("tests.asserts", "tests.helpers")
 
 
 @pytest.hookimpl(tryfirst=True)
