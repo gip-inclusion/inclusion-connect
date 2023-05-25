@@ -150,9 +150,6 @@ class ActivateAccountForm(RegisterForm):
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
-    # email subject in templates/registration/password_reset_subject.txt
-    # email body in templates/registration/password_reset_email.html
-
     def __init__(self, *args, initial, **kwargs):
         super().__init__(*args, initial=initial, **kwargs)
         email_field = self.fields["email"]
@@ -162,9 +159,6 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
-    # email subject in templates/registration/password_reset_subject.txt
-    # email body in templates/registration/password_reset_email.html
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for key in ["new_password1", "new_password2"]:
