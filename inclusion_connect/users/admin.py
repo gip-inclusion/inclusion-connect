@@ -70,7 +70,8 @@ class AdminPasswordChange(auth_forms.AdminPasswordChangeForm):
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
-    readonly_fields = ["username", "email"]
+    readonly_fields = ["username", "email", "terms_accepted_at"]
+    list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline]
     change_password_form = AdminPasswordChange
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
@@ -85,6 +86,7 @@ class UserAdmin(auth_admin.UserAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         assert fieldsets[0] == (None, {"fields": ("username", "password")})
-        new_fieldsets = copy.deepcopy(fieldsets)
+        new_fieldsets = list(copy.deepcopy(fieldsets))
         new_fieldsets[0][1]["fields"] += ("must_reset_password",)
+        new_fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
         return new_fieldsets
