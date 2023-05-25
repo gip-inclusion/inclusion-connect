@@ -17,9 +17,18 @@ class Migration(migrations.Migration):
             name="EmailAddress",
             fields=[
                 (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
                     "email",
                     django.contrib.postgres.fields.citext.CIEmailField(
-                        max_length=254, primary_key=True, serialize=False, verbose_name="adresse e-mail"
+                        db_index=True, max_length=254, verbose_name="adresse e-mail"
                     ),
                 ),
                 (

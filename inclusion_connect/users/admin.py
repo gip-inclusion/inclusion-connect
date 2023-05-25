@@ -29,11 +29,23 @@ class EmailAddressInlineFormSet(forms.BaseInlineFormSet):
             raise ValidationError(f"L’utilisateur ne peut avoir qu’une seule adresse e-mail {non}vérifiée.")
 
     def save(self, commit=True):
-        instances = super().save(commit=True)
-        for form in self.forms:
-            if not form.initial.get("verified_at") and "verified_at" in form.changed_data:
-                form.instance.verify(form.cleaned_data["verified_at"])
-        return instances
+        for i, form in enumerate(self.forms):
+            newly_verified = not form.initial.get("verified_at") and is_email_verified(form)
+            if newly_verified:
+                verified_email_address = form.instance
+                try:
+                    self.deleted_objects = [self.forms[1 - i].instance]
+                except IndexError:
+                    self.deleted_objects = []
+                if verified_email_address.pk is None:
+                    self.new_objects = [verified_email_address]
+                    self.changed_objects = []
+                else:
+                    self.new_objects = []
+                    self.changed_objects = [(verified_email_address, form.changed_data)]
+                verified_email_address.verify(form.cleaned_data["verified_at"])
+                return [verified_email_address]
+        return super().save(commit=commit)
 
 
 class EmailAddressInline(admin.TabularInline):
