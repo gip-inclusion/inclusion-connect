@@ -3,7 +3,8 @@
 ## Pour utiliser Inclusion Connect
 
 - [Le protocole OpenID Connect](openid_connect.md)
-- [Comment utiliser Inclusion Connect](inclusion_connect.md)
+- [Détails end-points d'Inclusion Connect](inclusion_connect.md)
+- [Parcours utilisateurs](user_journey.md)
 
 ## Pour développer
 

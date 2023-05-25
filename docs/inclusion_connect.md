@@ -2,23 +2,28 @@
 
 Afin d'implémenter Inclusion Connect, il faut un compte pour votre <abbr>FS</abbr> (Fournisseur de Service) sur les plateformes d'intégration et de production.
 
-- Vous pouvez observer l'ensemble des parcours de connexion / création de compte / etc à [cette page](https://plateforme-inclusion.notion.site/Documentation-Produit-1253040ad01f4b939d67f056e056e7d0)
+- Vous pouvez observer l'ensemble des parcours utilisateurs à [cette page](user_journey.md)
 - Pour plus de détail sur les différents _endpoints_ vous pouvez continuer à lire cette page.
+
+Contactez l'équipe du projet pour obtenir les variables de production et de recette.
 
 ## Nos endpoints
 
 Le format des urls est le suivant :
 
-|               |                                                                              |
-|           --- | ---                                                                          |
-| Authorization | https://{hostname}/realms/{realm-name}/protocol/openid-connect/auth          |
-| Registration  | https://{hostname}/realms/{realm-name}/protocol/openid-connect/registrations |
-| Token         | https://{hostname}/realms/{realm-name}/protocol/openid-connect/token         |
-| UserInfo      | https://{hostname}/realms/{realm-name}/protocol/openid-connect/userinfo      |
-| Logout        | https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout        |
-| Login-Reset   | https://{hostname}/realms/{realm-name}/login-actions/reset-credentials       |
+|               |                                       |
+|           --- | ---                                   |
+| Authorization | https://{hostname}/auth/authorize     |
+| Registration  | https://{hostname}/auth/register      |
+| Activation    | https://{hostname}/auth/activate      |
+| Token         | https://{hostname}/auth/token         |
+| UserInfo      | https://{hostname}/auth/userinfo      |
+| Logout        | https://{hostname}/auth/logout        |
 
-Contactez l'équipe du projet pour obtenir les variables de production et de recette.
+
+D'un point de vue OpenID Connect, les end-points Authorization, Registration et Activation
+sont identiques. La seule chose qui change est si l'utilisateur n'est pas connecté, dans ce cas on
+le redirige vers une vue différente pour chaque end-point.
 
 ## Détail du fonctionnement
 
@@ -26,29 +31,30 @@ Contactez l'équipe du projet pour obtenir les variables de production et de rec
 sequenceDiagram
 Note right of Utilisateur: L'utilisateur clique sur le bouton "Inclusion Connect"
 Utilisateur ->> FS: ;
-FS -->> Utilisateur: Redirect 302 <IC_URL>/protocol/openid-connect/auth
-Utilisateur ->> Inclusion Connect: GET <IC_URL>/protocol/openid-connect/auth
+FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/authorize
+Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/authorize
 Inclusion Connect -->> Utilisateur: Redirect 302 <FS_URL>/<URL_CALLBACK>
 Utilisateur ->> FS: GET <FS_URL>/<URL_CALLBACK>
-FS ->> Inclusion Connect: POST <IC_URL>/protocol/openid-connect/token
+FS ->> Inclusion Connect: POST <IC_URL>/auth/token
 Inclusion Connect -->> FS: HTTP Response 200
-FS ->> Inclusion Connect: POST <IC_URL>/protocol/openid-connect/userinfo
+FS ->> Inclusion Connect: POST <IC_URL>/auth/userinfo
 Inclusion Connect -->> FS: HTTP Response 200
 FS -->> Utilisateur: Redirect 302 <FS_URL>/page_authentifée
 Note right of Utilisateur: Plus tard l'utilisateur se déconnecte du fournisseur de service
 Utilisateur ->> FS: ;
-FS -->> Utilisateur: Redirect 302 <IC_URL>/protocol/openid-connect/logout
-Utilisateur ->> Inclusion Connect: GET <IC_URL>/protocol/openid-connect/logout
+FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/logout
+Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/logout
 Inclusion Connect -->> Utilisateur: Redirect 302 <FS_URL>/<POST_LOGOUT_REDIRECT_URI>
 Utilisateur ->> FS: GET <FS_URL>/<POST_LOGOUT_REDIRECT_URI>
 ```
 
 ## Détail des flux
 
-Le détail des flux peut être trouvé
-[en anglais sur cette page](https://openid.net/specs/openid-connect-core-1_0.html).
+Le détail des flux peut être trouvé en anglais ici :
+- https://openid.net/specs/openid-connect-core-1_0.html
+- https://openid.net/specs/openid-connect-rpinitiated-1_0.html
 
-### 1) Authentification / Création de compte
+### 1) Authentification / Création de compte / Activation de compte
 
 #### Description
 
@@ -59,7 +65,7 @@ Le détail des flux peut être trouvé
 
 #### Requête (Authentification)
 
-- URL : `https://{hostname}/realms/{realm-name}/protocol/openid-connect/auth?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- URL : `https://{hostname}/auth/authorize?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
 - Méthode : GET
 
 Les paramètres sont les suivants :
@@ -69,7 +75,9 @@ Les paramètres sont les suivants :
 - **scope** : les ressources auxquelles on souhaite avoir accès. Il faut utiliser `openid profile email`.
 - **state** : valeur générée aléatoirement par le FS qu'Inclusion Connect renvoie tel quel dans la réponse à cet appel pour être ensuite vérifié par le FS. Il est utilisé afin d’empêcher l’exploitation de failles CSRF.
 - **nonce** : valeur générée aléatoirement par le FS qu'Inclusion Connect renvoie tel quel dans la réponse à l'appel à /token, pour être ensuite vérifié par le FS. Il est utilisé pour empêcher les attaques par rejeu.
-- **login_hint**: paramètre supplémentaire utilisé par Inclusion Connect afin de préremplir une adresse e-mail dans le formulaire de création de compte sur Inclusion Connect. Attention : le formulaire ne bloque pas l'édition et il faudra donc vérifier que l'utilisateur a conservé cet email à l'aide de l'_access token_ plus tard. Lorsque ce paramètres est fourni, il n'est pas possible de changer l'adresse email pré-remplie.
+- **login_hint**: paramètre optionnel servant à pré-remplir une adresse e-mail dans les différents formulaires de connexion / création de compte. Lorsque ce paramètre est fourni, il n'est pas possible de changer l'adresse email pré-remplie.
+
+/!\ Attention : si l'utilisateur est déjà connecté avec un autre email, Inclusion Connect acceptera automatiquement la demande de connexion, et l'email ne correspondra donc pas a celui donné dans login_hint. Il faut donc que le FS vérifie que l'email est identique de son côté.
 
 Une fois sur Inclusion Connect, il y a 3 possibilités.
 - Si c'est un nouvel utilisateur, il devra se créer un compte, puis recevra un email de vérification d'adresse email qui le renverra sur Inclusion Connect avant d'être redirigé sur **redirect_uri**.
@@ -80,13 +88,23 @@ Une fois sur Inclusion Connect, il y a 3 possibilités.
 
 Il est possible d'utiliser l'endpoint _Registration_ pour que l'utilisateur arrive directement sur cette seconde page.
 
-- URL : `https://{hostname}/realms/{realm-name}/protocol/openid-connect/registrations?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- URL : `https://{hostname}/auth/register?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
 - Méthode : GET
 
-Les paramètres sont les mêmes que pour l'Authentification, plus les suivants :
+Les paramètres sont les mêmes que pour l'Authentification.
+
+#### Requête (Activation de compte)
+
+Il est possible d'utiliser l'endpoint _Activation_ pour que l'utilisateur arrive directement sur une page de création de compte pré-remplie.
+
+- URL : `https://{hostname}/auth/activate?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- Méthode : GET
+
+Les paramètres sont les mêmes que pour l'Authentification, plus :
+- **login_hint**: devient obligatoire
 - **firstname**: permet de pré-remplir le prénom de l'utilisateur
 - **lastname**: permet de pré-remplir le nom de famille de l'utilisateur
-Sur cette page, les champs pré-remplis ne sont pas modifiables. Cela permet de s'assurer qu'un utilisateur existant d'une plateforme qui migre son compte à Incluion Connect ne change pas ses informations personnelles.
+Sur cette page, ces informations ne sont pas modifiables. Cela permet de s'assurer qu'un utilisateur existant d'une plateforme qui migre son compte à Inclusion Connect ne change pas ses informations personnelles.
 
 #### Réponse
 
@@ -121,7 +139,7 @@ Les paramètres sont les suivants :
 
 #### Requête
 
-- URL : `https://{hostname}/realms/{realm-name}/protocol/openid-connect/token`
+- URL : `https://{hostname}/auth/token`
 - Méthode : POST
 - Header attendu: `Content-Type: application/x-www-form-urlencoded`
 - Body: au format `key1=value1&key2=value2` (adapté au content-type `application/x-www-form-urlencoded` )
@@ -184,7 +202,7 @@ sont déjà présentent dans l'id_token.
 
 #### Requête
 
-- URL :  `https://{hostname}/realms/{realm-name}/protocol/openid-connect/userinfo`
+- URL :  `https://{hostname}/auth/userinfo`
 - Méthode : GET. La transmission du token JWT _access_token_ DOIT se faire dans le header `Authorization : Bearer <Token>`.
 
 #### Réponse
@@ -208,46 +226,13 @@ Lorsqu'un utilisateur se déconnecte d'un FS, on s'attend à ce que le FS appell
 
 Cela peut être fait de deux manières :
 
-#### GET
+#### Sans confirmation
 
-Un appel GET sur l'url `https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout?state=<STATE>&id_token_hint=<ID_TOKEN>`
-en réutilisant le **state** et le **id_token** (le paramètre **id_token_hint** permet de ne pas demander de confirmation).
-
-#### Redirect
-
-##### Sans confirmation
-
-On redirige l'utilisateur sur `https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout?state=<STATE>&id_token_hint=<ID_TOKEN>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`
+On redirige l'utilisateur sur `https://{hostname}/auth/logout?state=<STATE>&id_token_hint=<ID_TOKEN>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`
 qui sera ensuite redirigé vers l'url passée avec le paramètre **post_logout_redirect_uri**.
 
 
-##### Avec confirmation
+#### Avec confirmation
 
-Si le `STATE` et/ou l'`ID_TOKEN` ne sont pas disponibles, il est possible de déconnecter l'utilisateur avec une redirection  vers `https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout?client_id=<CLIENT_ID>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`.
+Si le `STATE` et/ou l'`ID_TOKEN` ne sont pas disponibles, il est possible de déconnecter l'utilisateur avec une redirection  vers `https://{hostname}/auth/logout?client_id=<CLIENT_ID>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`.
 Dans ce cas, l'utilisateur devra confirmer sa volonté de se deconnecter d'Inclusion Connect et sera ensuite redirigé vers l'url passée avec le paramètre **post_logout_redirect_uri**.
-
-### 6) Ré-initialisation de mots de passe
-
-On accède généralement à cette page en cliquant sur "Mot de passe oublié" depuis la page de connexion.
-
-Cependant il est possible d'envoyer directement un utilisateur sur cette page, ce qui est utile notamment dans
-le cas où l'on a importé des utilisateurs d'une plateforme dans Inclusion Connect et où ils ne leur reste qu'à
-changer de mot de passe pour activer leur compte.
-
-Voici le fonctionnement dans ce cas.
-
-#### Description
-
-- Contexte : Le FS redirige l'utilisateur vers l'endpoint _Login-Reset_
-- Origine : FS (par exemple lien dans un email)
-- Cible : Inclusion Connect
-- Type d'appel : redirection navigateur
-
-#### Requête
-
-- URL : `https://{hostname}/realms/{realm-name}/login-actions/reset-credentials`
-- Méthode : POST
-
-Voici les arguments que l'on peut ajouter à l'url :
-- **email** : l'adresse email de l'utilisateur. Cela lui permet de ne pas re-saissir son email sur cette page
-et facilite donc l'activation de son compte.
