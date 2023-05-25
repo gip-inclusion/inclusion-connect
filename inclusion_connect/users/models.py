@@ -65,7 +65,7 @@ class EmailAddress(models.Model):
     When the new email is verified, the old email address is deleted, user.email == new_email
     """
 
-    email = CIEmailField("adresse e-mail", primary_key=True)
+    email = CIEmailField("adresse e-mail", db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_addresses")
     created_at = models.DateTimeField(editable=False, default=timezone.now, verbose_name="date de création")
     verified_at = models.DateTimeField(null=True, blank=True, verbose_name="date de vérification")
@@ -102,7 +102,7 @@ class EmailAddress(models.Model):
         # Free unused email addresses for other users.
         type(self).objects.filter(user_id=self.user_id).exclude(pk=self.pk).delete()
         self.verified_at = verified_at or timezone.now()
-        self.save(update_fields=["verified_at"])
+        self.save()
 
 
 class UserApplicationLink(models.Model):
