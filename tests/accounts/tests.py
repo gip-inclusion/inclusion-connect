@@ -1042,5 +1042,4 @@ class TestMiddleware:
         )
         client.force_login(user)
         response = client.get(add_url_params(reverse("oidc_overrides:logout"), {"state": "random_string"}))
-        # FIXME: Replace with status_code == 200 when using django-oauth-toolkit logout
-        assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
+        assert response.status_code == 200

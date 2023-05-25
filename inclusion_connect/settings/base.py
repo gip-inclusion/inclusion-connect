@@ -308,9 +308,13 @@ OAUTH2_PROVIDER = {
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oidc_overrides.validators.CustomOAuth2Validator",
     "REFRESH_TOKEN_EXPIRE_SECONDS": SESSION_COOKIE_AGE,
+    "OIDC_RP_INITIATED_LOGOUT_ENABLED": True,
+    "OIDC_RP_INITIATED_LOGOUT_ALWAYS_PROMPT": False,
 }
 
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
+
+ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
 
 # Keycloak Compatibility
 # ----------------------

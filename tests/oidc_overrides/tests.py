@@ -3,6 +3,7 @@ import datetime
 import pytest
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
@@ -23,16 +24,36 @@ from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
-def test_allow_wildcard_in_redirect_uris():
-    application = ApplicationFactory(redirect_uris="http://localhost/*")
-    assert application.redirect_uri_allowed("http://localhost/callback")
+class TestRedirectUris:
+    @pytest.mark.parametrize("allow_all", [True, False])
+    def test_allow_all_settings(self, allow_all):
+        with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
+            application = ApplicationFactory(redirect_uris="*")
+            assert application.redirect_uri_allowed("http://localhost/callback") is allow_all
 
-    application = ApplicationFactory(redirect_uris="*")
-    assert application.redirect_uri_allowed("http://localhost/callback")
+    def test_allow_wildcard_at_redirect_uris_end(self):
+        application = ApplicationFactory(redirect_uris="http://localhost/*")
+        assert application.redirect_uri_allowed("http://localhost/callback")
 
-    # We do not handle wildcard in domains
-    application = ApplicationFactory(redirect_uris="http://*.mydomain.com/callback")
-    assert not application.redirect_uri_allowed("http://site1.mydomain.com/callback")
+    def test_no_open_redirect_uri(self):
+        application = ApplicationFactory(redirect_uris="http://localhost*")
+        assert not application.redirect_uri_allowed("http://localhost/callback")
+
+
+class TestPostLogoutRedirectUris:
+    @pytest.mark.parametrize("allow_all", [True, False])
+    def test_allow_all_settings(self, allow_all):
+        with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
+            application = ApplicationFactory(post_logout_redirect_uris="*")
+            assert application.post_logout_redirect_uri_allowed("http://localhost/callback") is allow_all
+
+    def test_allow_wildcard_at_redirect_uris_end(self):
+        application = ApplicationFactory(post_logout_redirect_uris="http://localhost/*")
+        assert application.post_logout_redirect_uri_allowed("http://localhost/callback")
+
+    def test_no_open_redirect_uri(self):
+        application = ApplicationFactory(post_logout_redirect_uris="http://localhost*")
+        assert not application.post_logout_redirect_uri_allowed("http://localhost/callback")
 
 
 class TestLogoutView:
@@ -46,15 +67,14 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"},
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
         )
-        assertRedirects(response, "https://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
 
-    @pytest.mark.skip()
     def test_expired_token_and_session(self, client):
         """This test simulates a call on logout endpoint with expired token and sessions"""
         user = UserFactory()
@@ -63,19 +83,18 @@ class TestLogoutView:
             assert get_user(client).is_authenticated is True
 
         with freeze_time("2023-05-05 14:59:21"):
-            params = {"id_token_hint": id_token, "post_logout_redirect_uri": "https://callback/"}
+            params = {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"}
             response = call_logout(client, "get", params)
             assert response.status_code == 200
 
             params["allow"] = True
             response = call_logout(client, "post", params)
-            assertRedirects(response, "https://callback/", fetch_redirect_response=False)
+            assertRedirects(response, "http://callback/", fetch_redirect_response=False)
 
             assert get_user(client).is_authenticated is False
             assert has_ongoing_sessions(user) is False
             assert token_are_revoked(user) is True
 
-    @pytest.mark.skip()
     def test_bad_login_hint(self, client):
         """This test simulates a call on logout endpoint with bad login hint"""
         user = UserFactory()
