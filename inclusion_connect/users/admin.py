@@ -83,6 +83,11 @@ class UserAdmin(auth_admin.UserAdmin):
             form.instance.email = ""
             form.instance.save(update_fields=["email"])
 
+    def permissions_readonly(self, request, obj):
+        if not request.user.is_superuser:
+            return False
+        return obj and not obj.is_staff
+
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         is_change_form = obj is not None
@@ -91,6 +96,10 @@ class UserAdmin(auth_admin.UserAdmin):
             fieldsets = list(copy.deepcopy(fieldsets))
             fieldsets[0][1]["fields"] += ("must_reset_password",)
             fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
+            if self.permissions_readonly(request, obj):
+                fieldsets = list(copy.deepcopy(fieldsets))
+                assert fieldsets[2][0] == "Permissions"
+                del fieldsets[2]
         return fieldsets
 
 
@@ -108,3 +117,9 @@ class UserApplicationLinkAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_readonly_fields(self, request, obj=None):
+        rof = super().get_readonly_fields(request, obj)
+        if self.permissions_readonly(request, obj):
+            rof += ("is_staff", "is_superuser", "groups", "user_permissions")
+        return rof

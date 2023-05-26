@@ -1,9 +1,10 @@
 import datetime
 
+from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertNotContains, assertRedirects
+from pytest_django.asserts import assertContains, assertNotContains, assertQuerysetEqual, assertRedirects
 
 from inclusion_connect.users.models import EmailAddress
 from tests.helpers import parse_response_to_soup
@@ -589,3 +590,155 @@ class TestUserAdmin:
 
         user.refresh_from_db()
         assert user.must_reset_password
+
+    def test_any_staff_cannot_access_users_admin(self, client):
+        staff_user = UserFactory(is_staff=True)
+        client.force_login(staff_user)
+
+        user = UserFactory()
+
+        response = client.get(reverse("admin:users_user_changelist"))
+        assert response.status_code == 403
+
+        response = client.get(reverse("admin:users_user_add"))
+        assert response.status_code == 403
+
+        response = client.get(reverse("admin:users_user_change", args=(user.pk,)))
+        assert response.status_code == 403
+
+        response = client.get(reverse("admin:users_user_delete", args=(user.pk,)))
+        assert response.status_code == 403
+
+        response = client.get(reverse("admin:users_user_history", args=(user.pk,)))
+        assert response.status_code == 403
+
+        password = "toto"
+        response = client.post(
+            reverse("admin:auth_user_password_change", args=(user.pk,)),
+            data={"password1": password, "password2": password},
+        )
+        assert response.status_code == 403
+
+    def test_support_staff_can_access_users_admin(self, client):
+        staff_user = UserFactory(is_staff=True)
+        staff_group = Group.objects.get(name="support")
+        staff_user.groups.set([staff_group])
+        client.force_login(staff_user)
+
+        user = UserFactory()
+
+        response = client.get(reverse("admin:users_user_changelist"))
+        assert response.status_code == 200
+
+        response = client.get(reverse("admin:users_user_add"))
+        assert response.status_code == 200
+
+        response = client.get(reverse("admin:users_user_change", args=(user.pk,)))
+        assert response.status_code == 200
+
+        response = client.get(reverse("admin:users_user_delete", args=(user.pk,)))
+        assert response.status_code == 403
+
+        response = client.get(reverse("admin:users_user_history", args=(user.pk,)))
+        assert response.status_code == 200
+
+        password = "toto"
+        response = client.post(
+            reverse("admin:auth_user_password_change", args=(user.pk,)),
+            data={"password1": password, "password2": password},
+        )
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+        user.refresh_from_db()
+        assert user.must_reset_password is True
+
+    def test_support_staff_cannot_elevate_privileges(self, client):
+        staff_user = UserFactory(is_staff=True, email_address=False)
+        email_address = EmailAddress.objects.create(
+            user=staff_user, email=staff_user.email, verified_at=timezone.now()
+        )
+        staff_group = Group.objects.get(name="support")
+        staff_user.groups.set([staff_group])
+        client.force_login(staff_user)
+        response = client.get(
+            reverse("admin:users_user_change", args=(staff_user.pk,)),
+            data={
+                "must_reset_password": "off",
+                "first_name": "Kiddy",
+                "last_name": "Script",
+                "is_active": "on",
+                "is_staff": "on",
+                "is_superuser": "on",
+                "groups": "",  # Can’t modify groups.
+                "user_permissions": [Permission.objects.order_by("?").first()],
+                "last_login_0": "02/01/2023",
+                "last_login_1": "22:22:22",
+                "date_joined_0": "01/01/2023",
+                "date_joined_1": "11:11:11",
+                "initial-date_joined_0": "01/01/2023",
+                "initial-date_joined_1": "11:11:11",
+                "terms_accepted_at_0": "02/01/2023",
+                "terms_accepted_at_1": "22:40:00",
+                "email_addresses-TOTAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "1",
+                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-0-id": email_address.pk,
+                "email_addresses-0-user": staff_user.pk,
+                "email_addresses-0-email": staff_user.email,
+                "email_addresses-0-verified_at_0": "02/01/2023",
+                "email_addresses-0-verified_at_1": "23:00:00",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        # Readonly fields were ignored, hence the 200.
+        assert response.status_code == 200
+        staff_user.refresh_from_db()
+        assert staff_user.is_staff is True
+        assert staff_user.is_superuser is False
+        assertQuerysetEqual(staff_user.groups.all(), [staff_group])
+        assert staff_user.get_user_permissions() == set()
+
+    def test_superuser_cant_add_privileges_to_regular_users(self, client):
+        staff_user = UserFactory(is_staff=True, is_superuser=True)
+        staff_group = Group.objects.get(name="support")
+        user = UserFactory(email_address=False)
+        email_address = EmailAddress.objects.create(user=user, email=user.email, verified_at=timezone.now())
+        client.force_login(staff_user)
+        response = client.get(
+            reverse("admin:users_user_change", args=(user.pk,)),
+            data={
+                "must_reset_password": "off",
+                "first_name": "Kiddy",
+                "last_name": "Script",
+                "is_active": "on",
+                "is_staff": "on",
+                "is_superuser": "on",
+                "groups": staff_group.pk,
+                "user_permissions": [Permission.objects.order_by("?").first()],
+                "last_login_0": "02/01/2023",
+                "last_login_1": "22:22:22",
+                "date_joined_0": "01/01/2023",
+                "date_joined_1": "11:11:11",
+                "initial-date_joined_0": "01/01/2023",
+                "initial-date_joined_1": "11:11:11",
+                "terms_accepted_at_0": "02/01/2023",
+                "terms_accepted_at_1": "22:40:00",
+                "email_addresses-TOTAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "1",
+                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-0-id": email_address.pk,
+                "email_addresses-0-user": user.pk,
+                "email_addresses-0-email": user.email,
+                "email_addresses-0-verified_at_0": "02/01/2023",
+                "email_addresses-0-verified_at_1": "23:00:00",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        # Readonly fields were ignored, hence the 200.
+        assert response.status_code == 200
+        staff_user.refresh_from_db()
+        assert user.is_staff is False
+        assert user.is_superuser is False
+        assertQuerysetEqual(user.groups.all(), [])
+        assert user.get_user_permissions() == set()
