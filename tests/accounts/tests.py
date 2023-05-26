@@ -188,7 +188,7 @@ class TestRegisterView:
             "afin de vérifier votre adresse e-mail :\n\n"
             f"{verify_link}\n\n"
             "Ce lien expire dans 1 jour.\n\n"
-            "Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.\n\n"
+            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
             "---\n"
             "L’équipe d’inclusion connect\n"
         )
@@ -358,7 +358,7 @@ class TestRegisterView:
             "afin de vérifier votre adresse e-mail :\n\n"
             f"{verify_link}\n\n"
             "Ce lien expire dans 1 jour.\n\n"
-            "Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.\n\n"
+            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
             "---\n"
             "L’équipe d’inclusion connect\n"
         )
