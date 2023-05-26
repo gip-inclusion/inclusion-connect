@@ -85,8 +85,10 @@ class UserAdmin(auth_admin.UserAdmin):
 
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
-        assert fieldsets[0] == (None, {"fields": ("username", "password")})
-        new_fieldsets = list(copy.deepcopy(fieldsets))
-        new_fieldsets[0][1]["fields"] += ("must_reset_password",)
-        new_fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
-        return new_fieldsets
+        is_change_form = obj is not None
+        if is_change_form:
+            assert fieldsets[0] == (None, {"fields": ("username", "password")})
+            fieldsets = list(copy.deepcopy(fieldsets))
+            fieldsets[0][1]["fields"] += ("must_reset_password",)
+            fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
+        return fieldsets

@@ -73,6 +73,12 @@ class TestUserAdmin:
         # Using exact search with quotes.
         assertNotContains(client.get(reverse("admin:users_user_changelist"), {"q": "'charlie c'"}), result_id)
 
+    def test_admin_add(self, client):
+        user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(user)
+        response = client.get(reverse("admin:users_user_add"))
+        assert response.status_code == 200
+
     @freeze_time("2023-05-12T16:00:00+02:00")
     def test_verify_email(self, client):
         user = UserFactory(email="")
