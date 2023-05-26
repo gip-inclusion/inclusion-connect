@@ -27,6 +27,7 @@ class User(AbstractUser):
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
     class Meta:
+        verbose_name = "utilisateur"
         constraints = [
             models.UniqueConstraint(
                 "email",
