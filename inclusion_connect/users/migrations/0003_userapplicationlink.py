@@ -40,5 +40,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "verbose_name": "service utilisé",
+                "verbose_name_plural": "services utilisés",
+            },
         ),
     ]

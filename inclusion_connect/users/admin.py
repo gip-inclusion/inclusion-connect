@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.forms.formsets import DELETION_FIELD_NAME
 
-from .models import EmailAddress, User
+from .models import EmailAddress, User, UserApplicationLink
 
 
 def is_email_verified(form):
@@ -92,3 +92,19 @@ class UserAdmin(auth_admin.UserAdmin):
             fieldsets[0][1]["fields"] += ("must_reset_password",)
             fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
         return fieldsets
+
+
+@admin.register(UserApplicationLink)
+class UserApplicationLinkAdmin(admin.ModelAdmin):
+    list_display = ["user", "application", "last_login"]
+    readonly_fields = ["user", "application", "last_login"]
+    search_fields = ["user__email", "user__first_name", "user__last_name", "application__name"]
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
