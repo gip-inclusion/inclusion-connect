@@ -70,7 +70,7 @@ class AdminPasswordChange(auth_forms.AdminPasswordChangeForm):
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
-    readonly_fields = ["username", "email", "terms_accepted_at"]
+    readonly_fields = ["username", "email"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline]
     change_password_form = AdminPasswordChange
