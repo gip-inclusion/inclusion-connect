@@ -8,5 +8,5 @@ afin de vérifier votre adresse e-mail :
 
 Ce lien expire dans 1 jour.
 
-Sinon, veuillez ignorer ce message ; aucun changement ne sera effectué sur votre compte.
+Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.
 {% endblock body %}
