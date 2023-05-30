@@ -378,9 +378,9 @@ django-oauth-toolkit==2.2.0 \
     --hash=sha256:46890decb24a34e2a5382debeaf7752e50d90b7a11716cf2a9fd067097ec0963 \
     --hash=sha256:abd85c74af525a62365ec2049113e73a2ff8b46ef906e7104a7ba968ef02a11d
     # via -r requirements/base.txt
-djlint==1.28.0 \
-    --hash=sha256:510ac19b724741dcbc1027afb954e8845ecadeab437e92a3f51b2b1a7b1411fb \
-    --hash=sha256:61993473774eafb1bf011762854207721f7f0394cecb935b4c9c5c6d1f25023d
+djlint==1.29.0 \
+    --hash=sha256:7e72ea985b6c8a71e007b9af3922d88474f192793c0cd5142151a2ac936c742e \
+    --hash=sha256:99fbe5a7f0b086786fa5929d2fd1d82b3c2d856dcd0e97cc874d3f436286f220
     # via -r requirements/dev.in
 editorconfig==0.12.3 \
     --hash=sha256:57f8ce78afcba15c8b18d46b5170848c88d56fd38f05c2ec60dbbfcb8996e89e \
