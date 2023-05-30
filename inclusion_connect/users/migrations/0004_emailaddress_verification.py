@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="user",
-            options={},
+            options={"verbose_name": "utilisateur"},
         ),
         migrations.AlterField(
             model_name="user",

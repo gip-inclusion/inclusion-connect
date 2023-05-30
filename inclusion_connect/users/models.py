@@ -27,6 +27,7 @@ class User(AbstractUser):
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
     class Meta:
+        verbose_name = "utilisateur"
         constraints = [
             models.UniqueConstraint(
                 "email",
@@ -119,3 +120,10 @@ class UserApplicationLink(models.Model):
         on_delete=models.CASCADE,
     )
     last_login = models.DateTimeField("dernière connexion", default=timezone.now)
+
+    class Meta:
+        verbose_name = "service utilisé"
+        verbose_name_plural = "services utilisés"
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.application}"

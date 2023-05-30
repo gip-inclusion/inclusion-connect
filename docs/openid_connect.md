@@ -8,13 +8,12 @@ Les fournisseurs de service doivent donc être des clients OpenID Connect (aussi
 
 La spécification du protocole se trouve sur http://openid.net/connect/.
 
-Pour une référence d'implémentation OpenID Connect voici le lien : http://openid.net/specs/openid-connect-core-1_0.html
 
 ## Les Flux Standards
 
 Le protocole OpenID Connect définit 3 appels REST faits par le client, et 4 endpoints (un du côté client, et trois du côté provider).
 
-En amont, le client s'inscrit (en général manuellement) auprès du provider. Il lui fournit une URL de callback (l'URL du client vers lequel l'internaute est redirigé une fois authentifié), aussi appelée "callback endpoint". En retour le provider donne au client un client ID et un client secret.
+En amont, le Client s'inscrit auprès du provider. Il lui fournit une URL de callback (l'URL du client vers lequel l'internaute est redirigé une fois authentifié), aussi appelée "callback endpoint". En retour le provider donne au client un client ID et un client secret.
 
 Lorsque l'internaute clique sur le bouton d'authentification du client, le flux est le suivant :
 
