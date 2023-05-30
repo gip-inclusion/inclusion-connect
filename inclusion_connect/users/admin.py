@@ -67,18 +67,30 @@ class AdminPasswordChange(auth_forms.AdminPasswordChangeForm):
         return super().save(commit)
 
 
+class UserApplicationLinkInline(admin.TabularInline):
+    model = UserApplicationLink
+    extra = 0
+    can_delete = False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj):
+        return False
+
+
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
     readonly_fields = ["username", "email", "terms_accepted_at"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
-    inlines = [EmailAddressInline]
+    inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChange
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
-        [email_address_formset] = formsets
+        [email_address_formset, user_application_link_formset] = formsets
         if form.instance.email and not any(is_email_verified(fs) for fs in email_address_formset):
             form.instance.email = ""
             form.instance.save(update_fields=["email"])
@@ -101,25 +113,3 @@ class UserAdmin(auth_admin.UserAdmin):
                 assert fieldsets[2][0] == "Permissions"
                 del fieldsets[2]
         return fieldsets
-
-
-@admin.register(UserApplicationLink)
-class UserApplicationLinkAdmin(admin.ModelAdmin):
-    list_display = ["user", "application", "last_login"]
-    readonly_fields = ["user", "application", "last_login"]
-    search_fields = ["user__email", "user__first_name", "user__last_name", "application__name"]
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def get_readonly_fields(self, request, obj=None):
-        rof = super().get_readonly_fields(request, obj)
-        if self.permissions_readonly(request, obj):
-            rof += ("is_staff", "is_superuser", "groups", "user_permissions")
-        return rof
