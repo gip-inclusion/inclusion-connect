@@ -19,6 +19,9 @@ django-cors-headers  # https://github.com/adamchainz/django-cors-headers
 
 PyJWT  # https://github.com/jpadilla/pyjwt
 
+# Add Content Security Policy headers
+django-csp
+
 # Front-end
 # ------------------------------------------------------------------------------
 

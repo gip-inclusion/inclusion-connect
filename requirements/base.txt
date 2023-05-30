@@ -196,6 +196,7 @@ django==4.1.9 \
     #   django-anymail
     #   django-bootstrap4
     #   django-cors-headers
+    #   django-csp
     #   django-oauth-toolkit
 django-anymail==10.0 \
     --hash=sha256:59eb4c91e201cd6465bd5e27f2cc3342e897e8178c1b1a4bc1a10871ae0b6ef3 \
@@ -208,6 +209,10 @@ django-bootstrap4==23.1 \
 django-cors-headers==4.0.0 \
     --hash=sha256:a971cd4c75b29974068cc36b5c595698822f1e0edd5f1b32ea42ea37326ad4aa \
     --hash=sha256:e3cbd247a1a835da4cf71a70d4214378813ea7e08337778b82cb2c1bc19d28d6
+    # via -r requirements/base.in
+django-csp==3.7 \
+    --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
+    --hash=sha256:01eda02ad3f10261c74131cdc0b5a6a62b7c7ad4fd017fbefb7a14776e0a9727
     # via -r requirements/base.in
 django-oauth-toolkit==2.2.0 \
     --hash=sha256:46890decb24a34e2a5382debeaf7752e50d90b7a11716cf2a9fd067097ec0963 \
