@@ -62,6 +62,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    "csp.middleware.CSPMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -91,7 +92,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 # Django CSP
-                # "csp.context_processors.nonce",
+                "csp.context_processors.nonce",
             ],
         },
     },
@@ -322,3 +323,37 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     "inclusion_connect.keycloak_compat.hashers.KeycloakPasswordHasher",
 ]
+
+# Content Security Policy
+# -----------------------
+
+# Beware, some browser extensions may prevent the reports to be sent to sentry with CORS errors.
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_FRAME_SRC = []
+CSP_IMG_SRC = [
+    "'self'",
+    "https://www.gstatic.com",  # Used by google translate
+    "https://translate.google.com",  # Used by google translate
+]
+CSP_STYLE_SRC = [
+    "'self'",
+    # It would be better to whilelist styles hashes but it's to much work for now.
+    "'unsafe-inline'",
+    "*.googleapis.com",  # Google translate
+]
+CSP_FONT_SRC = [
+    # There are many users that override the font with extensions or with services such as google translates.
+    # For accessibility reasons we need to allow the user to chose the used font.
+    "*",
+]
+CSP_SCRIPT_SRC = [
+    "'self'",
+    "https://translate.googleapis.com",  # Allow google translate
+]
+CSP_CONNECT_SRC = [
+    "'self'",
+    "https://translate.googleapis.com",  # Allow google translate
+]
+
+CSP_INCLUDE_NONCE_IN = ["script-src"]
+CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
