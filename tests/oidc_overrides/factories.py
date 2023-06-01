@@ -25,3 +25,4 @@ class ApplicationFactory(factory.django.DjangoModelFactory):
     name = factory.Faker("company", locale="fr_FR")
     algorithm = Application.HS256_ALGORITHM
     client_secret = default_client_secret()
+    client_id = factory.Sequence("client_#{}".format)
