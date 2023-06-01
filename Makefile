@@ -50,14 +50,13 @@ clean:
 
 quality: $(VIRTUAL_ENV)
 	black --check $(PY_PACKAGES)
-	isort --check $(PY_PACKAGES)
-	flake8 --count --show-source --statistics $(PY_PACKAGES)
+	ruff check $(PY_PACKAGES)
 	djlint --lint --check inclusion_connect
 	python manage.py makemigrations --check --dry-run --noinput
 
 fix: $(VIRTUAL_ENV)
 	black $(PY_PACKAGES)
-	isort $(PY_PACKAGES)
+	ruff $(PY_PACKAGES)
 	djlint --reformat inclusion_connect
 
 pylint: $(VIRTUAL_ENV)
