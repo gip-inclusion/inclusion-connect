@@ -4,12 +4,12 @@
 	// List of extensions which should be recommended for users of this workspace.
 	"recommendations": [
 		"batisteo.vscode-django",
+		"charliermarsh.ruff",
 		"ms-azuretools.vscode-docker",
 		"eamodio.gitlens",
 		"ms-vsliveshare.vsliveshare",
 		"ms-python.vscode-pylance",
 		"ms-python.python",
-		"ms-python.isort",
 		"ms-python.black-formatter",
 		"monosans.djlint",
 		"editorconfig.editorconfig"

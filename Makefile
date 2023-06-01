@@ -56,7 +56,7 @@ quality: $(VIRTUAL_ENV)
 
 fix: $(VIRTUAL_ENV)
 	black $(PY_PACKAGES)
-	ruff $(PY_PACKAGES)
+	ruff check --fix $(PY_PACKAGES)
 	djlint --reformat inclusion_connect
 
 pylint: $(VIRTUAL_ENV)
