@@ -17,6 +17,7 @@ def default_client_secret():
 class ApplicationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Application
+        django_get_or_create = ("client_id",)
 
     redirect_uris = "http://localhost/*"
     post_logout_redirect_uris = "http://callback/"
@@ -25,3 +26,4 @@ class ApplicationFactory(factory.django.DjangoModelFactory):
     name = factory.Faker("company", locale="fr_FR")
     algorithm = Application.HS256_ALGORITHM
     client_secret = default_client_secret()
+    client_id = factory.Sequence("client_#{}".format)

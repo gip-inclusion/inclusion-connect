@@ -1,3 +1,4 @@
+from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -103,3 +104,14 @@ class LogoutView(RPInitiatedLogoutView):
             return False  # Nothing to do : don't prompt the user
 
         return prompt
+
+    def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
+        user = token_user or self.request.user
+        response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
+        # Clean all other dango session for this user
+        [
+            s.delete()
+            for s in Session.objects.filter(expire_date__gte=timezone.now())
+            if s.get_decoded().get("_auth_user_id") == str(user.pk)
+        ]
+        return response
