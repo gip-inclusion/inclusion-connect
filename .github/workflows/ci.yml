@@ -58,7 +58,7 @@ jobs:
         cache-dependency-path: requirements/dev.txt
     - name: 📥 Install dependencies
       run: make venv
-    - name: ✨ Black, isort, flake8 & djlint
+    - name: ✨ Black, ruff & djlint
       run: make quality
     - name: 🤹 Django tests
       run: make test
