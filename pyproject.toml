@@ -18,7 +18,7 @@ select = [
 
 [tool.ruff.isort]
 combine-as-imports = true
-known-first-party = ["itou"]
+known-first-party = ["inclusion_connect"]
 lines-after-imports = 2
 
 [tool.djlint]
