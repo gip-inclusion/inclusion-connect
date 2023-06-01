@@ -3,12 +3,13 @@ import datetime
 import pytest
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
-from django.test import override_settings
+from django.test import Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertRedirects
 
+from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
@@ -115,6 +116,26 @@ class TestLogoutView:
         assert token_are_revoked(user) is False
         assert get_user(client).is_authenticated is True
         assert has_ongoing_sessions(user) is True
+
+    def test_logout_clear_all_clients_sessions(self, client):
+        user = UserFactory()
+        id_token = oidc_complete_flow(client, user)
+        assert get_user(client).is_authenticated is True
+
+        other_client = Client()
+        oidc_complete_flow(other_client, user, application=Application.objects.get(client_id=OIDC_PARAMS["client_id"]))
+        assert get_user(other_client).is_authenticated is True
+        assert get_user(client) == get_user(other_client)
+
+        response = call_logout(
+            client,
+            "get",
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+        )
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assert get_user(client).is_authenticated is False
+        assert get_user(other_client).is_authenticated is False
+
 
 class TestAuthorizeView:
     def test_bad_oidc_params(self, client, snapshot):

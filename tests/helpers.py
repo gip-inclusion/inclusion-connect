@@ -64,8 +64,8 @@ def oidc_flow_followup(client, auth_response_params, user):
     return token_json["id_token"]
 
 
-def oidc_complete_flow(client, user):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def oidc_complete_flow(client, user, application=None):
+    application = application or ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     auth_url = reverse("oidc_overrides:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
