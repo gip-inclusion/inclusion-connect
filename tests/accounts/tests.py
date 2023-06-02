@@ -26,7 +26,7 @@ from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
-from tests.helpers import parse_response_to_soup
+from tests.helpers import OIDC_PARAMS, parse_response_to_soup
 from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
@@ -831,6 +831,25 @@ class TestConfirmEmailTokenView:
         assert email_address.verified_at == datetime.datetime(2023, 4, 26, 11, 11, 11, tzinfo=datetime.timezone.utc)
         assert "_auth_user_id" not in client.session
         assert "_auth_user_backend" not in client.session
+
+    @freeze_time("2023-04-26 11:11:11")
+    def test_confirm_email_from_other_client(self, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        next_url = add_url_params(reverse("oidc_overrides:register"), OIDC_PARAMS)
+        user.save_next_redirect_uri(next_url)
+        response = client.get(self.url(user, token))
+        assertRedirects(response, next_url, fetch_redirect_response=False)
+        email_address.refresh_from_db()
+        assert email_address.verified_at == timezone.now()
+        user.refresh_from_db()
+        assert user.email == "me@mailinator.com"
+        assert user.next_redirect_uri is None
+        assert user.next_redirect_uri_stored_at is None
+        assert client.session["_auth_user_id"] == str(user.pk)
+        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
 
     @freeze_time("2023-04-26 11:11:11")
     def test_invalidates_previous_email(self, client):

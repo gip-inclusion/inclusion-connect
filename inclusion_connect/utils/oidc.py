@@ -21,4 +21,6 @@ def get_next_url(request):
     next_url = required_action_url(request.user)
     if next_url:
         return next_url
-    return request.session.pop("next_url", reverse("accounts:edit_user_info"))
+    session_next_url = request.session.pop("next_url", None)
+    user_next_url = request.user.pop_next_redirect_uri()
+    return session_next_url or user_next_url or reverse("accounts:edit_user_info")
