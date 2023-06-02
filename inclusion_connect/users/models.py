@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from django.conf import settings
@@ -26,6 +27,10 @@ class User(AbstractUser):
     must_reset_password = models.BooleanField("mot de passe temporaire", default=False)
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
 
+    # Allow to redirect user correctly even when using a link from another browser (without session data)
+    next_redirect_uri = models.TextField(blank=True, null=True)
+    next_redirect_uri_stored_at = models.DateTimeField(blank=True, null=True)
+
     class Meta:
         verbose_name = "utilisateur"
         constraints = [
@@ -51,6 +56,20 @@ class User(AbstractUser):
     @property
     def must_accept_terms(self):
         return self.terms_accepted_at is None or self.terms_accepted_at < settings.NEW_TERMS_DATE
+
+    def save_next_redirect_uri(self, next_redirect_uri):
+        self.next_redirect_uri = next_redirect_uri
+        self.next_redirect_uri_stored_at = timezone.now()
+        self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
+
+    def pop_next_redirect_uri(self):
+        next_url = self.next_redirect_uri
+        if next_url and self.next_redirect_uri_stored_at < timezone.now() - datetime.timedelta(days=1):
+            next_url = None
+        self.next_redirect_uri = None
+        self.next_redirect_uri_stored_at = None
+        self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
+        return next_url
 
 
 class EmailAddress(models.Model):

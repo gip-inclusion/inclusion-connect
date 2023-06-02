@@ -43,6 +43,8 @@ class BaseUserCreationView(OIDCSessionMixin, CreateView):
         email_address = EmailAddress.objects.get(email=email)
         emails.send_verification_email(self.request, email_address)
         self.request.session[EMAIL_CONFIRM_KEY] = email
+        if next_url := self.request.session.get("next_url"):
+            self.object.save_next_redirect_uri(next_url)
         return response
 
 
