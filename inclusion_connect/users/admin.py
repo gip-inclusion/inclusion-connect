@@ -113,3 +113,9 @@ class UserAdmin(auth_admin.UserAdmin):
                 assert fieldsets[2][0] == "Permissions"
                 del fieldsets[2]
         return fieldsets
+
+    def get_readonly_fields(self, request, obj=None):
+        rof = super().get_readonly_fields(request, obj)
+        if self.permissions_readonly(request, obj):
+            rof += ("is_staff", "is_superuser", "groups", "user_permissions")
+        return rof
