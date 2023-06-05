@@ -543,6 +543,49 @@ def test_logout_with_confirmation(client):
     assertRedirects(response, reverse("accounts:login"))
 
 
+def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_client_id(client):
+    user = UserFactory()
+    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+
+    with freeze_time("2023-05-25 9:34"):
+        auth_url = reverse("oidc_overrides:authorize")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
+
+        response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assert get_user(client).is_authenticated is True
+        response = client.get(response.url)
+        auth_response_params = get_url_params(response.url)
+        oidc_flow_followup(client, auth_response_params, user)
+        assert get_user(client).is_authenticated is True
+
+    with freeze_time("2023-05-25 20:05"):
+        assert get_user(client).is_authenticated is False
+        response = call_logout(
+            client, "get", {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/"}
+        )
+        assert response.status_code == 200
+        assertContains(
+            response,
+            '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
+        )
+
+        response = call_logout(
+            client,
+            "post",
+            {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+        )
+
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        # The user is anonymous, without the `id_token`, the system cannot identify the user.
+        # Without the user, their tokens cannot be revoked.
+        assert not token_are_revoked(user)
+
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
+
+
 def test_edit_user_info_and_password(client, mailoutbox):
     user = UserFactory()
     verified_email = user.email
