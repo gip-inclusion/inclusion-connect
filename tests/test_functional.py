@@ -296,7 +296,7 @@ def test_logout_no_confirmation(client):
     assertRedirects(response, reverse("accounts:login"))
 
 
-def test_logout_no_confirmation_when_already_session_and_tokens_already_expired(client):
+def test_logout_no_confirmation_when_already_session_and_tokens_already_expired_with_id_token_hint(client):
     """Logout without confirmation requires the id_token"""
 
     user = UserFactory()
@@ -362,6 +362,44 @@ def test_logout_with_confirmation(client):
 
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
+
+
+def test_logout_with_confirmation_when_already_session_and_tokens_already_expired_with_client_id(client):
+    """Logout without confirmation requires the id_token"""
+
+    user = UserFactory()
+    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+
+    with freeze_time("2023-05-25 9:34"):
+        auth_url = reverse("oidc_overrides:authorize")
+        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
+
+        response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assert get_user(client).is_authenticated is True
+        response = client.get(response.url)
+        auth_response_params = get_url_params(response.url)
+        oidc_flow_followup(client, auth_response_params, user)
+
+    with freeze_time("2023-05-25 20:05"):
+        assert get_user(client).is_authenticated is False
+        response = call_logout(
+            client, "get", {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/"}
+        )
+        assert response.status_code == 200
+
+        response = call_logout(
+            client,
+            "post",
+            {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+        )
+
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assert not token_are_revoked(user)  # Unable to revoke tokens
+
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("accounts:login"))
 
 
 def test_edit_user_info_and_password(client, mailoutbox):

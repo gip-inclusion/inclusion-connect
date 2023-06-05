@@ -1,10 +1,10 @@
 # FIXME: Remove whole file when bumping django-oauth-toolkit
-
 import json
 from urllib.parse import urlparse
 
 from django import forms
 from django.contrib.auth import logout
+from django.contrib.auth.models import AnonymousUser
 from django.urls import reverse
 from django.views.generic import FormView
 from jwcrypto import jwt
@@ -316,7 +316,8 @@ class RPInitiatedLogoutView(FormView):
 
     def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
         # Delete Access Tokens
-        if oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS:
+        user = token_user or self.request.user
+        if oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS and not isinstance(user, AnonymousUser):
             AccessToken = get_access_token_model()
             RefreshToken = get_refresh_token_model()
             access_tokens_to_delete = AccessToken.objects.filter(
