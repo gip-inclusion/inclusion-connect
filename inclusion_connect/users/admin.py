@@ -95,11 +95,6 @@ class UserAdmin(auth_admin.UserAdmin):
             form.instance.email = ""
             form.instance.save(update_fields=["email"])
 
-    def permissions_readonly(self, request, obj):
-        if not request.user.is_superuser:
-            return True
-        return obj and not obj.is_staff
-
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         is_change_form = obj is not None
@@ -107,15 +102,20 @@ class UserAdmin(auth_admin.UserAdmin):
             assert fieldsets[0] == (None, {"fields": ("username", "password")})
             fieldsets = list(copy.deepcopy(fieldsets))
             fieldsets[0][1]["fields"] += ("must_reset_password",)
+
             fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
-            if self.permissions_readonly(request, obj):
-                fieldsets = list(copy.deepcopy(fieldsets))
-                assert fieldsets[2][0] == "Permissions"
+
+            assert fieldsets[2][0] == "Permissions"
+            if request.user.is_superuser:
+                if obj and not obj.is_staff:
+                    # Hide space-consuming widgets for groups and user_permissions.
+                    fieldsets[2] = ("Permissions", {"fields": ["is_active", "is_staff", "is_superuser"]})
+            else:
                 del fieldsets[2]
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
         rof = super().get_readonly_fields(request, obj)
-        if self.permissions_readonly(request, obj):
-            rof += ("is_staff", "is_superuser", "groups", "user_permissions")
+        if not request.user.is_superuser:
+            rof = [*rof, "is_staff", "is_superuser", "groups", "user_permissions"]
         return rof
