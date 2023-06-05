@@ -1,9 +1,11 @@
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import OAuthToolkitError
+from oauth2_provider.settings import oauth2_settings
 
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
@@ -115,7 +117,18 @@ oauth2_views.oidc.validate_logout_request = validate_logout_request
 class LogoutView(oauth2_views.RPInitiatedLogoutView):
     def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
         user = token_user or self.request.user
-        response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
+        # There's an issue when the user session already expired and the RP only passes the client_id
+        # See https://github.com/jazzband/django-oauth-toolkit/pull/1281
+        # This is a temporary workaround
+        original_setting = oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS
+        if isinstance(user, AnonymousUser):
+            try:
+                oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS = False
+                response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
+            finally:
+                oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS = original_setting
+        else:
+            response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
 
         [
             s.delete()
