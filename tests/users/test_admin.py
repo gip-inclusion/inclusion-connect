@@ -707,7 +707,7 @@ class TestUserAdmin:
         staff_group = Group.objects.get(name="support")
         staff_user.groups.set([staff_group])
         client.force_login(staff_user)
-        response = client.get(
+        response = client.post(
             reverse("admin:users_user_change", args=(staff_user.pk,)),
             data={
                 "must_reset_password": "off",
@@ -735,11 +735,15 @@ class TestUserAdmin:
                 "email_addresses-0-email": staff_user.email,
                 "email_addresses-0-verified_at_0": "02/01/2023",
                 "email_addresses-0-verified_at_1": "23:00:00",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
-        # Readonly fields were ignored, hence the 200.
-        assert response.status_code == 200
+        # Readonly fields were ignored, hence the 302.
+        assertRedirects(response, reverse("admin:users_user_change", args=(staff_user.pk,)))
         staff_user.refresh_from_db()
         assert staff_user.is_staff is True
         assert staff_user.is_superuser is False
