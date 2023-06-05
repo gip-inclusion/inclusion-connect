@@ -798,3 +798,61 @@ class TestUserAdmin:
         assert user.is_superuser is False
         assertQuerysetEqual(user.groups.all(), [])
         assert user.get_user_permissions() == set()
+
+    def test_superuser_can_promote_user(self, client):
+        staff_group = Group.objects.get(name="support")
+        user = UserFactory(email_address=False)
+        email_address = EmailAddress.objects.create(user=user, email=user.email, verified_at=timezone.now())
+        client.force_login(UserFactory(is_staff=True, is_superuser=True))
+        response = client.post(
+            reverse("admin:users_user_change", args=(user.pk,)),
+            data={
+                "must_reset_password": "off",
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_active": "on",
+                "is_staff": "on",
+                "is_superuser": "on",
+                "groups": staff_group.pk,
+                "last_login_0": "02/01/2023",
+                "last_login_1": "22:22:22",
+                "date_joined_0": "01/01/2023",
+                "date_joined_1": "11:11:11",
+                "initial-date_joined_0": "01/01/2023",
+                "initial-date_joined_1": "11:11:11",
+                "terms_accepted_at_0": "02/01/2023",
+                "terms_accepted_at_1": "22:40:00",
+                "email_addresses-TOTAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "1",
+                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-0-id": email_address.pk,
+                "email_addresses-0-user": user.pk,
+                "email_addresses-0-email": user.email,
+                "email_addresses-0-verified_at_0": "02/01/2023",
+                "email_addresses-0-verified_at_1": "23:00:00",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        # Readonly fields were ignored, hence the 302.
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)), fetch_redirect_response=False)
+        user.refresh_from_db()
+        assert user.is_staff is True
+        assert user.is_superuser is True
+        response = client.get(response.url)
+        assertContains(
+            response,
+            '<select name="groups" id="id_groups" multiple class="selectfilter" data-field-name="groupes" '
+            'data-is-stacked="0">',
+            count=1,
+        )
+        assertContains(
+            response,
+            '<select name="user_permissions" id="id_user_permissions" multiple class="selectfilter" '
+            'data-field-name="permissions de l’utilisateur" data-is-stacked="0">',
+            count=1,
+        )
