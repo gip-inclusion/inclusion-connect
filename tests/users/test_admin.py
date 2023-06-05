@@ -752,7 +752,7 @@ class TestUserAdmin:
         user = UserFactory(email_address=False)
         email_address = EmailAddress.objects.create(user=user, email=user.email, verified_at=timezone.now())
         client.force_login(staff_user)
-        response = client.get(
+        response = client.post(
             reverse("admin:users_user_change", args=(user.pk,)),
             data={
                 "must_reset_password": "off",
@@ -780,11 +780,15 @@ class TestUserAdmin:
                 "email_addresses-0-email": user.email,
                 "email_addresses-0-verified_at_0": "02/01/2023",
                 "email_addresses-0-verified_at_1": "23:00:00",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
-        # Readonly fields were ignored, hence the 200.
-        assert response.status_code == 200
+        # Readonly fields were ignored, hence the 302.
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
         staff_user.refresh_from_db()
         assert user.is_staff is False
         assert user.is_superuser is False
