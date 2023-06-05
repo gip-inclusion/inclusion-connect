@@ -1,0 +1,32 @@
+{% extends "layout/left_content.html" %}
+{% load bootstrap4 %}
+
+{% block content %}
+    <div class="block-center">
+        {% if not error %}
+            <h3>Déconnexion</h3>
+            <p>Êtes-vous sûr de vouloir vous déconnecter ?</p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    {% if field.is_hidden %}{{ field }}{% endif %}
+                {% endfor %}
+
+                {{ form.errors }}
+                {{ form.non_field_errors }}
+
+                <div class="control-group">
+                    <div class="controls">
+                        <input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />
+                    </div>
+                </div>
+            </form>
+
+        {% else %}
+            <h2>Erreur: {{ error.error }}</h2>
+            <p>{{ error.description }}</p>
+        {% endif %}
+    </div>
+{% endblock %}
