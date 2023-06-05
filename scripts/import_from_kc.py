@@ -184,7 +184,8 @@ for client_id, secret, name, realm_name in application_data:
         client_secret=secret,
         name=name,
         algorithm="RS256",
-        redirect_uris=",".join(redirect_uris[client_id]),
+        redirect_uris=" ".join(redirect_uris[client_id]),
+        post_logout_redirect_uris=" ".join(redirect_uris[client_id]),
     )
 
 users = []
