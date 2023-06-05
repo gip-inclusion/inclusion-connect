@@ -61,7 +61,7 @@ class EmailAddressInline(admin.TabularInline):
     ordering = [F("verified_at").desc(nulls_last=True), "email"]
 
 
-class AdminPasswordChange(auth_forms.AdminPasswordChangeForm):
+class AdminPasswordChangeForm(auth_forms.AdminPasswordChangeForm):
     def save(self, commit=True):
         self.user.must_reset_password = True
         return super().save(commit)
@@ -85,7 +85,7 @@ class UserAdmin(auth_admin.UserAdmin):
     readonly_fields = ["username", "email", "terms_accepted_at"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline, UserApplicationLinkInline]
-    change_password_form = AdminPasswordChange
+    change_password_form = AdminPasswordChangeForm
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
 
     def save_related(self, request, form, formsets, change):
