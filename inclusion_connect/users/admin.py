@@ -97,7 +97,7 @@ class UserAdmin(auth_admin.UserAdmin):
 
     def permissions_readonly(self, request, obj):
         if not request.user.is_superuser:
-            return False
+            return True
         return obj and not obj.is_staff
 
     def get_fieldsets(self, request, obj=None):
