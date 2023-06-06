@@ -298,9 +298,22 @@ EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 # Django-oauth-toolkit
 # --------------------
 
+one_lined_rsa_private_key = os.environ.get("OIDC_RSA_PRIVATE_KEY")
+OIDC_RSA_PRIVATE_KEY = f"""{one_lined_rsa_private_key[:27]}
+{one_lined_rsa_private_key[27:-25]}
+{one_lined_rsa_private_key[-25:]}"""
+
+assert (
+    OIDC_RSA_PRIVATE_KEY.splitlines()[0] == "-----BEGIN PRIVATE KEY-----"
+), "Bad rsa key format, we expect a one-lined PEM key starting with '-----BEGIN PRIVATE KEY----'"
+assert (
+    OIDC_RSA_PRIVATE_KEY.splitlines()[2] == "-----END PRIVATE KEY-----"
+), "Bad rsa key format, we expect a one-lined PEM key ending with '-----END PRIVATE KEY----'"
+
+
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": True,
-    "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
+    "OIDC_RSA_PRIVATE_KEY": OIDC_RSA_PRIVATE_KEY,
     "SCOPES": {
         "openid": "OpenID Connect scope",
         "profile": "Profil utilisateur",
