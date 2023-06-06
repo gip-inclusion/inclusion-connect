@@ -302,9 +302,15 @@ EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 # Django-oauth-toolkit
 # --------------------
 
+try:
+    with open("oidc.pem", "r") as rsa_key_file:
+        oidc_rsa_private_key = rsa_key_file.read()
+except FileNotFoundError:
+    oidc_rsa_private_key = ""
+
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": True,
-    "OIDC_RSA_PRIVATE_KEY": os.environ.get("OIDC_RSA_PRIVATE_KEY"),
+    "OIDC_RSA_PRIVATE_KEY": oidc_rsa_private_key,
     "SCOPES": {
         "openid": "OpenID Connect scope",
         "profile": "Profil utilisateur",

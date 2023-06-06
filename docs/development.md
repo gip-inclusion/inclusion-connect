@@ -29,6 +29,14 @@ Afin d'avoir accès aux mails envoyés par Inclusion Connect en local, notre `do
 MailHog donne accès à un faux webmail à l'addresse http://127.0.0.1:8025 qui permet d'afficher tous les emails qui sont envoyés.
 Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse email.
 
+## Générer une clé RSA
+
+Cette clé sera utilisée pour signer les jwt renvoyés aux partenaires.
+
+```bash
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
+```
+
 ## Démarrer PostgreSQL et MailHog
 
 Lancer les images dockers depuis la racine du dépôt :

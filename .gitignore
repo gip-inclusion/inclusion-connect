@@ -1,6 +1,9 @@
 # Environment variables
 .envrc
 
+# OIDC RSA private key
+oidc.pem
+
 # Config
 docker-compose-prod.yml
 
