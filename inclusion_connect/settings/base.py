@@ -302,11 +302,7 @@ EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 # Django-oauth-toolkit
 # --------------------
 
-try:
-    with open("oidc.pem", "r") as rsa_key_file:
-        oidc_rsa_private_key = rsa_key_file.read()
-except FileNotFoundError:
-    oidc_rsa_private_key = ""
+oidc_rsa_private_key = Path("oidc.pem").read_text()
 
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": True,
