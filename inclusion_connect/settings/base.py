@@ -33,7 +33,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = False
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "connect.inclusion.beta.gouv.fr").split(",")
-
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Inclusion Connect <contact@inclusion.beta.gouv.fr>")
 
 # Application definition
 
