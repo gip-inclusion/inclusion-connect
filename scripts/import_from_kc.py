@@ -151,7 +151,7 @@ with KeyCloakCursor() as cursor:
     # Applications
     cursor.execute(
         """
-        SELECT client_id, secret, client.name, realm.name
+        SELECT client_id, secret, client.name
         FROM client
         INNER JOIN realm ON client.realm_id = realm.id
         WHERE secret is not NULL
@@ -174,9 +174,7 @@ with KeyCloakCursor() as cursor:
         redirect_uris[client_id].append(value)
 
 applications = {}
-for client_id, secret, name, realm_name in application_data:
-    if realm_name not in REALMS:
-        continue
+for client_id, secret, name in application_data:
     applications[client_id] = Application(
         client_id=client_id,
         client_type="confidential",
