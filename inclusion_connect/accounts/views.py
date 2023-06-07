@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -157,10 +158,10 @@ class ConfirmEmailTokenView(View):
             uid = uuid.UUID(http.urlsafe_base64_decode(uidb64).decode())
         except (TypeError, ValueError, OverflowError) as e:
             raise Http404 from e
-        one_day = 24 * 60 * 60
+        max_age = 24 * 60 * 60 * settings.EMAIL_LINKS_VALIDITY_DAYS
         signer = TimestampSigner()
         try:
-            encoded_email = signer.unsign(token, max_age=one_day)
+            encoded_email = signer.unsign(token, max_age=max_age)
         except SignatureExpired:
             encoded_email = signer.unsign(token)
             email = self.decode_email(encoded_email)

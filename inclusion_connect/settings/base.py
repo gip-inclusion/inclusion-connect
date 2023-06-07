@@ -281,6 +281,10 @@ if SENTRY_DSN:
 new_terms_date_str = os.getenv("NEW_TERMS_DATE", "2023-03-02T00:00:00+00:00")
 NEW_TERMS_DATE = datetime.datetime.fromisoformat(new_terms_date_str)
 
+# email link validity
+EMAIL_LINKS_VALIDITY_DAYS = 1
+PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS
+
 # Email
 # -----
 
