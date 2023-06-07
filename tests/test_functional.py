@@ -7,7 +7,6 @@ from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
 from django.db.models import F
-from django.test import Client
 from django.urls import reverse
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
@@ -16,6 +15,7 @@ from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
+from tests.conftest import Client
 from tests.helpers import OIDC_PARAMS, call_logout, oidc_flow_followup, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
