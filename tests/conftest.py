@@ -1,5 +1,5 @@
 import pytest
-from django.test.client import Client
+from django.test import TestCase, client as django_client
 
 
 pytest.register_assert_rewrite("tests.asserts", "tests.helpers")
@@ -14,7 +14,7 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.django_db)
 
 
-class NoInlineClient(Client):
+class NoInlineClient(django_client.Client):
     def request(self, **request):
         response = super().request(**request)
         content_type = response["Content-Type"].split(";")[0]
@@ -38,14 +38,16 @@ class NoInlineClient(Client):
         return response
 
 
+class ExecuteOnCommitCallbacksClient(django_client.Client):
+    def request(self, **request):
+        with TestCase.captureOnCommitCallbacks(execute=True):
+            return super().request(**request)
+
+
+class Client(ExecuteOnCommitCallbacksClient, NoInlineClient):
+    pass
+
+
 @pytest.fixture
-def client(django_capture_on_commit_callbacks):
-    class ExecuteOnCommitCallbacksClient(Client):
-        def request(self, **request):
-            with django_capture_on_commit_callbacks(execute=True):
-                return super().request(**request)
-
-    class InclusionConnectTestClient(ExecuteOnCommitCallbacksClient, NoInlineClient):
-        pass
-
-    return InclusionConnectTestClient()
+def client():
+    return Client()
