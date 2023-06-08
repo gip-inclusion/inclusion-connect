@@ -16,6 +16,9 @@ def make_password_field(form_field, field_class=None):
         """,
         addon_after_class=None,
         field_class=field_class,
+        # Otherwise, password validators rules are displayed in a <ul>,
+        # which duplicated the indicators from new_password.html.
+        show_help=False,
     )
 
 

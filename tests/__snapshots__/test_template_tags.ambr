@@ -1,0 +1,11 @@
+# serializer version: 1
+# name: test_new_password_display[new password has instructions]
+  '''
+  <div class="form-group form-group-required"><label for="id_password1">Mot de passe</label><div class="password-with-instructions"><div class="input-group"><input autocomplete="new-password" class="form-control" id="id_password1" name="password1" placeholder="**********" required="" title="" type="password"/><div class="input-group-append">
+          <button class="btn btn-sm btn-link btn-ico" data-password="toggle" type="button">
+              <i class="ri-eye-line"></i>
+              <span>Afficher</span>
+          </button>
+          </div></div></div></div>
+  '''
+# ---
