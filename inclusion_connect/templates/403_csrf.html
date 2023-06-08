@@ -1,0 +1,12 @@
+{% extends "layout/left_content.html" %}
+{% block content %}
+    <div class="alert alert-danger">
+        <p>
+            La requête a été interrompue pour votre sécurité (mécanisme <abbr>CSRF</abbr>).
+            Peut-être vous êtes-vous connecté depuis un autre onglet ?
+        </p>
+        <p class="mb-0">
+            Veuillez <a href="">recharger la page</a>.
+        </p>
+    </div>
+{% endblock %}
