@@ -1,0 +1,176 @@
+# serializer version: 1
+# name: test_csrf_view
+  '''
+  
+  
+  
+  <!DOCTYPE HTML>
+  <html lang="fr">
+      <head>
+          <meta charset="utf-8">
+          <title>Inclusion Connect</title>
+          <meta name="robots" content="noindex, nofollow">
+          <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+          <link rel="icon" href="/static/img/illustration-bg-ic.svg" type="image/svg+xml">
+          <link rel="icon" href="/static/img/favicon.ico" type="image/ico">
+          <link rel="stylesheet" href="/static/vendor/theme-inclusion/stylesheets/app.css" type="text/css">
+          <link rel="stylesheet" href="/static/css/inclusion_connect.css" type="text/css">
+  
+          
+      </head>
+      <body>
+          
+  
+  
+  <header class="s-header s-header--emploi sticky-top" role="banner" id="header">
+      <section class="s-header__container container">
+          <div class="s-header__row row">
+              <div class="s-header__col s-header__col--logo col-auto d-flex align-items-center pr-0 pr-md-3">
+                  <img src="/static/vendor/theme-inclusion/images/logo-ministere-emploi.svg" alt="Ministère du travail, du plein emploi et de l'insertion" />
+              </div>
+              <div class="s-header__col s-header__col--logo col-auto d-flex align-items-center px-0 px-md-3">
+                  <img src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg" alt="Inclusion Connect" />
+              </div>
+          </div>
+      </section>
+  </header>
+  
+  
+          <main id="main" role="main" class="s-main">
+  
+              <section class="s-section pt-lg-3">
+                  <div class="s-section__container container">
+                      <div class="s-section__row row no-gutters bg-white">
+                          
+      <div class="s-section__col col-12 col-lg-6 bg-lg-white">
+          <div class="bg-white p-3 py-lg-7 px-lg-8">
+              <div class="container container-messages">
+                  
+                      
+  
+  
+                  
+              </div>
+  
+              
+      <div class="alert alert-danger">
+          <p>
+              La requête a été interrompue pour votre sécurité (mécanisme <abbr>CSRF</abbr>).
+              Peut-être vous êtes-vous connecté depuis un autre onglet ?
+          </p>
+          <p class="mb-0">
+              Veuillez <a href="">recharger la page</a>.
+          </p>
+      </div>
+  
+          </div>
+      </div>
+  
+                          
+      <div class="s-section__col d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+          <img class="img-fluid" src="/static/img/illustration-ic.svg" alt="" loading="lazy">
+      </div>
+  
+                      </div>
+                  </div>
+              </section>
+  
+  
+          </main>
+  
+          
+  
+  
+  <footer class="s-footer" role="contentinfo" id="footer">
+      <section class="s-footer-nav">
+          <div class="s-footer-nav__container container">
+              <div class="s-footer-nav__row row">
+                  <div class="s-footer-nav__col col-6 d-flex align-items-center">
+                      <div class="s-footer-nav__logo">
+                          <img src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg" alt="Rébublique Française" class="img-fluid">
+                      </div>
+                  </div>
+                  <div class="s-footer-nav__col col-12 col-lg-6 d-flex align-items-center small">
+                      <div>
+                          <p class="mb-3">
+                              Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
+                          </p>
+                          <ul>
+                              <li>
+                                  <a target="_blank" href="https://legifrance.gouv.fr">
+                                      legifrance.gouv.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                  </a>
+                              </li>
+                              <li>
+                                  <a target="_blank" href="https://gouvernement.fr">
+                                      gouvernement.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                  </a>
+                              </li>
+                              <li>
+                                  <a target="_blank" href="https://service-public.fr">
+                                      service-public.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                  </a>
+                              </li>
+                              <li>
+                                  <a target="_blank" href="https://data.gouv.fr">
+                                      data.gouv.fr<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                                  </a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                  <div class="fr-footer__content col-12 col-lg-6 d-flex align-items-center">
+                      <p class="fr-footer__content-desc"></p>
+                      <ul class="fr-footer__content-list">
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      </section>
+  
+      <section class="s-footer-legal">
+          <div class="s-footer-legal__container container">
+              <div class="s-footer-legal__row row">
+                  <div class="s-footer-legal__col col-xs-12 col-lg-8">
+                      <ul>
+                          <li>
+                              <a href="/static/terms/Politique%20de%20confidentialite%CC%81_20230512.pdf" target="_blank">
+                                  Politique de confidentialité<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="/static/terms/CGU_20230302.pdf" target="_blank">
+                                  CGU<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                              </a>
+                          </li>
+                          <li>
+                              <a href="/static/terms/Mentions%20l%C3%A9gales_20230302.pdf" target="_blank">
+                                  Mentions légales<i class="ri-external-link-line ml-1 ri-lg" aria-hidden="true"></i>
+                              </a>
+                          </li>
+                      </ul>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </footer>
+  
+  
+          
+          
+          
+  
+          <script src="/static/vendor/jquery-3.6.4/jquery-3.6.4.min.js"></script>
+          <script src="/static/vendor/bootstrap-4.3.1/popper.min.js"></script>
+          <script src="/static/vendor/bootstrap-4.3.1/bootstrap.min.js"></script>
+          <script src="/static/vendor/theme-inclusion/javascripts/app.js"></script>
+  
+          
+              <script src="/static/js/index.js"></script>
+          
+      </body>
+  </html>
+  
+  '''
+# ---
