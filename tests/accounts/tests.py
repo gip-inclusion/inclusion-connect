@@ -509,6 +509,7 @@ class TestActivateAccountView:
 
 
 class TestPasswordResetView:
+    @freeze_time("2023-06-08 09:10:03")
     def test_password_reset(self, client):
         user = UserFactory()
 
@@ -588,6 +589,7 @@ class TestPasswordResetView:
         # Check sent email
         assert len(mail.outbox) == 0
 
+    @freeze_time("2023-06-08 09:10:03")
     def test_login_hint(self, client, mailoutbox):
         user = UserFactory(email="me@mailinator.com")
 
