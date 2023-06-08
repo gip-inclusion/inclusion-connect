@@ -264,9 +264,6 @@ BOOTSTRAP4 = {
 # Inclusion Connect settings
 # --------------------------
 
-# Environment, sets the type of env of the app (PROD, FAST-MACHINE, DEMO, DEV…)
-IC_ENVIRONMENT = os.getenv("IC_ENVIRONMENT", "PROD")
-
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 try:
     _sentry_traces_sample_rate = float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", ""))
