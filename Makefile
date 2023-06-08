@@ -52,6 +52,7 @@ quality: $(VIRTUAL_ENV)
 	black --check $(PY_PACKAGES)
 	ruff check $(PY_PACKAGES)
 	djlint --lint --check inclusion_connect
+	python manage.py collectstatic --noinput
 	python manage.py makemigrations --check --dry-run --noinput
 
 fix: $(VIRTUAL_ENV)
