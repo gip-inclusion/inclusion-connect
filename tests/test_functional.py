@@ -355,7 +355,7 @@ def test_login_after_password_reset(client):
     reset_url_regex = reverse("accounts:password_reset_confirm", args=("string", "string")).replace("string", "[^/]*")
     reset_url = re.search(reset_url_regex, mail.outbox[0].body)[0]
     response = client.get(reset_url)  # retrieve the modified url
-    response = client.post(response.url, data={"new_password1": "password", "new_password2": "password"})
+    response = client.post(response.url, data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"})
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
 
@@ -398,7 +398,7 @@ def test_login_after_password_reset_other_client(client):
 
     other_client = Client()
     response = other_client.get(reset_url)  # retrieve the modified url
-    response = other_client.post(response.url, data={"new_password1": "password", "new_password2": "password"})
+    response = other_client.post(response.url, data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"})
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(other_client).is_authenticated is True
 
@@ -634,7 +634,7 @@ def test_edit_user_info_and_password(client, mailoutbox):
     assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
     response = client.post(
         change_password_url,
-        data={"old_password": DEFAULT_PASSWORD, "new_password1": "toto", "new_password2": "toto"},
+        data={"old_password": DEFAULT_PASSWORD, "new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
     )
     assert get_user(client).is_authenticated is True
 
@@ -642,5 +642,7 @@ def test_edit_user_info_and_password(client, mailoutbox):
     assert get_user(client).is_authenticated is False
 
     # User may login with new password
-    response = client.post(reverse("accounts:login"), data={"email": "my@email.com", "password": "toto"}, follow=True)
+    response = client.post(
+        reverse("accounts:login"), data={"email": "my@email.com", "password": "V€r¥--$3©®€7"}, follow=True
+    )
     assert get_user(client).is_authenticated is True
