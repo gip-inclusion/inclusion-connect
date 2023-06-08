@@ -3,9 +3,6 @@ import os
 from .base import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position # noqa: E402,F403
 
 
-IC_ENVIRONMENT = "DEV"
-os.environ["IC_ENVIRONMENT"] = IC_ENVIRONMENT
-
 # Django settings
 # ---------------
 SECRET_KEY = "foobar"
