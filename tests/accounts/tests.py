@@ -58,7 +58,7 @@ class TestLoginView:
         url = add_url_params(reverse("accounts:login"), {"next": "anything"})
         user = UserFactory()
 
-        response = client.post(url, data={"email": user.email, "password": "toto"})
+        response = client.post(url, data={"email": user.email, "password": "V€r¥--$3©®€7"})
         assertTemplateUsed(response, "login.html")
         assertContains(response, "Adresse e-mail ou mot de passe invalide.")
         assert not get_user(client).is_authenticated
@@ -544,7 +544,7 @@ class TestPasswordResetView:
         assert password_reset_url in mail.outbox[0].body
 
         # Change password
-        password = "toto"
+        password = "V€r¥--$3©®€7"
         response = client.get(password_reset_url)  # retrieve the modified url
         response = client.post(response.url, data={"new_password1": password, "new_password2": password})
 
@@ -602,7 +602,7 @@ class TestPasswordResetView:
         assert password_reset_url in email.body
 
         # Change password
-        password = "toto"
+        password = "V€r¥--$3©®€7"
         response = client.get(password_reset_url)  # retrieve the modified url
         response = client.post(response.url, data={"new_password1": password, "new_password2": password})
 
@@ -719,7 +719,7 @@ def test_change_password(client):
     # Go change password
     response = client.post(
         change_password_url,
-        data={"old_password": DEFAULT_PASSWORD, "new_password1": "toto", "new_password2": "toto"},
+        data={"old_password": DEFAULT_PASSWORD, "new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
     )
     assertRedirects(response, change_password_url)
     assert get_user(client).is_authenticated is True
@@ -727,7 +727,9 @@ def test_change_password(client):
     client.logout()
     assert get_user(client).is_authenticated is False
 
-    response = client.post(reverse("accounts:login"), data={"email": user.email, "password": "toto"}, follow=True)
+    response = client.post(
+        reverse("accounts:login"), data={"email": user.email, "password": "V€r¥--$3©®€7"}, follow=True
+    )
     assert get_user(client).is_authenticated is True
 
 
@@ -1001,7 +1003,7 @@ class TestChangeTemporaryPasswordView:
 
         response = client.post(
             reverse("accounts:change_temporary_password"),
-            data={"new_password1": "toto", "new_password2": "toto"},
+            data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
         # The redirect cleans `next_url` from the session.
@@ -1040,7 +1042,7 @@ class TestMiddleware:
 
         client.post(
             reverse("accounts:change_temporary_password"),
-            data={"new_password1": "toto", "new_password2": "toto"},
+            data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
         response = client.get(reverse("accounts:edit_user_info"))
         assert response.status_code == 200

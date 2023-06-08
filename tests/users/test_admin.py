@@ -629,7 +629,7 @@ class TestUserAdmin:
         client.force_login(staff_user)
 
         user = UserFactory()
-        password = "toto"
+        password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
             data={"password1": password, "password2": password},
@@ -660,7 +660,7 @@ class TestUserAdmin:
         response = client.get(reverse("admin:users_user_history", args=(user.pk,)))
         assert response.status_code == 403
 
-        password = "toto"
+        password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
             data={"password1": password, "password2": password},
@@ -690,7 +690,7 @@ class TestUserAdmin:
         response = client.get(reverse("admin:users_user_history", args=(user.pk,)))
         assert response.status_code == 200
 
-        password = "toto"
+        password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
             data={"password1": password, "password2": password},

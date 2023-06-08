@@ -20,8 +20,6 @@ EMAIL_PORT = 1025
 
 SESSION_COOKIE_SECURE = False
 
-AUTH_PASSWORD_VALIDATORS = []
-
 INSTALLED_APPS.extend(  # noqa: F405
     [
         "django_extensions",
