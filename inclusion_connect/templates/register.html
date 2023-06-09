@@ -10,7 +10,7 @@
         Inclusion Connect vous permettra d’utiliser le même identifiant et mot de passe pour plusieurs services, en toute sécurité.
     </div>
 
-    <form method="post" class="js-prevent-multiple-submit">
+    <form method="post" class="js-prevent-multiple-submit" novalidate>
         {% csrf_token %}
         <fieldset>
             <div class="row">
