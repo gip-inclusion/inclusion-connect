@@ -627,7 +627,14 @@ def test_edit_user_info_and_password(client, mailoutbox):
     assert verification_email.subject == "Vérification de l’adresse e-mail"
     verification_url = get_verification_link(verification_email.body)
     response = client.get(verification_url)
-    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assertRedirects(response, edit_user_info_url)
+    user.refresh_from_db()
+    assert user.next_redirect_uri is None
+
+    # Page still contains return to referrer link
+    response = client.get(response.url)
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
 
     # Go change password
     response = client.get(change_password_url)
@@ -646,3 +653,54 @@ def test_edit_user_info_and_password(client, mailoutbox):
         reverse("accounts:login"), data={"email": "my@email.com", "password": "V€r¥--$3©®€7"}, follow=True
     )
     assert get_user(client).is_authenticated is True
+
+
+def test_edit_user_info_other_client(client, mailoutbox):
+    user = UserFactory()
+    verified_email = user.email
+    referrer_uri = "https://go/back/there"
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
+
+    # User is redirected to login
+    response = client.get(edit_user_info_url)
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}))
+    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    assertRedirects(response, edit_user_info_url)
+    assertContains(response, "<h1>\n                Informations générales\n            </h1>")
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
+
+    # Page contains return to referrer link
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
+
+    # Edit user info
+    response = client.post(
+        edit_user_info_url,
+        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
+    )
+    assertRedirects(response, reverse("accounts:confirm-email"))
+    user.refresh_from_db()
+    assert user.first_name == "John"
+    assert user.last_name == "Doe"
+    assert user.email == verified_email
+    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
+    assert old.verified_at is not None
+    assert old.email == verified_email
+    assert new.verified_at is None
+    assert new.email == "my@email.com"
+    assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
+    [verification_email] = mailoutbox
+    assert verification_email.to == ["my@email.com"]
+    assert verification_email.subject == "Vérification de l’adresse e-mail"
+    verification_url = get_verification_link(verification_email.body)
+    other_client = Client()
+    response = other_client.get(verification_url)
+    assertRedirects(response, edit_user_info_url)
+    user.refresh_from_db()
+    assert user.next_redirect_uri is None
+
+    # Page still contains return to referrer link
+    response = other_client.get(response.url)
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)

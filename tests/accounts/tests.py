@@ -658,10 +658,11 @@ class TestEditUserInfoView:
         user = UserFactory()
         verified_email = user.email
         client.force_login(user)
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": "rp_url"})
 
         # Edit user info
         response = client.post(
-            reverse("accounts:edit_user_info"),
+            edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "jo-with-typo@email.com"},
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
@@ -675,10 +676,11 @@ class TestEditUserInfoView:
         assert new.verified_at is None
         assert new.email == "jo-with-typo@email.com"
         assert client.session[EMAIL_CONFIRM_KEY] == "jo-with-typo@email.com"
+        assert user.next_redirect_uri == edit_user_info_url
 
         # Now, fix the typo.
         response = client.post(
-            reverse("accounts:edit_user_info"),
+            edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "joe@email.com"},
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
@@ -692,6 +694,7 @@ class TestEditUserInfoView:
         assert new.verified_at is None
         assert new.email == "joe@email.com"
         assert client.session[EMAIL_CONFIRM_KEY] == "joe@email.com"
+        assert user.next_redirect_uri == edit_user_info_url
 
 
 def test_change_password(client):
