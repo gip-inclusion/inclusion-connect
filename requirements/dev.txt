@@ -14,10 +14,6 @@ asgiref==3.7.2 \
     # via
     #   -r requirements/base.txt
     #   django
-astroid==2.15.5 \
-    --hash=sha256:078e5212f9885fa85fbb0cf0101978a336190aadea6e13305409d099f71b2324 \
-    --hash=sha256:1039262575027b441137ab4a62a793a9b43defb42c32d5670f38686207cd780f
-    # via pylint
 asttokens==2.2.1 \
     --hash=sha256:4622110b2a6f30b77e1473affaa97e711bc2f07d3f10848420ff1898edbe94f3 \
     --hash=sha256:6b0ac9e93fb0335014d382b8fa9b3afa7df546984258005da0b9e7095b3deb1c
@@ -339,10 +335,6 @@ deprecated==1.2.14 \
     # via
     #   -r requirements/base.txt
     #   jwcrypto
-dill==0.3.6 \
-    --hash=sha256:a07ffd2351b8c678dfc4a856a3005f8067aea51d6ba6c700796a4d9e280f39f0 \
-    --hash=sha256:e5db55f3687856d8fbdab002ed78544e1c4559a130302693d839dfe8f93f2373
-    # via pylint
 distlib==0.3.6 \
     --hash=sha256:14bad2d9b04d3a36127ac97f30b12a19268f211063d8f8ee4f47108896e11b46 \
     --hash=sha256:f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e
@@ -474,10 +466,6 @@ ipython==8.13.2 \
     --hash=sha256:7dff3fad32b97f6488e02f87b970f309d082f758d7b7fc252e3b19ee0e432dbb \
     --hash=sha256:ffca270240fbd21b06b2974e14a86494d6d29290184e788275f55e0b55914926
     # via ipdb
-isort==5.12.0 \
-    --hash=sha256:8bef7dde241278824a6d83f44a544709b065191b95b6e50894bdc722fcba0504 \
-    --hash=sha256:f84c2818376e66cf843d497486ea8fed8700b340f308f076c6fb1229dff318b6
-    # via pylint
 jedi==0.18.2 \
     --hash=sha256:203c1fd9d969ab8f2119ec0a3342e0b49910045abe6af0a3ae83a5764d54639e \
     --hash=sha256:bae794c30d07f6d910d32a7048af09b5a39ed740918da923c6b780790ebac612
@@ -496,52 +484,10 @@ jwcrypto==1.5.0 \
     # via
     #   -r requirements/base.txt
     #   django-oauth-toolkit
-lazy-object-proxy==1.9.0 \
-    --hash=sha256:09763491ce220c0299688940f8dc2c5d05fd1f45af1e42e636b2e8b2303e4382 \
-    --hash=sha256:0a891e4e41b54fd5b8313b96399f8b0e173bbbfc03c7631f01efbe29bb0bcf82 \
-    --hash=sha256:189bbd5d41ae7a498397287c408617fe5c48633e7755287b21d741f7db2706a9 \
-    --hash=sha256:18b78ec83edbbeb69efdc0e9c1cb41a3b1b1ed11ddd8ded602464c3fc6020494 \
-    --hash=sha256:1aa3de4088c89a1b69f8ec0dcc169aa725b0ff017899ac568fe44ddc1396df46 \
-    --hash=sha256:212774e4dfa851e74d393a2370871e174d7ff0ebc980907723bb67d25c8a7c30 \
-    --hash=sha256:2d0daa332786cf3bb49e10dc6a17a52f6a8f9601b4cf5c295a4f85854d61de63 \
-    --hash=sha256:5f83ac4d83ef0ab017683d715ed356e30dd48a93746309c8f3517e1287523ef4 \
-    --hash=sha256:659fb5809fa4629b8a1ac5106f669cfc7bef26fbb389dda53b3e010d1ac4ebae \
-    --hash=sha256:660c94ea760b3ce47d1855a30984c78327500493d396eac4dfd8bd82041b22be \
-    --hash=sha256:66a3de4a3ec06cd8af3f61b8e1ec67614fbb7c995d02fa224813cb7afefee701 \
-    --hash=sha256:721532711daa7db0d8b779b0bb0318fa87af1c10d7fe5e52ef30f8eff254d0cd \
-    --hash=sha256:7322c3d6f1766d4ef1e51a465f47955f1e8123caee67dd641e67d539a534d006 \
-    --hash=sha256:79a31b086e7e68b24b99b23d57723ef7e2c6d81ed21007b6281ebcd1688acb0a \
-    --hash=sha256:81fc4d08b062b535d95c9ea70dbe8a335c45c04029878e62d744bdced5141586 \
-    --hash=sha256:8fa02eaab317b1e9e03f69aab1f91e120e7899b392c4fc19807a8278a07a97e8 \
-    --hash=sha256:9090d8e53235aa280fc9239a86ae3ea8ac58eff66a705fa6aa2ec4968b95c821 \
-    --hash=sha256:946d27deaff6cf8452ed0dba83ba38839a87f4f7a9732e8f9fd4107b21e6ff07 \
-    --hash=sha256:9990d8e71b9f6488e91ad25f322898c136b008d87bf852ff65391b004da5e17b \
-    --hash=sha256:9cd077f3d04a58e83d04b20e334f678c2b0ff9879b9375ed107d5d07ff160171 \
-    --hash=sha256:9e7551208b2aded9c1447453ee366f1c4070602b3d932ace044715d89666899b \
-    --hash=sha256:9f5fa4a61ce2438267163891961cfd5e32ec97a2c444e5b842d574251ade27d2 \
-    --hash=sha256:b40387277b0ed2d0602b8293b94d7257e17d1479e257b4de114ea11a8cb7f2d7 \
-    --hash=sha256:bfb38f9ffb53b942f2b5954e0f610f1e721ccebe9cce9025a38c8ccf4a5183a4 \
-    --hash=sha256:cbf9b082426036e19c6924a9ce90c740a9861e2bdc27a4834fd0a910742ac1e8 \
-    --hash=sha256:d9e25ef10a39e8afe59a5c348a4dbf29b4868ab76269f81ce1674494e2565a6e \
-    --hash=sha256:db1c1722726f47e10e0b5fdbf15ac3b8adb58c091d12b3ab713965795036985f \
-    --hash=sha256:e7c21c95cae3c05c14aafffe2865bbd5e377cfc1348c4f7751d9dc9a48ca4bda \
-    --hash=sha256:e8c6cfb338b133fbdbc5cfaa10fe3c6aeea827db80c978dbd13bc9dd8526b7d4 \
-    --hash=sha256:ea806fd4c37bf7e7ad82537b0757999264d5f70c45468447bb2b91afdbe73a6e \
-    --hash=sha256:edd20c5a55acb67c7ed471fa2b5fb66cb17f61430b7a6b9c3b4a1e40293b1671 \
-    --hash=sha256:f0117049dd1d5635bbff65444496c90e0baa48ea405125c088e93d9cf4525b11 \
-    --hash=sha256:f0705c376533ed2a9e5e97aacdbfe04cecd71e0aa84c7c0595d02ef93b6e4455 \
-    --hash=sha256:f12ad7126ae0c98d601a7ee504c1122bcef553d1d5e0c3bfa77b16b3968d2734 \
-    --hash=sha256:f2457189d8257dd41ae9b434ba33298aec198e30adf2dcdaaa3a28b9994f6adb \
-    --hash=sha256:f699ac1c768270c9e384e4cbd268d6e67aebcfae6cd623b4d7c3bfde5a35db59
-    # via astroid
 matplotlib-inline==0.1.6 \
     --hash=sha256:f1f41aab5328aa5aaea9b16d083b128102f8712542f819fe7e6a420ff581b311 \
     --hash=sha256:f887e5f10ba98e8d2b150ddcf4702c1e5f8b3a20005eb0f74bfdbd360ee6f304
     # via ipython
-mccabe==0.7.0 \
-    --hash=sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325 \
-    --hash=sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e
-    # via pylint
 mypy-extensions==1.0.0 \
     --hash=sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d \
     --hash=sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782
@@ -590,7 +536,6 @@ platformdirs==3.5.1 \
     --hash=sha256:e2378146f1964972c03c085bb5662ae80b2b8c06226c54b2ff4aa9483e8a13a5
     # via
     #   black
-    #   pylint
     #   virtualenv
 pluggy==1.0.0 \
     --hash=sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159 \
@@ -641,21 +586,6 @@ pyjwt==2.7.0 \
     --hash=sha256:ba2b425b15ad5ef12f200dc67dd56af4e26de2331f965c5439994dad075876e1 \
     --hash=sha256:bd6ca4a3c4285c1a2d4349e5a035fdf8fb94e04ccd0fcbe6ba289dae9cc3e074
     # via -r requirements/base.txt
-pylint==2.17.4 \
-    --hash=sha256:5dcf1d9e19f41f38e4e85d10f511e5b9c35e1aa74251bf95cdd8cb23584e2db1 \
-    --hash=sha256:7a1145fb08c251bdb5cca11739722ce64a63db479283d10ce718b2460e54123c
-    # via
-    #   -r requirements/dev.in
-    #   pylint-django
-    #   pylint-plugin-utils
-pylint-django==2.5.3 \
-    --hash=sha256:0ac090d106c62fe33782a1d01bda1610b761bb1c9bf5035ced9d5f23a13d8591 \
-    --hash=sha256:56b12b6adf56d548412445bd35483034394a1a94901c3f8571980a13882299d5
-    # via -r requirements/dev.in
-pylint-plugin-utils==0.8.2 \
-    --hash=sha256:ae11664737aa2effbf26f973a9e0b6779ab7106ec0adc5fe104b0907ca04e507 \
-    --hash=sha256:d3cebf68a38ba3fba23a873809155562571386d4c1b03e5b4c4cc26c3eee93e4
-    # via pylint-django
 pyproject-hooks==1.0.0 \
     --hash=sha256:283c11acd6b928d2f6a7c73fa0d01cb2bdc5f07c57a2eeb6e83d5e56b97976f8 \
     --hash=sha256:f271b298b97f5955d53fb12b72c1fb1948c22c1a6b70b315c54cedaca0264ef5
@@ -896,10 +826,6 @@ syrupy==4.0.2 \
     --hash=sha256:3c75ab6866580679b2cb9abe78e74c3e2011fffc6333651c6beb2a78a716ab80 \
     --hash=sha256:dfd1f0fad298eee753de4f2471d4346412c4435885c4b7beea648d4934c6620a
     # via -r requirements/dev.in
-tomlkit==0.11.8 \
-    --hash=sha256:8c726c4c202bdb148667835f68d68780b9a003a9ec34167b6c673b38eff2a171 \
-    --hash=sha256:9330fc7faa1db67b541b28e62018c17d20be733177d290a13b24c62d1614e0c3
-    # via pylint
 tqdm==4.65.0 \
     --hash=sha256:1871fb68a86b8fb3b59ca4cdd3dcccbc7e6d613eeed31f4c332531977b89beb5 \
     --hash=sha256:c4f53a17fe37e132815abceec022631be8ffe1b9381c2e6e30aa70edc99e9671
@@ -1015,7 +941,6 @@ wrapt==1.15.0 \
     --hash=sha256:fd69666217b62fa5d7c6aa88e507493a34dec4fa20c5bd925e4bc12fce586639
     # via
     #   -r requirements/base.txt
-    #   astroid
     #   deprecated
 
 # The following packages are considered to be unsafe in a requirements file:

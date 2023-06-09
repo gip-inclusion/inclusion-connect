@@ -15,7 +15,9 @@ from inclusion_connect.utils.oidc import get_next_url
 
 
 class ActionToken(View):
-    def get(self, request):
+    # This view is transitional, will only live for less than a week in production.
+    # Can ignore “Too many branches ({branches} > {max_branches})”
+    def get(self, request):  # noqa: PLR0912
         try:
             request_jwt = request.GET["key"]
         except KeyError as e:
