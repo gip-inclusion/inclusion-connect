@@ -161,8 +161,10 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
         super().save(*args, request=request, **kwargs)
         email = self.cleaned_data["email"]
         if next_url := request.session.get("next_url"):
-            [user] = self.get_users(email)
-            user.save_next_redirect_uri(next_url)
+            users = list(self.get_users(email))
+            if users:
+                [user] = users
+                user.save_next_redirect_uri(next_url)
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):

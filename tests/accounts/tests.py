@@ -554,6 +554,33 @@ class TestPasswordResetView:
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
 
+    def test_password_reset_unknown_email(self, client):
+        redirect_url = reverse("oidc_overrides:logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        response = client.get(url)
+        password_reset_url = reverse("accounts:password_reset")
+        assertContains(response, password_reset_url)
+
+        response = client.get(password_reset_url)
+        assertTemplateUsed(response, "password_reset.html")
+
+        response = client.post(password_reset_url, data={"email": "evil@mailinator.com"})
+        assertRedirects(response, reverse("accounts:login"))
+        assert client.session["next_url"] == redirect_url
+        assertMessages(
+            response,
+            [
+                (
+                    messages.SUCCESS,
+                    "Si un compte existe avec cette adresse e-mail, "
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                ),
+            ],
+        )
+
+        # Check sent email
+        assert len(mail.outbox) == 0
+
     def test_login_hint(self, client, mailoutbox):
         user = UserFactory(email="me@mailinator.com")
 
