@@ -15,8 +15,6 @@ coverage  # https://github.com/nedbat/coveragepy
 djlint  # https://www.djlint.com
 ruff  # https://github.com/charliermarsh/ruff
 pre-commit  # https://github.com/pre-commit/pre-commit
-pylint  # https://github.com/PyCQA/pylint
-pylint-django  # https://github.com/PyCQA/pylint-django
 
 
 # Django
