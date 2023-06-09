@@ -1,0 +1,19 @@
+{% extends "layout/left_content.html" %}
+{% load bootstrap4 %}
+
+{% load i18n %}
+{% block content %}
+    <div>
+        <h3>Modifier l'application « {{ application.name }} »</h3>
+
+        <form method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+
+            {% buttons %}
+                <a href="{% url "oauth2_provider:detail" application.id %}" class="btn btn-outline-primary">Retour</a>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            {% endbuttons %}
+        </form>
+    </div>
+{% endblock %}

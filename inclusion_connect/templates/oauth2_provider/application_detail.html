@@ -1,0 +1,39 @@
+{% extends "layout/left_content.html" %}
+
+{% load i18n %}
+{% block content %}
+    <div>
+        <h3>Application « {{ application.name }} »</h3>
+
+        <ul>
+            <li>
+                <b>Client id :</b> {{ application.client_id }}
+            </li>
+
+            <li>
+                <b>Client type :</b> {{ application.client_type }}
+            </li>
+
+            <li>
+                <b>Authorization Grant Type :</b> {{ application.authorization_grant_type }}
+            </li>
+
+            <li>
+                <b>Redirect Uris :</b>
+                <br>
+                <textarea readonly>{{ application.redirect_uris }}</textarea>
+            </li>
+
+            <li>
+                <b>Post logout redirect uris :</b>
+                <br>
+                <textarea class="input-block-level" readonly>{{ application.post_logout_redirect_uris }}</textarea>
+            </li>
+        </ul>
+
+        <div class="form-group">
+            <a class="btn btn-outline-primary" href="{% url "oauth2_provider:list" %}">Retour</a>
+            <a class="btn btn-primary" href="{% url "oauth2_provider:update" application.id %}">Modifier</a>
+        </div>
+    </div>
+{% endblock content %}

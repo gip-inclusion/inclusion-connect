@@ -1,0 +1,15 @@
+{% extends "layout/left_content.html" %}
+
+{% load i18n %}
+{% block content %}
+    <div>
+        <h3>Vos applications</h3>
+        <ul>
+            {% for application in applications %}
+                <li>
+                    <a href="{{ application.get_absolute_url }}">{{ application.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
