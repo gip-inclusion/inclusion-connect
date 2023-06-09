@@ -280,7 +280,7 @@ NEW_TERMS_DATE = datetime.datetime.fromisoformat(new_terms_date_str)
 
 # email link validity
 EMAIL_LINKS_VALIDITY_DAYS = 1
-PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS
+PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
 
 # Email
 # -----
