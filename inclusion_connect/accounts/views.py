@@ -248,6 +248,7 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
             email_address = EmailAddress(user=user, email=email)
             emails.send_verification_email(self.request, email_address)
             self.request.session[EMAIL_CONFIRM_KEY] = email
+            user.save_next_redirect_uri(self.request.get_full_path())
             return HttpResponseRedirect(reverse("accounts:confirm-email"))
         return response
 
