@@ -1,0 +1,8 @@
+# serializer version: 1
+# name: test_log_formatting[log serialized as JSON with metadata]
+  '''
+  {"key": "value", "other_key": "value", "timestamp": "2023-05-05T11:11:11Z", "name": "inclusion_connect", "levelname": "INFO"}
+  INFO:inclusion_connect:{'key': 'value', 'other_key': 'value'}
+  
+  '''
+# ---

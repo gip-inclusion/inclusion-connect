@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
@@ -6,7 +7,7 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertNotContains, assertQuerysetEqual, assertRedirects
 
-from inclusion_connect.users.models import EmailAddress
+from inclusion_connect.users.models import EmailAddress, User
 from tests.helpers import parse_response_to_soup
 from tests.users.factories import UserFactory
 
@@ -74,17 +75,136 @@ class TestUserAdmin:
         # Using exact search with quotes.
         assertNotContains(client.get(reverse("admin:users_user_changelist"), {"q": "'charlie c'"}), result_id)
 
-    def test_admin_add(self, client):
-        user = UserFactory(is_superuser=True, is_staff=True)
-        client.force_login(user)
-        response = client.get(reverse("admin:users_user_add"))
-        assert response.status_code == 200
+    def test_admin_add(self, caplog, client):
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
+        password = "V€r¥--$3©®€7"
+        response = client.post(
+            reverse("admin:users_user_add"),
+            {
+                "password1": password,
+                "password2": password,
+                "email_addresses-TOTAL_FORMS": "0",
+                "email_addresses-INITIAL_FORMS": "0",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_save": "Enregistrer",
+            },
+        )
+        user = User.objects.get(is_superuser=False)
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+        assert user.email == ""
+        assert user.email_addresses.exists() is False
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_add', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
+        caplog.clear()
+
+        response = client.post(
+            reverse("admin:users_user_change", args=(user.pk,)),
+            data={
+                "must_reset_password": "off",
+                "first_name": "Manuel",
+                "last_name": "Calavera",
+                "email": "manny.calavera@mailinator.com",
+                "is_active": "on",
+                "is_staff": "on",
+                "email_addresses-TOTAL_FORMS": "0",
+                "email_addresses-INITIAL_FORMS": "0",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+        user.refresh_from_db()
+        assert user.is_staff is True
+        assert user.first_name == "Manuel"
+        assert user.last_name == "Calavera"
+        assert user.email == "manny.calavera@mailinator.com"
+        assertQuerysetEqual(user.groups.all(), [])
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'old_first_name': '', "
+                "'new_first_name': 'Manuel', "
+                "'old_last_name': '', "
+                "'new_last_name': 'Calavera', "
+                "'email_changed': 'manny.calavera@mailinator.com'"
+                "}",
+            )
+        ]
+        caplog.clear()
+
+        staff_group = Group.objects.get(name="support")
+        response = client.post(
+            reverse("admin:users_user_change", args=(user.pk,)),
+            data={
+                "must_reset_password": "off",
+                "first_name": "Manuel",
+                "last_name": "Calavera",
+                "email": "manny.calavera@mailinator.com",
+                "is_active": "on",
+                "is_staff": "on",
+                "groups": staff_group.pk,
+                "email_addresses-TOTAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+        user.refresh_from_db()
+        assert user.is_staff is True
+        assert user.first_name == "Manuel"
+        assert user.last_name == "Calavera"
+        assert user.email == "manny.calavera@mailinator.com"
+        assertQuerysetEqual(user.groups.all(), [staff_group])
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'groups': {'added': {1: 'support'}}"
+                "}",
+            )
+        ]
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_confirm_email(self, client):
+    def test_confirm_email(self, caplog, client):
         user = UserFactory(email="")
         email_address = EmailAddress.objects.create(email="me@mailinator.com", user=user)
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
             url,
@@ -114,13 +234,26 @@ class TestUserAdmin:
         assert email_address.email == "me@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'email_confirmed': 'me@mailinator.com'"
+                "}",
+            )
+        ]
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_confirm_other_email(self, client):
+    def test_confirm_other_email(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
         email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
             url,
@@ -152,12 +285,25 @@ class TestUserAdmin:
         assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'email_confirmed': 'other@mailinator.com'"
+                "}",
+            )
+        ]
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_update_verified_email(self, client):
+    def test_update_verified_email(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
             url,
@@ -186,13 +332,26 @@ class TestUserAdmin:
         assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'email_changed': 'other@mailinator.com'"
+                "}",
+            )
+        ]
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_dont_update_verified_email_and_confirm_another(self, client):
+    def test_dont_update_verified_email_and_confirm_another(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
         email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
             url,
@@ -232,13 +391,15 @@ class TestUserAdmin:
         assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at is None
+        assert caplog.record_tuples == []
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_update_verified_email_and_confirm_the_same_email(self, client):
+    def test_update_verified_email_and_confirm_the_same_email(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
         email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
             url,
@@ -270,9 +431,21 @@ class TestUserAdmin:
         assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change', "
+                f"'acting_user': UUID('{admin_user.pk}'), "
+                f"'user': UUID('{user.pk}'), "
+                "'email_confirmed': 'other@mailinator.com'"
+                "}",
+            )
+        ]
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_dont_erase_email(self, client):
+    def test_dont_erase_email(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
@@ -301,9 +474,10 @@ class TestUserAdmin:
         assert response.context["errors"][0][0] == "Vous ne pouvez pas supprimer l'adresse e-mail de l'utilsateur."
         user.refresh_from_db()
         assert user.email == "me@mailinator.com"
+        assert caplog.record_tuples == []
 
     @freeze_time("2023-05-12T14:42:03")
-    def test_dont_crash_if_new_email_is_invalid(self, client):
+    def test_dont_crash_if_new_email_is_invalid(self, caplog, client):
         user = UserFactory(email="me@mailinator.com")
         verified_email_address = user.email_addresses.get()
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
@@ -331,9 +505,9 @@ class TestUserAdmin:
         assert response.status_code == 200
         assert response.context["errors"][0][0] == "Saisissez une adresse de courriel valide."
         assert user.email == "me@mailinator.com"
-        assert user.email_addresses.get() == verified_email_address
+        assert caplog.record_tuples == []
 
-    def test_admin_password_update(self, client, snapshot):
+    def test_admin_password_update(self, caplog, client, snapshot):
         staff_user = UserFactory(is_superuser=True, is_staff=True)
         client.force_login(staff_user)
 
@@ -352,9 +526,19 @@ class TestUserAdmin:
             data={"password": password},
         )
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
-
         user.refresh_from_db()
         assert user.must_reset_password
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'admin_change_password', "
+                f"'acting_user': UUID('{staff_user.pk}'), "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
 
     def test_any_staff_cannot_access_users_admin(self, client):
         staff_user = UserFactory(is_staff=True)

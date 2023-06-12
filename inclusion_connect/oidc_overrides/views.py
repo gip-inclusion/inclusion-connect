@@ -1,5 +1,9 @@
+import logging
+from functools import partial
+
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.models import Session
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -7,10 +11,14 @@ from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
 from oauth2_provider.settings import oauth2_settings
 
+from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
 from inclusion_connect.utils.urls import is_inclusion_connect_url
+
+
+logger = logging.getLogger("inclusion_connect.oidc")
 
 
 class OIDCSessionMixin:
@@ -68,6 +76,18 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             defaults={"last_login": timezone.now()},
         )
         return response
+
+    def redirect(self, redirect_to, application):
+        log = log_data(self.request)
+        # OIDC params may have been lost when the client changed browser,
+        # make sure the application is set.
+        log["application"] = application.client_id
+        log["event"] = "redirect"
+        log["user"] = self.request.user.pk
+        log["url"] = redirect_to
+        log["client_id"] = application.client_id
+        transaction.on_commit(partial(logger.info, log))
+        return super().redirect(redirect_to, application)
 
 
 class AuthorizationView(BaseAuthorizationView):
@@ -133,6 +153,26 @@ oauth2_views.oidc.validate_logout_request = validate_logout_request
 
 
 class LogoutView(oauth2_views.RPInitiatedLogoutView):
+    EVENT_NAME = "logout"
+
+    def log(self, event_name, application, user, **extra):
+        request = self.request
+        log = log_data(request)
+        if application:
+            log["application"] = application.client_id
+            log["client_id"] = application.client_id
+        log["event"] = event_name
+        request_data = request.GET if request.method == "GET" else request.POST
+        for param in ["id_token_hint", "logout_hint", "client_id", "post_logout_redirect_uri", "state"]:
+            try:
+                log[param] = request_data[param]
+            except KeyError:
+                pass
+        if user:
+            log["user"] = user.pk
+        log.update(extra)
+        transaction.on_commit(partial(logger.info, log))
+
     def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
         user = token_user or self.request.user
         # There's an issue when the user session already expired and the RP only passes the client_id
@@ -153,4 +193,15 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
             for s in Session.objects.filter(expire_date__gte=timezone.now())
             if s.get_decoded().get("_auth_user_id") == str(user.pk)
         ]
+        self.log(self.EVENT_NAME, application, user)
+        return response
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        self.log(f"{self.EVENT_NAME}_error", application=None, user=None, errors=form.errors.get_json_data())
+        return response
+
+    def error_response(self, error):
+        response = super().error_response(error)
+        self.log(f"{self.EVENT_NAME}_error", application=None, user=None, error=str(error))
         return response
