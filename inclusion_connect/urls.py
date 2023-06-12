@@ -25,8 +25,7 @@ urlpatterns = [
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
     # OIDC urls
-    re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls")),
-    re_path(r"^auth/", include("oauth2_provider.urls", namespace="oauth2_provider")),
+    re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls", namespace="oauth2_provider")),
 ]
 
 for realm in settings.KEYCLOAK_REALMS:

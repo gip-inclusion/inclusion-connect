@@ -66,7 +66,7 @@ def oidc_flow_followup(client, auth_response_params, user):
 
 def oidc_complete_flow(client, user, application=None):
     application = application or ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assert client.session["next_url"] == auth_complete_url
@@ -120,7 +120,7 @@ def parse_response_to_soup(response, selector=None, no_html_body=False, status_c
 
 
 def call_logout(client, method, params):
-    url = reverse("oidc_overrides:logout")
+    url = reverse("oauth2_provider:logout")
     if method == "get":
         return client.get(add_url_params(url, params))
     elif method == "post":

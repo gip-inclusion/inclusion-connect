@@ -141,7 +141,7 @@ class TestLogoutView:
 class TestAuthorizeView:
     def test_bad_oidc_params(self, client, snapshot):
         # Application does not exist
-        auth_url = reverse("oidc_overrides:authorize")
+        auth_url = reverse("oauth2_provider:authorize")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
@@ -149,7 +149,7 @@ class TestAuthorizeView:
 
     def test_not_authenticated(self, client):
         ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-        auth_url = reverse("oidc_overrides:authorize")
+        auth_url = reverse("oauth2_provider:authorize")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
@@ -160,7 +160,7 @@ class TestAuthorizeView:
 class TestRegisterView:
     def test_bad_oidc_params(self, client, snapshot):
         # Application does not exist
-        auth_url = reverse("oidc_overrides:register")
+        auth_url = reverse("oauth2_provider:register")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
@@ -168,7 +168,7 @@ class TestRegisterView:
 
     def test_not_authenticated(self, client):
         ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-        auth_url = reverse("oidc_overrides:register")
+        auth_url = reverse("oauth2_provider:register")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:register"))
@@ -178,7 +178,7 @@ class TestRegisterView:
 
 class TestActivateView:
     def test_bad_oidc_params(self, client, snapshot):
-        auth_url = reverse("oidc_overrides:activate")
+        auth_url = reverse("oauth2_provider:activate")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
@@ -186,7 +186,7 @@ class TestActivateView:
 
     def test_missing_user_info(self, client, snapshot):
         ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-        auth_url = reverse("oidc_overrides:activate")
+        auth_url = reverse("oauth2_provider:activate")
         # Missing: email, firstname and lastname.
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
@@ -202,7 +202,7 @@ class TestActivateView:
     def test_not_authenticated(self, client):
         ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
         auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
-        auth_url = reverse("oidc_overrides:activate")
+        auth_url = reverse("oauth2_provider:activate")
         auth_complete_url = add_url_params(auth_url, auth_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:activate"))
@@ -225,10 +225,10 @@ def test_user_application_link(client):
 
     auth_params_1 = OIDC_PARAMS.copy()
     auth_params_1["client_id"] = application_1.client_id
-    auth_url_1 = add_url_params(reverse("oidc_overrides:authorize"), auth_params_1)
+    auth_url_1 = add_url_params(reverse("oauth2_provider:authorize"), auth_params_1)
     auth_params_2 = OIDC_PARAMS.copy()
     auth_params_2["client_id"] = application_2.client_id
-    auth_url_2 = add_url_params(reverse("oidc_overrides:authorize"), auth_params_2)
+    auth_url_2 = add_url_params(reverse("oauth2_provider:authorize"), auth_params_2)
 
     assert user.linked_applications.count() == 0
 
@@ -263,7 +263,7 @@ def test_session_duration(client):
     user = UserFactory()
 
     auth_params = OIDC_PARAMS.copy()
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
 
     auth_params["client_id"] = application_1.client_id
     auth_complete_url = add_url_params(auth_url, auth_params)

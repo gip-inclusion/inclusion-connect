@@ -35,9 +35,9 @@ def get_verification_link(body):
 @pytest.mark.parametrize(
     "auth_url",
     [
-        reverse("oidc_overrides:register"),
+        reverse("oauth2_provider:register"),
         # Verify the GET parameter `next` does not override OIDC redirect_uri.
-        f"{reverse('oidc_overrides:register')}?next=http://evil.com",
+        f"{reverse('oauth2_provider:register')}?next=http://evil.com",
     ],
 )
 def test_register_endpoint(auth_url, client, mailoutbox):
@@ -94,7 +94,7 @@ def test_register_endpoint_confirm_email_from_other_client(client, mailoutbox):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(reverse("oidc_overrides:register"), OIDC_PARAMS)
+    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
@@ -145,7 +145,7 @@ def test_register_endpoint_email_not_received(client, use_other_client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(reverse("oidc_overrides:register"), OIDC_PARAMS)
+    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
@@ -229,9 +229,9 @@ def test_register_endpoint_email_not_received(client, use_other_client):
 @pytest.mark.parametrize(
     "auth_url",
     [
-        reverse("oidc_overrides:activate"),
+        reverse("oauth2_provider:activate"),
         # Verify the GET parameter `next` does not override OIDC redirect_uri.
-        f"{reverse('oidc_overrides:activate')}?next=http://evil.com",
+        f"{reverse('oauth2_provider:activate')}?next=http://evil.com",
     ],
 )
 def test_activate_endpoint(auth_url, client, mailoutbox):
@@ -243,7 +243,7 @@ def test_activate_endpoint(auth_url, client, mailoutbox):
     assert response.status_code == 400
 
     user_email = "email@mailinator.com"
-    auth_url = reverse("oidc_overrides:activate")
+    auth_url = reverse("oauth2_provider:activate")
     auth_params = OIDC_PARAMS | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
@@ -292,9 +292,9 @@ def test_activate_endpoint(auth_url, client, mailoutbox):
 @pytest.mark.parametrize(
     "auth_url",
     [
-        reverse("oidc_overrides:authorize"),
+        reverse("oauth2_provider:authorize"),
         # Verify the GET parameter `next` does not override OIDC redirect_uri.
-        f"{reverse('oidc_overrides:authorize')}?next=http://evil.com",
+        f"{reverse('oauth2_provider:authorize')}?next=http://evil.com",
     ],
 )
 def test_login_endpoint(auth_url, client):
@@ -330,7 +330,7 @@ def test_login_after_password_reset(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory()
 
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
@@ -371,7 +371,7 @@ def test_login_after_password_reset_other_client(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
     user = UserFactory()
 
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
@@ -415,7 +415,7 @@ def test_login_hint_is_preserved(client):
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
 
     user_email = "email@mailinator.com"
-    auth_url = reverse("oidc_overrides:register")
+    auth_url = reverse("oauth2_provider:register")
     auth_params = OIDC_PARAMS | {"login_hint": user_email}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url, follow=True)
@@ -453,7 +453,7 @@ def test_logout_no_confirmation(client):
     user = UserFactory()
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
 
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
@@ -479,7 +479,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
 
     with freeze_time("2023-05-25 9:34"):
-        auth_url = reverse("oidc_overrides:authorize")
+        auth_url = reverse("oauth2_provider:authorize")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
@@ -509,7 +509,7 @@ def test_logout_with_confirmation(client):
     user = UserFactory()
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
 
-    auth_url = reverse("oidc_overrides:authorize")
+    auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
@@ -548,7 +548,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
     ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
 
     with freeze_time("2023-05-25 9:34"):
-        auth_url = reverse("oidc_overrides:authorize")
+        auth_url = reverse("oauth2_provider:authorize")
         auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
