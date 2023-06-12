@@ -229,17 +229,6 @@ LOGGING = {
             "handlers": ["console"],
             "level": os.getenv("IC_LOG_LEVEL", "INFO"),
         },
-        # Logger for DRF API application
-        # Will be "log-drained": may need to adjust format
-        "api_drf": {
-            "handlers": ["api_console"],
-            "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"),
-        },
-        # Huey; async tasks
-        "huey": {
-            "handlers": ["console"],
-            "level": os.getenv("HUEY_LOG_LEVEL", "WARNING"),
-        },
     },
 }
 
