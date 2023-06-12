@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.serializers.json import DjangoJSONEncoder
 from dotenv import load_dotenv
 
 
@@ -202,16 +203,17 @@ LOGGING = {
     "handlers": {
         "console": {"class": "logging.StreamHandler"},
         "null": {"class": "logging.NullHandler"},
-        "api_console": {
+        "json_handler": {
             "class": "logging.StreamHandler",
-            "formatter": "api_simple",
+            "formatter": "json_formatter",
         },
     },
     "formatters": {
-        "api_simple": {
-            "format": "{levelname} {asctime} {pathname} : {message}",
-            "style": "{",
-        },
+        "json_formatter": {
+            "()": "inclusion_connect.logging.JsonFormatter",
+            "json_encoder": DjangoJSONEncoder,
+            "timestamp": True,
+        }
     },
     "loggers": {
         "django": {
@@ -226,7 +228,7 @@ LOGGING = {
             "propagate": False,
         },
         "inclusion_connect": {
-            "handlers": ["console"],
+            "handlers": ["json_handler"],
             "level": os.getenv("IC_LOG_LEVEL", "INFO"),
         },
     },

@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import pytest
 from django.contrib.auth import get_user
@@ -57,10 +58,10 @@ class TestPostLogoutRedirectUris:
 
 
 class TestLogoutView:
-    def test_id_token_hint(self, client, oidc_params):
+    def test_id_token_hint(self, caplog, client, oidc_params):
         """This test simulates a call on logout endpoint with id_hint params"""
         user = UserFactory()
-        id_token = oidc_complete_flow(client, user, oidc_params)
+        id_token = oidc_complete_flow(client, user, oidc_params, caplog)
 
         assert get_user(client).is_authenticated is True
 
@@ -74,12 +75,26 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'application': 'my_application', "
+                "'client_id': 'my_application', "
+                "'event': 'logout', "
+                f"'id_token_hint': '{id_token}', "
+                "'post_logout_redirect_uri': 'http://callback/', "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
 
-    def test_expired_token_and_session(self, client, oidc_params):
+    def test_expired_token_and_session(self, caplog, client, oidc_params):
         """This test simulates a call on logout endpoint with expired token and sessions"""
         user = UserFactory()
         with freeze_time("2023-05-05 14:29:20"):
-            id_token = oidc_complete_flow(client, user, oidc_params)
+            id_token = oidc_complete_flow(client, user, oidc_params, caplog)
             assert get_user(client).is_authenticated is True
 
         with freeze_time("2023-05-05 14:59:21"):
@@ -101,11 +116,25 @@ class TestLogoutView:
             assert get_user(client).is_authenticated is False
             assert has_ongoing_sessions(user) is False
             assert token_are_revoked(user) is True
+            assert caplog.record_tuples == [
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    "{'ip_address': '127.0.0.1', "
+                    "'application': 'my_application', "
+                    "'client_id': 'my_application', "
+                    "'event': 'logout', "
+                    f"'id_token_hint': '{id_token}', "
+                    "'post_logout_redirect_uri': 'http://callback/', "
+                    f"'user': UUID('{user.pk}')"
+                    "}",
+                )
+            ]
 
-    def test_bad_id_token_hint_with_logged_in_user_fails(self, client, oidc_params):
+    def test_bad_id_token_hint_with_logged_in_user_fails(self, caplog, client, oidc_params):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         user = UserFactory()
-        oidc_complete_flow(client, user, oidc_params)
+        oidc_complete_flow(client, user, oidc_params, caplog)
 
         assert get_user(client).is_authenticated is True
 
@@ -115,25 +144,58 @@ class TestLogoutView:
         assert token_are_revoked(user) is False
         assert get_user(client).is_authenticated is True
         assert has_ongoing_sessions(user) is True
+        assert caplog.record_tuples == [
+            ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'application': 'my_application', "
+                "'event': 'logout_error', "
+                "'id_token_hint': '111', "
+                "'error': '(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.'"
+                "}",
+            ),
+        ]
 
-    def test_bad_id_token_hint_with_no_redirect_uri(self, client):
+    def test_bad_id_token_hint_with_no_redirect_uri(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111})
         assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', 'event': 'logout', 'id_token_hint': '111', 'user': None}",
+            ),
+        ]
 
-    def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, client):
+    def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
         assert response.status_code == 400
+        assert caplog.record_tuples == [
+            ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'logout_error', "
+                "'id_token_hint': '111', "
+                "'post_logout_redirect_uri': 'http://callback/', "
+                "'error': '(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.'"
+                "}",
+            ),
+        ]
 
-    def test_logout_clear_all_clients_sessions(self, client, oidc_params):
+    def test_logout_clear_all_clients_sessions(self, caplog, client, oidc_params):
         user = UserFactory()
         application = ApplicationFactory(client_id=oidc_params["client_id"])
-        id_token = oidc_complete_flow(client, user, oidc_params, application=application)
+        id_token = oidc_complete_flow(client, user, oidc_params, caplog, application=application)
         assert get_user(client).is_authenticated is True
 
         other_client = Client()
-        oidc_complete_flow(other_client, user, oidc_params, application=application)
+        oidc_complete_flow(other_client, user, oidc_params, caplog, application=application)
         assert get_user(other_client).is_authenticated is True
         assert get_user(client) == get_user(other_client)
 
@@ -145,15 +207,29 @@ class TestLogoutView:
         assertRedirects(response, "http://callback/", fetch_redirect_response=False)
         assert get_user(client).is_authenticated is False
         assert get_user(other_client).is_authenticated is False
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'application': 'my_application', "
+                "'client_id': 'my_application', "
+                "'event': 'logout', "
+                f"'id_token_hint': '{id_token}', "
+                "'post_logout_redirect_uri': 'http://callback/', "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
 
-    def test_multiple_logout_with_id_token_hint(self, client, oidc_params):
+    def test_multiple_logout_with_id_token_hint(self, caplog, client, oidc_params):
         user = UserFactory()
         application_1 = ApplicationFactory()
         oidc_params["client_id"] = application_1.client_id
-        id_token_1 = oidc_complete_flow(client, user, oidc_params, application=application_1)
+        id_token_1 = oidc_complete_flow(client, user, oidc_params, caplog, application=application_1)
         application_2 = ApplicationFactory()
         oidc_params["client_id"] = application_2.client_id
-        id_token_2 = oidc_complete_flow(client, user, oidc_params, application=application_2)
+        id_token_2 = oidc_complete_flow(client, user, oidc_params, caplog, application=application_2)
 
         assert get_user(client).is_authenticated is True
         assert token_are_revoked(user) is False
@@ -169,6 +245,21 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                f"'application': '{application_1.client_id}', "
+                f"'client_id': '{application_1.client_id}', "
+                "'event': 'logout', "
+                f"'id_token_hint': '{id_token_1}', "
+                "'post_logout_redirect_uri': 'http://callback/', "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
+        caplog.clear()
 
         response = call_logout(
             client,
@@ -180,6 +271,20 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                f"'application': '{application_2.client_id}', "
+                f"'client_id': '{application_2.client_id}', "
+                "'event': 'logout', "
+                f"'id_token_hint': '{id_token_2}', "
+                "'post_logout_redirect_uri': 'http://callback/', "
+                "'user': None"
+                "}",
+            )
+        ]
 
 
 class TestAuthorizeView:

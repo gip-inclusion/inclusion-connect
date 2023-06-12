@@ -1,4 +1,5 @@
 import datetime
+import logging
 import uuid
 
 import jwt
@@ -242,7 +243,7 @@ def test_user_account(client, realm):
 
 class TestActionToken:
     @freeze_time("2023-04-26 11:11:11")
-    def test_verify_email(self, client):
+    def test_verify_email(self, caplog, client):
         secret = "secret"
         JWTHashSecret.objects.create(
             realm_id="local",
@@ -269,6 +270,17 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'confirm_email_address'}",
+            )
+        ]
+        caplog.clear()
 
         # Validating again fails.
         with freeze_time("2023-04-26 11:11:12"):
@@ -280,8 +292,19 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'confirm_email_address_error', "
+                "'error': 'already verified'}",
+            )
+        ]
 
-    def test_verify_bad_signature(self, client):
+    def test_verify_bad_signature(self, caplog, client):
         secret = "secret"
         JWTHashSecret.objects.create(
             realm_id="local",
@@ -306,8 +329,9 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
+        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
 
-    def test_verify_invalid_audience(self, client):
+    def test_verify_invalid_audience(self, caplog, client):
         secret = "secret"
         JWTHashSecret.objects.create(
             realm_id="local",
@@ -332,8 +356,9 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
+        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
 
-    def test_verify_email_token_too_old(self, client):
+    def test_verify_email_token_too_old(self, caplog, client):
         secret = "secret"
         JWTHashSecret.objects.create(
             realm_id="local",
@@ -362,8 +387,20 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'event': 'confirm_email_address_error', "
+                "'error': 'link expired', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}')"
+                "}",
+            )
+        ]
 
-    def test_unknown_action(self, client):
+    def test_unknown_action(self, caplog, client):
         secret = "secret"
         JWTHashSecret.objects.create(
             realm_id="local",
@@ -388,13 +425,15 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
+        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
 
-    def test_no_jwt(self, client):
+    def test_no_jwt(self, caplog, client):
         response = client.get(reverse("keycloak_compat_local:action-token"))
         assert response.status_code == 404
+        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
 
     @freeze_time("2023-05-05 17:17:17")
-    def test_token_from_keycloak(self, client):
+    def test_token_from_keycloak(self, caplog, client):
         JWTHashSecret.objects.create(
             realm_id="local",
             secret="9vWa5WDqm9-Ai7a_Ke39g_lCNy_uisUjDaFsnZZDlhB_TLpgP5zeMqPOfghwpPZxb2cCi5remrm71ZzRKDXWjQ",
@@ -410,6 +449,16 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'confirm_email_address'}",
+            )
+        ]
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])

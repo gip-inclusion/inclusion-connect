@@ -25,7 +25,8 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": PASSWORD_PLACEHOLDER}),
     )
 
-    def __init__(self, request, *args, **kwargs):
+    def __init__(self, log, request, *args, **kwargs):
+        self.log = log
         self.request = request
         super().__init__(*args, **kwargs)
         self.fields["email"].disabled = "email" in self.initial
@@ -36,7 +37,10 @@ class LoginForm(forms.Form):
 
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
-            if self.user_cache is None:
+            if self.user_cache:
+                self.log["user"] = self.user_cache.pk
+            else:
+                self.log["email"] = email
                 try:
                     email_address = EmailAddress.objects.get(email=email, verified_at=None)
                 except EmailAddress.DoesNotExist as e:
@@ -52,7 +56,8 @@ class LoginForm(forms.Form):
                     send_verification_email(self.request, email_address)
                     raise ValidationError(
                         "Un compte inactif avec cette adresse e-mail existe déjà, "
-                        "l’email de vérification vient d’être envoyé à nouveau."
+                        "l’email de vérification vient d’être envoyé à nouveau.",
+                        code="unverified_email",
                     )
         return self.cleaned_data
 
@@ -94,7 +99,8 @@ class RegisterForm(auth_forms.UserCreationForm):
         model = User
         fields = ("last_name", "first_name")
 
-    def __init__(self, *args, initial, request, **kwargs):
+    def __init__(self, *args, initial, log, request, **kwargs):
+        self.log = log
         self.request = request
         super().__init__(*args, initial=initial, **kwargs)
         for key in ["password1", "password2"]:
@@ -109,25 +115,29 @@ class RegisterForm(auth_forms.UserCreationForm):
         try:
             email_address = EmailAddress.objects.get(email=email)
         except EmailAddress.DoesNotExist:
-            pass
+            self.log["email"] = email
         else:
+            self.log["user"] = email_address.user_id
             if email_address.verified_at:
+                code = "existing_email"
                 msg = format_html(
                     'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
                     reverse("accounts:login"),
                 )
             else:
+                code = "unverified_email"
                 send_verification_email(self.request, email_address)
                 msg = (
                     "Un compte inactif avec cette adresse e-mail existe déjà, "
                     "l’email de vérification vient d’être envoyé à nouveau."
                 )
-            raise ValidationError(msg)
+            raise ValidationError(msg, code=code)
         return email
 
     def save(self, commit=True):
         self.instance.terms_accepted_at = self.instance.date_joined
         user = super().save(commit=commit)
+        self.log["user"] = user.pk
         save_unverified_email(user, self.cleaned_data["email"])
         return user
 

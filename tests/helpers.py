@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import jwt
@@ -13,7 +14,7 @@ from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFac
 from tests.users.factories import DEFAULT_PASSWORD
 
 
-def oidc_flow_followup(client, auth_response_params, user, oidc_params):
+def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
     # Call TOKEN endpoint
     # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
@@ -24,6 +25,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params):
         "redirect_uri": oidc_params["redirect_uri"],
     }
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
+    assert caplog.record_tuples == []
 
     token_json = response.json()
     id_token = token_json["id_token"]
@@ -51,11 +53,12 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params):
         "family_name": user.last_name,
         "email": user.email,
     }
+    assert caplog.record_tuples == []
 
     return token_json["id_token"]
 
 
-def oidc_complete_flow(client, user, oidc_params, application=None):
+def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
     application = application or ApplicationFactory(client_id=oidc_params["client_id"])
     auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -71,9 +74,37 @@ def oidc_complete_flow(client, user, oidc_params, application=None):
         )
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                f"'application': '{application.client_id}', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login'}",
+            )
+        ]
+        caplog.clear()
         response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
-    return oidc_flow_followup(client, auth_response_params, user, oidc_params)
+    code = auth_response_params["code"]
+    assert caplog.record_tuples == [
+        (
+            "inclusion_connect.oidc",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            # auth_complete_url contains the client_id, 'application' can be logged.
+            f"'application': '{application.client_id}', "
+            "'event': 'redirect', "
+            f"'user': UUID('{user.pk}'), "
+            f"'url': 'http://localhost/callback?code={code}&state=state', "
+            f"'client_id': '{application.client_id}'"
+            "}",
+        )
+    ]
+    caplog.clear()
+
+    return oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 def has_ongoing_sessions(user):
