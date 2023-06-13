@@ -61,7 +61,7 @@
           </p>
           <p class="mb-0">
               Pour continuer à utiliser Inclusion Connect,
-              <a href="/accounts/my-account/">retournez sur la page de gestion de votre compte</a>.
+              <a href="/accounts/my-account/?redirect_uri=http%3A%2F%2Fgo.back%2Fthere">retournez sur la page de gestion de votre compte</a>.
           </p>
       </div>
   
