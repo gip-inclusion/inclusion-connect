@@ -760,3 +760,28 @@ class TestUserAdmin:
             'data-field-name="permissions de l’utilisateur" data-is-stacked="0">',
             count=1,
         )
+
+    @freeze_time("2023-05-12T16:00:00+02:00")
+    def test_admin_detail_password_field(self, client, snapshot):
+        user = UserFactory(
+            is_superuser=True,
+            is_staff=True,
+            first_name="Admin",
+            last_name="Istrator",
+            email="admin@mailinator.net",
+            username="11111111-1111-1111-1111-111111111111",
+        )
+
+        result_id = '[class*="field-must_reset_password"]'
+
+        def get_password_form_field():
+            response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
+            assert response.status_code == 200
+            return str(parse_response_to_soup(response, selector=result_id))
+
+        client.force_login(user)
+        assert get_password_form_field() == snapshot(name="normal password")
+
+        user.must_reset_password = True
+        user.save()
+        assert get_password_form_field() == snapshot(name="temporary password")
