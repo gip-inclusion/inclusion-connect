@@ -11,3 +11,8 @@ main {
   background-repeat: no-repeat;
   background-position: top -120px left;
 }
+
+.form-group > label,
+.input-group > label {
+  font-weight: 500;
+}
