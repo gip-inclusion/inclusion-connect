@@ -197,7 +197,7 @@ class TestUserAdmin:
                 # Specifying the old email address
                 "email_addresses-0-id": email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
+                "email_addresses-0-email": "other@mailinator.com",
                 "email_addresses-0-verified_at_0": "",
                 "email_addresses-0-verified_at_1": "",
                 "email_addresses-0-DELETE": "on",
