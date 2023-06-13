@@ -175,6 +175,7 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 
 # Session
 CSRF_USE_SESSIONS = True
+CSRF_FAILURE_VIEW = "inclusion_connect.views.csrf_failure"
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
