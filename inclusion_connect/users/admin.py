@@ -79,9 +79,32 @@ class UserApplicationLinkInline(admin.TabularInline):
         return False
 
 
+class TemporaryPasswordWidget(forms.Widget):
+    def render(self, name, value, attrs=None, renderer=None):
+        form_link = (
+            "<p>Pour remplacer le mot de passe avec un mot de passe temporaire, "
+            'utilisez <a href="../password">ce formulaire</a>.</p>'
+        )
+        warning = ""
+        if value:
+            warning = '<p><img src="/static/admin/img/icon-alert.svg" alt="True"> Mot de passe temporaire</p>'
+        return f"<div>{warning}{form_link}</div>"
+
+
+class UserChangeForm(auth_forms.UserChangeForm):
+    password = None
+    must_reset_password = forms.Field(
+        label="Mot de passe",
+        disabled=True,
+        required=False,
+        widget=TemporaryPasswordWidget,
+    )
+
+
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
+    form = UserChangeForm
     readonly_fields = ["username", "email", "terms_accepted_at", "date_joined", "last_login"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline, UserApplicationLinkInline]
@@ -101,7 +124,7 @@ class UserAdmin(auth_admin.UserAdmin):
         if is_change_form:
             assert fieldsets[0] == (None, {"fields": ("username", "password")})
             fieldsets = list(copy.deepcopy(fieldsets))
-            fieldsets[0][1]["fields"] += ("must_reset_password",)
+            fieldsets[0][1]["fields"] = ("username", "must_reset_password")
 
             fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
 
