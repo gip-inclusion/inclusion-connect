@@ -26,7 +26,7 @@ NB: le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il
 
 Afin d'avoir accès aux mails envoyés par Inclusion Connect en local, notre `docker-compose.yml` lance une image docker de [MailHog](https://github.com/mailhog/MailHog).
 
-MailHog donne accès à un faux webmail à l'addresse http://127.0.0.1:8025 qui permet d'afficher tous les emails qui sont envoyés.
+MailHog donne accès à un faux webmail à l'addresse http://localhost:8025 qui permet d'afficher tous les emails qui sont envoyés.
 Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse email.
 
 ## Générer une clé RSA
@@ -74,7 +74,7 @@ Pour utiliser le service il faut les identifiantes suivants :
 
 ## Normalement tout est bon !
 
-Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://127.0.0.1:8080/admin`
+Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://localhost:8080/admin`
 et aux autres urls.
 
 Il faudra utiliser le couple `local_inclusion_connect`/`password` comme indiqué précédement pour se connecter avec un client OpenID Connect
