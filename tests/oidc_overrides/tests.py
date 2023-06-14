@@ -3,7 +3,7 @@ import datetime
 import pytest
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
-from django.test import Client, override_settings
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
@@ -13,6 +13,7 @@ from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
+from tests.conftest import Client
 from tests.helpers import (
     OIDC_PARAMS,
     call_logout,
