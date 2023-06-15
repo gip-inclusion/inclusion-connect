@@ -37,5 +37,6 @@ python-dotenv  # https://github.com/theskumar/python-dotenv
 # Production requirements
 # ------------------------------------------------------------------------------
 uwsgi==2.0.*  # https://github.com/unbit/uwsgi
+elasticsearch==8.*
 sentry-sdk  # https://github.com/getsentry/sentry-python
 python-json-logger  # https://github.com/madzak/python-json-logger
