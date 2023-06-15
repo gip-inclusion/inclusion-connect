@@ -48,3 +48,8 @@ DATABASES["default"]["PORT"] = os.getenv("PGPORT", "5433")  # noqa: F405
 DATABASES["default"]["NAME"] = os.getenv("PGDATABASE", "inclusion_connect")  # noqa: F405
 DATABASES["default"]["USER"] = os.getenv("PGUSER", "postgres")  # noqa: F405
 DATABASES["default"]["PASSWORD"] = os.getenv("PGPASSWORD", "password")  # noqa: F405
+
+try:
+    LOGGING["loggers"]["inclusion_connect"]["handlers"].remove("elasticsearch")  # noqa: F405
+except ValueError:
+    pass

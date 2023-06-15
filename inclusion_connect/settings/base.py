@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import datetime
 import os
 from pathlib import Path
+from urllib.parse import urlparse, urlunparse
 
 import dj_database_url
 from django.core.serializers.json import DjangoJSONEncoder
@@ -212,7 +213,7 @@ LOGGING = {
         "json_formatter": {
             "()": "inclusion_connect.logging.JsonFormatter",
             "json_encoder": DjangoJSONEncoder,
-            "timestamp": True,
+            "timestamp": "@timestamp",
         }
     },
     "loggers": {
@@ -233,6 +234,26 @@ LOGGING = {
         },
     },
 }
+# In the form https://user:password@hostname-elasticsearch.clever-cloud.com/
+if elasticsearch_url := os.getenv("ES_ADDON_URI"):
+    # The Elasticsearch client expects the port to be specified,
+    # and does not offer an option to infer it from the scheme.
+    parsed = urlparse(elasticsearch_url)
+    if parsed.port is None and parsed.scheme == "https":
+        parsed = parsed._replace(netloc=f"{parsed.netloc}:443")
+    elasticsearch_url = urlunparse(parsed)
+
+    environment_name = os.environ["IC_ENVIRONMENT"].lower()
+    index_name = f"inclusion-connect-{environment_name}"
+    LOGGING["handlers"]["elasticsearch"] = {
+        "class": "inclusion_connect.logging.ElasticSearchHandler",
+        "formatter": "json_formatter",
+        # Align buffer capacity on the default chunk_size for ElasticSearch.bulk.
+        "capacity": 500,
+        "host": elasticsearch_url,
+        "index_name": index_name,
+    }
+    LOGGING["loggers"]["inclusion_connect"]["handlers"].append("elasticsearch")
 
 AUTH_USER_MODEL = "users.User"
 
