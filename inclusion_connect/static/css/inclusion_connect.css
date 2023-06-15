@@ -16,3 +16,22 @@ main {
 .input-group > label {
   font-weight: 500;
 }
+
+.sidemenu_item {
+  position: relative;
+  padding: 0.75rem 0.5rem;
+  font-weight: 700;
+  border-left: 2px solid transparent;
+}
+
+.sidemenu_item.sidemenu_item_active {
+    border-left: 2px solid #000091;
+}
+
+.sidemenu_item > a {
+    text-decoration: none;
+}
+
+.sidemenu_item_active > a {
+    color: #000091;
+}

@@ -218,10 +218,19 @@ class MyAccountMixin(LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        edit_user_info_url = reverse("accounts:edit_user_info")
+        edit_password_url = reverse("accounts:change_password")
+
         referrer_uri = self.request.GET.get("referrer_uri")
         return context | {
-            "edit_user_info_url": add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}),
-            "edit_password_url": add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri}),
+            "edit_user_info": {
+                "url": add_url_params(edit_user_info_url, {"referrer_uri": referrer_uri}),
+                "active": self.request.path == edit_user_info_url,
+            },
+            "edit_password": {
+                "url": add_url_params(edit_password_url, {"referrer_uri": referrer_uri}),
+                "active": self.request.path == edit_password_url,
+            },
             "referrer_uri": referrer_uri,
         }
 
