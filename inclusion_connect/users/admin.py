@@ -4,7 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth import admin as auth_admin, forms as auth_forms, password_validation
 from django.core.exceptions import ValidationError
-from django.db.models import F
+from django.db.models import F, Prefetch
 from django.forms.formsets import DELETION_FIELD_NAME
 
 from .models import EmailAddress, User, UserApplicationLink
@@ -141,6 +141,22 @@ class UserAdmin(auth_admin.UserAdmin):
     inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChangeForm
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
+    list_display = (
+        "username",
+        "email",
+        "email_to_validate",
+        "first_name",
+        "last_name",
+        "is_staff",
+    )
+
+    @admin.display(description="Email à valider")
+    def email_to_validate(self, obj):
+        email_to_validate = obj.email_to_validate
+        if email_to_validate:
+            return email_to_validate[0].email
+        else:
+            return None
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
@@ -173,3 +189,16 @@ class UserAdmin(auth_admin.UserAdmin):
         if not request.user.is_superuser:
             rof = [*rof, "is_staff", "is_superuser", "groups", "user_permissions"]
         return rof
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .prefetch_related(
+                Prefetch(
+                    "email_addresses",
+                    queryset=EmailAddress.objects.filter(verified_at=None),
+                    to_attr="email_to_validate",
+                )
+            )
+        )
