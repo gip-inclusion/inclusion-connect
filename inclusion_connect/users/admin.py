@@ -82,7 +82,7 @@ class UserApplicationLinkInline(admin.TabularInline):
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
-    readonly_fields = ["username", "email", "terms_accepted_at"]
+    readonly_fields = ["username", "email", "terms_accepted_at", "date_joined", "last_login"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChangeForm
