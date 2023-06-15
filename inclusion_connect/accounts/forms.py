@@ -187,6 +187,7 @@ class EditUserInfoForm(forms.ModelForm):
         initial["email"] = instance.email
         super().__init__(*args, initial=initial, instance=instance, **kwargs)
         self.fields["email"] = verified_email_field()
+        self.fields["last_name"].widget.attrs["autofocus"] = True
 
     def clean_email(self):
         email = self.cleaned_data["email"]
