@@ -552,15 +552,23 @@ class TestUserAdmin:
         assert email_address.email == "new@mailinator.com"
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 45, 12, tzinfo=datetime.timezone.utc)
 
-    def test_admin_password_update(self, client):
+    def test_admin_password_update(self, client, snapshot):
         staff_user = UserFactory(is_superuser=True, is_staff=True)
         client.force_login(staff_user)
 
-        user = UserFactory()
+        user = UserFactory(
+            first_name="John",
+            last_name="Doe",
+            email="admin@mailinator.net",
+            username="11111111-1111-1111-1111-111111111111",
+        )
+        response = client.get(reverse("admin:auth_user_password_change", args=(user.pk,)))
+        assert str(parse_response_to_soup(response, selector="#user_form")) == snapshot
+
         password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
-            data={"password1": password, "password2": password},
+            data={"password": password},
         )
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
 
@@ -621,7 +629,7 @@ class TestUserAdmin:
         password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
-            data={"password1": password, "password2": password},
+            data={"password": password},
         )
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
         user.refresh_from_db()
