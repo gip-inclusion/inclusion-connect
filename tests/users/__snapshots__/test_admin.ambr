@@ -37,6 +37,54 @@
           </div>
   '''
 # ---
+# name: TestUserAdmin.test_admin_password_update
+  '''
+  <form id="user_form" method="post">
+              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+              
+              <input class="hidden" name="username" type="text" value="11111111-1111-1111-1111-111111111111"/>
+              <div>
+                  
+                  
+  
+                  <p>
+                      Saisissez un nouveau mot de passe pour l’utilisateur <strong>John Doe — admin@mailinator.net</strong>.
+                  </p>
+  
+                  <fieldset class="module aligned">
+                      
+  
+  <div class="form-group required"><label for="id_password">Mot de passe</label><div class="password-with-instructions"><input autocomplete="new-password" autofocus="" class="form-control" id="id_password" name="password" placeholder="Mot de passe" required="" title="" type="text"/></div></div>
+  <small class="form-text text-muted">
+      <ul class="list-unstyled">
+          <li>
+              <i class="ri-close-circle-line text-warning" id="pw-length"></i> 12 caractères minimum
+          </li>
+          <li>
+              <i class="ri-close-circle-line text-warning" id="pw-digit"></i> 1 chiffre
+          </li>
+          <li>
+              <i class="ri-close-circle-line text-warning" id="pw-lower"></i> 1 minuscule
+          </li>
+          <li>
+              <i class="ri-close-circle-line text-warning" id="pw-upper"></i> 1 majuscule
+          </li>
+          <li>
+              <i class="ri-close-circle-line text-warning" id="pw-special-char"></i> 1 caractère spécial (ex: &amp; é @ -)
+          </li>
+      </ul>
+  </small>
+  
+                  </fieldset>
+  
+                  <div class="submit-row">
+                      <input class="default" type="submit" value="Modifier le mot de passe"/>
+                  </div>
+  
+              </div>
+          </form>
+  '''
+# ---
 # name: TestUserAdmin.test_search_by_email_address[.chaplin → only Charlie Chaplin]
   '''
   <table id="result_list">

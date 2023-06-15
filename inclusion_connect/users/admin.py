@@ -2,7 +2,7 @@ import copy
 
 from django import forms
 from django.contrib import admin
-from django.contrib.auth import admin as auth_admin, forms as auth_forms
+from django.contrib.auth import admin as auth_admin, forms as auth_forms, password_validation
 from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.forms.formsets import DELETION_FIELD_NAME
@@ -61,10 +61,41 @@ class EmailAddressInline(admin.TabularInline):
     ordering = [F("verified_at").desc(nulls_last=True), "email"]
 
 
-class AdminPasswordChangeForm(auth_forms.AdminPasswordChangeForm):
+class AdminPasswordChangeForm(forms.Form):
+    """
+    A form used to change the password of a user in the admin interface.
+    """
+
+    required_css_class = "required"
+    password = forms.CharField(
+        label="Mot de passe",
+        widget=forms.TextInput(attrs={"autocomplete": "new-password", "autofocus": True}),
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_password(self):
+        password = self.cleaned_data.get("password")
+        password_validation.validate_password(password, self.user)
+        return password
+
     def save(self, commit=True):
+        password = self.cleaned_data["password"]
+        self.user.set_password(password)
         self.user.must_reset_password = True
-        return super().save(commit)
+        if commit:
+            self.user.save()
+        return self.user
+
+    @property
+    def changed_data(self):
+        data = super().changed_data
+        for name in self.fields:
+            if name not in data:
+                return []
+        return ["password"]
 
 
 class UserApplicationLinkInline(admin.TabularInline):

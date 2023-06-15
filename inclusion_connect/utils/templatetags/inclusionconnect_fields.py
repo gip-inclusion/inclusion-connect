@@ -30,3 +30,13 @@ def password_field(form_field):
 @register.inclusion_tag("includes/new_password.html")
 def password_field_with_instructions(form_field):
     return {"password_input": make_password_field(form_field, field_class="password-with-instructions")}
+
+
+@register.inclusion_tag("includes/new_password.html")
+def admin_password_field_with_instructions(form_field):
+    return {
+        "password_input": bootstrap_field(
+            form_field,
+            field_class="password-with-instructions",
+        )
+    }

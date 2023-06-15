@@ -1,0 +1,13 @@
+.ri-close-circle-line {
+    background-image: url("/static/admin/img/icon-no.svg");
+    display:inline-block;
+    height: 0.75rem;
+    width: 0.75rem;
+}
+
+.ri-checkbox-circle-line {
+    background-image: url("/static/admin/img/icon-yes.svg");
+    display:inline-block;
+    height: 0.75rem;
+    width: 0.75rem;
+}
