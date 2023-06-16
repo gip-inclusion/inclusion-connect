@@ -80,8 +80,8 @@ class TestUserAdmin:
         response = client.get(reverse("admin:users_user_add"))
         assert response.status_code == 200
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_verify_email(self, client):
+    @freeze_time("2023-05-12T14:42:03")
+    def test_confirm_email(self, client):
         user = UserFactory(email="")
         email_address = EmailAddress.objects.create(email="me@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
@@ -91,16 +91,15 @@ class TestUserAdmin:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": "",
+                "confirm_email": "on",
                 "is_active": "on",
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
                 "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
+                "email_addresses-MAX_NUM_FORMS": "0",
                 "email_addresses-0-id": email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
-                "email_addresses-0-verified_at_0": "12/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -116,53 +115,10 @@ class TestUserAdmin:
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_verify_email_ignores_other_emails(self, client):
-        user = UserFactory(email="")
-        email_address = EmailAddress.objects.create(email="me@mailinator.com", user=user)
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": email_address.pk,
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
-                "email_addresses-0-verified_at_0": "12/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "other@mailinator.com",
-                "email_addresses-1-verified_at_0": "",
-                "email_addresses-1-verified_at_1": "",
-                "email_addresses-__prefix__-user": user.pk,
-                "email_addresses-__prefix__-email": "",
-                "email_addresses-__prefix__-verified_at_0": "",
-                "email_addresses-__prefix__-verified_at_1": "",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertRedirects(response, url)
-        user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.email == "me@mailinator.com"
-        assert email_address.user_id == user.pk
-        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_add_verified_email(self, client):
-        user = UserFactory(email="")
+    @freeze_time("2023-05-12T14:42:03")
+    def test_confirm_other_email(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
         email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
@@ -171,22 +127,17 @@ class TestUserAdmin:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": user.email,
+                "confirm_email": "on",
                 "is_active": "on",
                 "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "2",
                 "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                # Specifying the old email address
-                "email_addresses-0-id": email_address.pk,
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "other@mailinator.com",
-                "email_addresses-0-verified_at_0": "",
-                "email_addresses-0-verified_at_1": "",
-                "email_addresses-0-DELETE": "on",
+                "email_addresses-1-id": email_address.pk,
                 "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "me@mailinator.com",
-                "email_addresses-1-verified_at_0": "12/05/2023",
-                "email_addresses-1-verified_at_1": "16:42:03",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -196,16 +147,16 @@ class TestUserAdmin:
         )
         assertRedirects(response, url)
         user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
+        assert user.email == "other@mailinator.com"
         email_address = user.email_addresses.get()
-        assert email_address.email == "me@mailinator.com"
+        assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_with_existing_verified_email(self, client):
-        user = UserFactory(email="me@mailinator.com", email_address=False)
-        email_address = EmailAddress.objects.create(email="me@mailinator.com", user=user, verified_at=timezone.now())
+    @freeze_time("2023-05-12T14:42:03")
+    def test_update_verified_email(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
@@ -213,16 +164,14 @@ class TestUserAdmin:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": "other@mailinator.com",
                 "is_active": "on",
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
                 "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": email_address.pk,
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
-                "email_addresses-0-verified_at_0": "12/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -232,16 +181,17 @@ class TestUserAdmin:
         )
         assertRedirects(response, url)
         user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
+        assert user.email == "other@mailinator.com"
         email_address = user.email_addresses.get()
-        assert email_address.email == "me@mailinator.com"
+        assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_change_verified_email(self, client):
-        user = UserFactory(email="old@mailinator.com", email_address=False)
-        email_address = EmailAddress.objects.create(email="old@mailinator.com", user=user, verified_at=timezone.now())
+    @freeze_time("2023-05-12T14:42:03")
+    def test_dont_update_verified_email_and_confirm_another(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
+        email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
@@ -249,16 +199,17 @@ class TestUserAdmin:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": "new@mailinator.com",
+                "confirm_email": "on",
                 "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "1",
-                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-TOTAL_FORMS": "2",
+                "email_addresses-INITIAL_FORMS": "2",
                 "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": email_address.pk,
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "new@mailinator.com",
-                "email_addresses-0-verified_at_0": "25/05/2023",
-                "email_addresses-0-verified_at_1": "11:11:11",
+                "email_addresses-1-id": email_address.pk,
+                "email_addresses-1-user": user.pk,
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -266,53 +217,27 @@ class TestUserAdmin:
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
-        assertRedirects(response, url)
-        user.refresh_from_db()
-        assert user.email == "new@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.email == "new@mailinator.com"
-        assert email_address.user_id == user.pk
-        assert email_address.verified_at == datetime.datetime(2023, 5, 25, 9, 11, 11, tzinfo=datetime.timezone.utc)
-
-    def test_save_reset_verified_at(self, client):
-        user = UserFactory(email="me@mailinator.com", email_address=False)
-        email_address = EmailAddress.objects.create(email="me@mailinator.com", user=user, verified_at=timezone.now())
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "1",
-                "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": email_address.pk,
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
-                "email_addresses-0-verified_at_0": "",
-                "email_addresses-0-verified_at_1": "",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
+        assert (
+            response.context["errors"][0][0]
+            == "Vous ne pouvez pas à la fois modifier l'email validé, et confirmer un email"
         )
-        assertRedirects(response, url)
         user.refresh_from_db()
-        assert user.email == ""
-        email_address = user.email_addresses.get()
-        assert email_address.email == "me@mailinator.com"
+        assert user.email == "me@mailinator.com"
+        assert user.email_addresses.count() == 2
+        assert verified_email_address.email == "me@mailinator.com"
+        assert verified_email_address.user_id == user.pk
+        assert verified_email_address.verified_at == datetime.datetime(
+            2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc
+        )
+        assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at is None
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_removes_verified_email(self, client):
-        user = UserFactory(email="old@mailinator.com", email_address=False)
-        email_address = EmailAddress.objects.create(email="old@mailinator.com", user=user, verified_at=timezone.now())
+    @freeze_time("2023-05-12T14:42:03")
+    def test_update_verified_email_and_confirm_the_same_email(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
+        email_address = EmailAddress.objects.create(email="other@mailinator.com", user=user)
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
         url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
         response = client.post(
@@ -320,17 +245,82 @@ class TestUserAdmin:
             data={
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": "other@mailinator.com",
+                "confirm_email": "on",
+                "is_active": "on",
+                "email_addresses-TOTAL_FORMS": "2",
+                "email_addresses-INITIAL_FORMS": "2",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
+                "email_addresses-0-user": user.pk,
+                "email_addresses-1-id": email_address.pk,
+                "email_addresses-1-user": user.pk,
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        assertRedirects(response, url)
+        user.refresh_from_db()
+        assert user.email == "other@mailinator.com"
+        email_address = user.email_addresses.get()
+        assert email_address.email == "other@mailinator.com"
+        assert email_address.user_id == user.pk
+        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
+
+    @freeze_time("2023-05-12T14:42:03")
+    def test_dont_erase_email(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
+        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
+        response = client.post(
+            url,
+            data={
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": "",
+                "confirm_email": "on",
                 "is_active": "on",
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
                 "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": email_address.pk,
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "me@mailinator.com",
-                "email_addresses-0-verified_at_0": "12/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
-                "email_addresses-0-DELETE": "on",
+                "linked_applications-TOTAL_FORMS": "0",
+                "linked_applications-INITIAL_FORMS": "0",
+                "linked_applications-MIN_NUM_FORMS": "0",
+                "linked_applications-MAX_NUM_FORMS": "0",
+                "_continue": "Enregistrer+et+continuer+les+modifications",
+            },
+        )
+        assert response.context["errors"][0][0] == "Vous ne pouvez pas supprimer l'adresse e-mail de l'utilsateur."
+        user.refresh_from_db()
+        assert user.email == "me@mailinator.com"
+
+    @freeze_time("2023-05-12T14:42:03")
+    def test_dont_crash_if_new_email_is_invalid(self, client):
+        user = UserFactory(email="me@mailinator.com")
+        verified_email_address = user.email_addresses.get()
+        client.force_login(UserFactory(is_superuser=True, is_staff=True))
+        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
+        response = client.post(
+            url,
+            data={
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": "bad_email",
+                "is_active": "on",
+                "email_addresses-TOTAL_FORMS": "1",
+                "email_addresses-INITIAL_FORMS": "1",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
+                "email_addresses-0-id": verified_email_address.pk,
+                "email_addresses-0-user": user.pk,
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -339,218 +329,9 @@ class TestUserAdmin:
             },
         )
         assert response.status_code == 200
-        assertContains(response, "L’utilisateur doit avoir au moins une adresse email.")
-        user.refresh_from_db()
-        assert user.email == "old@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.email == "old@mailinator.com"
-        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 0, 0, tzinfo=datetime.timezone.utc)
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_while_user_is_changing_email(self, client):
-        user = UserFactory(email="old@mailinator.com", email_address=False)
-        [old, new] = EmailAddress.objects.bulk_create(
-            [
-                EmailAddress(email="old@mailinator.com", user=user, verified_at=timezone.now()),
-                EmailAddress(email="new@mailinator.com", user=user),
-            ]
-        )
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "2",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": old.pk,
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "old@mailinator.com",
-                "email_addresses-0-verified_at_0": "12/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
-                "email_addresses-1-id": new.pk,
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "new@mailinator.com",
-                "email_addresses-1-verified_at_0": "",
-                "email_addresses-1-verified_at_1": "",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertRedirects(response, url)
-        user.refresh_from_db()
-        assert user.email == "old@mailinator.com"
-        [new, old] = user.email_addresses.order_by("email")
-        assert old.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
-        assert old.email == "old@mailinator.com"
-        assert new.verified_at is None
-        assert new.email == "new@mailinator.com"
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_update_verified_at(self, client):
-        user = UserFactory(email="old@mailinator.com", email_address=False)
-        [old, new] = EmailAddress.objects.bulk_create(
-            [
-                EmailAddress(email="old@mailinator.com", user=user, verified_at=timezone.now()),
-                EmailAddress(email="new@mailinator.com", user=user),
-            ]
-        )
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "2",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-id": old.pk,
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "old@mailinator.com",
-                "email_addresses-0-verified_at_0": "20/02/2002",
-                "email_addresses-0-verified_at_1": "12:33:21",
-                "email_addresses-1-id": new.pk,
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "new@mailinator.com",
-                "email_addresses-1-verified_at_0": "",
-                "email_addresses-1-verified_at_1": "",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertRedirects(response, url)
-        user.refresh_from_db()
-        assert user.email == "old@mailinator.com"
-        [new, old] = user.email_addresses.order_by("email")
-        assert old.verified_at == datetime.datetime(2002, 2, 20, 11, 33, 21, tzinfo=datetime.timezone.utc)
-        assert old.email == "old@mailinator.com"
-        assert new.verified_at is None
-        assert new.email == "new@mailinator.com"
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_two_verified_emails_error(self, client):
-        user = UserFactory(email="me@mailinator.com")
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "newme@mailinator.com",
-                "email_addresses-0-verified_at_0": "15/05/2023",
-                "email_addresses-0-verified_at_1": "16:42:03",
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "anotherme@mailinator.com",
-                "email_addresses-1-verified_at_0": "15/05/2023",
-                "email_addresses-1-verified_at_1": "16:45:12",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertContains(response, "L’utilisateur ne peut avoir qu’une seule adresse e-mail vérifiée.")
-        user.refresh_from_db()
+        assert response.context["errors"][0][0] == "Saisissez une adresse de courriel valide."
         assert user.email == "me@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, tzinfo=datetime.timezone.utc)
-        assert email_address.email == "me@mailinator.com"
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_two_unverified_emails_error(self, client):
-        user = UserFactory(email="me@mailinator.com")
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "newme@mailinator.com",
-                "email_addresses-0-verified_at_0": "",
-                "email_addresses-0-verified_at_1": "",
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "anotherme@mailinator.com",
-                "email_addresses-1-verified_at_0": "",
-                "email_addresses-1-verified_at_1": "",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertContains(response, "L’utilisateur ne peut avoir qu’une seule adresse e-mail non vérifiée.")
-        user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, tzinfo=datetime.timezone.utc)
-        assert email_address.email == "me@mailinator.com"
-
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_save_ignores_deleted_email(self, client):
-        user = UserFactory(email="old@mailinator.com")
-        client.force_login(UserFactory(is_superuser=True, is_staff=True))
-        url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-        response = client.post(
-            url,
-            data={
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_active": "on",
-                "email_addresses-TOTAL_FORMS": "2",
-                "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "0",
-                "email_addresses-MAX_NUM_FORMS": "1000",
-                "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": "old@mailinator.com",
-                "email_addresses-0-verified_at_0": "01/01/2023",
-                "email_addresses-0-verified_at_1": "12:34:56",
-                "email_addresses-0-DELETE": "on",
-                "email_addresses-1-user": user.pk,
-                "email_addresses-1-email": "new@mailinator.com",
-                "email_addresses-1-verified_at_0": "12/05/2023",
-                "email_addresses-1-verified_at_1": "16:45:12",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
-                "_continue": "Enregistrer+et+continuer+les+modifications",
-            },
-        )
-        assertRedirects(response, url)
-        user.refresh_from_db()
-        assert user.email == "new@mailinator.com"
-        email_address = user.email_addresses.get()
-        assert email_address.email == "new@mailinator.com"
-        assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 45, 12, tzinfo=datetime.timezone.utc)
+        assert user.email_addresses.get() == verified_email_address
 
     def test_admin_password_update(self, client, snapshot):
         staff_user = UserFactory(is_superuser=True, is_staff=True)
@@ -649,6 +430,7 @@ class TestUserAdmin:
                 "must_reset_password": "off",
                 "first_name": "Kiddy",
                 "last_name": "Script",
+                "email": staff_user.email,
                 "is_active": "on",
                 "is_staff": "on",
                 "is_superuser": "on",
@@ -656,13 +438,10 @@ class TestUserAdmin:
                 "user_permissions": [Permission.objects.order_by("?").first()],
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "1",
-                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
                 "email_addresses-0-id": email_address.pk,
                 "email_addresses-0-user": staff_user.pk,
-                "email_addresses-0-email": staff_user.email,
-                "email_addresses-0-verified_at_0": "02/01/2023",
-                "email_addresses-0-verified_at_1": "23:00:00",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -690,6 +469,7 @@ class TestUserAdmin:
                 "must_reset_password": "off",
                 "first_name": "Kiddy",
                 "last_name": "Script",
+                "email": user.email,
                 "is_active": "on",
                 "is_staff": "on",
                 "is_superuser": "on",
@@ -697,13 +477,10 @@ class TestUserAdmin:
                 "user_permissions": [Permission.objects.order_by("?").first()],
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "1",
-                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
                 "email_addresses-0-id": email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": user.email,
-                "email_addresses-0-verified_at_0": "02/01/2023",
-                "email_addresses-0-verified_at_1": "23:00:00",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -730,19 +507,17 @@ class TestUserAdmin:
                 "must_reset_password": "off",
                 "first_name": user.first_name,
                 "last_name": user.last_name,
+                "email": user.email,
                 "is_active": "on",
                 "is_staff": "on",
                 "is_superuser": "on",
                 "groups": staff_group.pk,
                 "email_addresses-TOTAL_FORMS": "1",
                 "email_addresses-INITIAL_FORMS": "1",
-                "email_addresses-MIN_NUM_FORMS": "1",
-                "email_addresses-MAX_NUM_FORMS": "2",
+                "email_addresses-MIN_NUM_FORMS": "0",
+                "email_addresses-MAX_NUM_FORMS": "0",
                 "email_addresses-0-id": email_address.pk,
                 "email_addresses-0-user": user.pk,
-                "email_addresses-0-email": user.email,
-                "email_addresses-0-verified_at_0": "02/01/2023",
-                "email_addresses-0-verified_at_1": "23:00:00",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
