@@ -9,7 +9,13 @@
                       
                           <label for="id_must_reset_password">Mot de passe :</label>
                           
-                              <div><p>Pour remplacer le mot de passe avec un mot de passe temporaire, utilisez <a href="../password">ce formulaire</a>.</p></div>
+                              <div>
+      
+      <p>
+          Pour remplacer le mot de passe avec un mot de passe temporaire,
+          utilisez <a href="../password">ce formulaire</a>.
+      </p>
+  </div>
                           
                       
                       
@@ -28,7 +34,18 @@
                       
                           <label for="id_must_reset_password">Mot de passe :</label>
                           
-                              <div><p><img alt="True" src="/static/admin/img/icon-alert.svg"/> Mot de passe temporaire</p><p>Pour remplacer le mot de passe avec un mot de passe temporaire, utilisez <a href="../password">ce formulaire</a>.</p></div>
+                              <div>
+      
+          <p>
+              <img alt="True" src="/static/admin/img/icon-alert.svg"/>
+              Mot de passe temporaire
+          </p>
+      
+      <p>
+          Pour remplacer le mot de passe avec un mot de passe temporaire,
+          utilisez <a href="../password">ce formulaire</a>.
+      </p>
+  </div>
                           
                       
                       
