@@ -6,6 +6,7 @@ from django.contrib.auth import admin as auth_admin, forms as auth_forms, passwo
 from django.core.exceptions import ValidationError
 from django.db.models import F, Prefetch
 from django.forms.formsets import DELETION_FIELD_NAME
+from django.utils.safestring import mark_safe
 
 from .models import EmailAddress, User, UserApplicationLink
 
@@ -14,51 +15,19 @@ def is_email_verified(form):
     return not form.cleaned_data.get(DELETION_FIELD_NAME) and form.cleaned_data.get("verified_at")
 
 
-class EmailAddressInlineFormSet(forms.BaseInlineFormSet):
-    def clean(self):
-        super().clean()
-        verified_addresses = 0
-        unverified_addresses = 0
-        for form in self.forms:
-            if is_email_verified(form):
-                verified_addresses += 1
-            elif not self._should_delete_form(form):
-                unverified_addresses += 1
-        if verified_addresses >= 2 or unverified_addresses >= 2:
-            non = "non " if unverified_addresses >= 2 else ""
-            raise ValidationError(f"L’utilisateur ne peut avoir qu’une seule adresse e-mail {non}vérifiée.")
-        if verified_addresses + unverified_addresses == 0:
-            raise ValidationError("L’utilisateur doit avoir au moins une adresse email.")
-
-    def save(self, commit=True):
-        for i, form in enumerate(self.forms):
-            newly_verified = not form.initial.get("verified_at") and is_email_verified(form)
-            if newly_verified:
-                verified_email_address = form.instance
-                try:
-                    self.deleted_objects = [self.forms[1 - i].instance]
-                except IndexError:
-                    self.deleted_objects = []
-                if verified_email_address.pk is None:
-                    self.new_objects = [verified_email_address]
-                    self.changed_objects = []
-                else:
-                    self.new_objects = []
-                    self.changed_objects = [(verified_email_address, form.changed_data)]
-                verified_email_address.verify(form.cleaned_data["verified_at"])
-                return [verified_email_address]
-        return super().save(commit=commit)
-
-
 class EmailAddressInline(admin.TabularInline):
     extra = 0
-    min_num = 1  # Must have an email address.
-    max_num = 2  # 1 verified and 1 not verified.
     model = EmailAddress
-    readonly_fields = ["created_at"]
-    formset = EmailAddressInlineFormSet
-    fields = ["email", "verified_at", "created_at"]
+    readonly_fields = ["email", "verified_at", "created_at"]
     ordering = [F("verified_at").desc(nulls_last=True), "email"]
+
+    can_delete = False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class AdminPasswordChangeForm(forms.Form):
@@ -114,6 +83,18 @@ class TemporaryPasswordWidget(forms.Widget):
     template_name = "admin/widgets/temporary_password.html"
 
 
+class ConfirmEmailWidget(forms.TextInput):
+    template_name = "admin/widgets/confirm_email.html"
+
+    def __init__(self, attrs=None, unverified_email=None):
+        super().__init__(attrs)
+        self.unverified_email = unverified_email
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        return context | {"unverified_email": self.unverified_email}
+
+
 class UserChangeForm(auth_forms.UserChangeForm):
     password = None
     must_reset_password = forms.Field(
@@ -122,13 +103,57 @@ class UserChangeForm(auth_forms.UserChangeForm):
         required=False,
         widget=TemporaryPasswordWidget,
     )
+    confirm_email = forms.BooleanField(
+        label=mark_safe('<img src="/static/admin/img/icon-alert.svg" alt="True"> Confirmer l’e-mail'),
+        disabled=True,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    def __init__(self, *args, instance, **kwargs):
+        super().__init__(*args, instance=instance, **kwargs)
+        email = self.fields["email"]
+        email.label = "Adresse e-mail vérifiée"
+
+        email_to_validate = instance.email_to_validate
+        if email_to_validate:
+            confirm_email = self.fields["confirm_email"]
+            unverified_email = email_to_validate[0].email
+            confirm_email.disabled = False
+            confirm_email.widget = ConfirmEmailWidget(unverified_email=unverified_email)
+
+    def clean_email(self):
+        new_email = self.cleaned_data.get("email")
+        if self.initial["email"] != new_email and new_email == "":
+            raise ValidationError("Vous ne pouvez pas supprimer l'adresse e-mail de l'utilsateur.")
+        return self.cleaned_data.get("email")
+
+    def clean(self):
+        super().clean()
+        new_email = self.cleaned_data.get("email")
+        if (
+            self.initial["email"] != new_email
+            and self.cleaned_data["confirm_email"]
+            and self.instance.email_to_validate[0].email != new_email
+        ):
+            raise ValidationError("Vous ne pouvez pas à la fois modifier l'email validé, et confirmer un email")
+
+    def save(self, commit=True):
+        new_email = self.cleaned_data["email"]
+        if self.cleaned_data["confirm_email"]:
+            self.instance.email_to_validate[0].verify()
+            self.instance.email = self.instance.email_to_validate[0].email
+        elif self.initial["email"] != new_email:
+            email_address = EmailAddress(user=self.instance, email=new_email)
+            email_address.verify()
+        return super().save(commit=commit)
 
 
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
     form = UserChangeForm
-    readonly_fields = ["username", "email", "terms_accepted_at", "date_joined", "last_login"]
+    readonly_fields = ["username", "terms_accepted_at", "date_joined", "last_login"]
     list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password",)
     inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChangeForm
@@ -150,20 +175,15 @@ class UserAdmin(auth_admin.UserAdmin):
         else:
             return None
 
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-        [email_address_formset, user_application_link_formset] = formsets
-        if form.instance.email and not any(is_email_verified(fs) for fs in email_address_formset):
-            form.instance.email = ""
-            form.instance.save(update_fields=["email"])
-
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         is_change_form = obj is not None
         if is_change_form:
             assert fieldsets[0] == (None, {"fields": ("username", "password")})
+            assert fieldsets[1] == ("Informations personnelles", {"fields": ("first_name", "last_name", "email")})
             fieldsets = list(copy.deepcopy(fieldsets))
             fieldsets[0][1]["fields"] = ("username", "must_reset_password")
+            fieldsets[1][1]["fields"] += ("confirm_email",)
 
             fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
 

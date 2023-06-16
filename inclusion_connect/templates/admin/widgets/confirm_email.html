@@ -1,0 +1,2 @@
+<input type="email" value="{{ unverified_email }}" disabled>
+<input type="checkbox" name="{{ widget.name }}" {% if widget.value != None %}value="{{ widget.value|stringformat:'s' }}"{% endif %} {% include "django/forms/widgets/attrs.html" %}>
