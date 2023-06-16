@@ -44,6 +44,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.forms",
 ]
 
 THIRD_PARTY_APPS = [
@@ -97,6 +98,11 @@ TEMPLATES = [
         },
     },
 ]
+
+# Override default Django forms widgets templates.
+# Requires django.forms in INSTALLED_APPS
+# https://timonweb.com/django/overriding-field-widgets-in-django-doesnt-work-template-not-found-the-solution/
+FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
 WSGI_APPLICATION = "inclusion_connect.wsgi.application"
 

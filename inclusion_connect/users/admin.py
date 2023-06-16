@@ -111,15 +111,7 @@ class UserApplicationLinkInline(admin.TabularInline):
 
 
 class TemporaryPasswordWidget(forms.Widget):
-    def render(self, name, value, attrs=None, renderer=None):
-        form_link = (
-            "<p>Pour remplacer le mot de passe avec un mot de passe temporaire, "
-            'utilisez <a href="../password">ce formulaire</a>.</p>'
-        )
-        warning = ""
-        if value:
-            warning = '<p><img src="/static/admin/img/icon-alert.svg" alt="True"> Mot de passe temporaire</p>'
-        return f"<div>{warning}{form_link}</div>"
+    template_name = "admin/widgets/temporary_password.html"
 
 
 class UserChangeForm(auth_forms.UserChangeForm):
