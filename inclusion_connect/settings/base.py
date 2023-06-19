@@ -73,6 +73,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "inclusion_connect.middleware.never_cache",
+    "inclusion_connect.middleware.limit_staff_users_to_admin",
     "inclusion_connect.accounts.middleware.post_login_actions",
 ]
 

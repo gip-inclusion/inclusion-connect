@@ -703,3 +703,22 @@ def test_edit_user_info_other_client(client, oidc_params, mailoutbox):
     response = other_client.get(response.url)
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
+
+
+def test_admin_session_doesnt_give_access_to_non_admin_views(client, oidc_params):
+    staff_user = UserFactory(is_staff=True)
+    response = client.post(
+        add_url_params(reverse("admin:login"), {"next": reverse("admin:index")}),
+        data={"username": staff_user.email, "password": DEFAULT_PASSWORD},
+    )
+    assert get_user(client) == staff_user
+
+    # We don't have access to accounts or oidc views with staff_user
+    account_url = reverse("accounts:edit_user_info")
+    response = client.get(account_url)
+    assertContains(response, "Les comptes administrateurs n'ont pas accès à cette page.", status_code=403)
+
+    ApplicationFactory(client_id=oidc_params["client_id"])
+    auth_complete_url = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
+    response = client.get(auth_complete_url)
+    assertContains(response, "Les comptes administrateurs n'ont pas accès à cette page.", status_code=403)
