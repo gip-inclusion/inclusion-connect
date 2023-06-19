@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from oauth2_provider import views as oauth2_views
-from oauth2_provider.exceptions import OAuthToolkitError
+from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
 from oauth2_provider.settings import oauth2_settings
 
 from inclusion_connect.oidc_overrides.models import Application
@@ -86,9 +86,27 @@ original_validate_logout_request = oauth2_views.oidc.validate_logout_request
 
 
 def validate_logout_request(request, id_token_hint, client_id, post_logout_redirect_uri):
-    prompt_logout, (post_logout_redirect_uri, application), token_user = original_validate_logout_request(
-        request, id_token_hint, client_id, post_logout_redirect_uri
-    )
+    try:
+        prompt_logout, (post_logout_redirect_uri, application), token_user = original_validate_logout_request(
+            request, id_token_hint, client_id, post_logout_redirect_uri
+        )
+    except (InvalidIDTokenError, InvalidOIDCClientError) as e:
+        # If there's a logged in user, don't allow invalid token
+        if request.user.is_authenticated:
+            raise e
+
+        prompt_logout = False
+        application = None
+        token_user = None
+        for app in Application.objects.all():
+            if app.post_logout_redirect_uri_allowed(post_logout_redirect_uri):
+                application = app
+
+        if post_logout_redirect_uri and application is None:
+            # Don't allow logout with bad id_token_hint if there's a redirect url and
+            # we can't find an application matching the url
+            raise e
+
     if (
         token_user  # We found a user with the token
         and prompt_logout
