@@ -104,8 +104,8 @@ class TestLogoutView:
             assert has_ongoing_sessions(user) is False
             assert token_are_revoked(user) is True
 
-    def test_bad_login_hint(self, client):
-        """This test simulates a call on logout endpoint with bad login hint"""
+    def test_bad_id_token_hint_with_logged_in_user_fails(self, client):
+        """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         user = UserFactory()
         oidc_complete_flow(client, user)
 
@@ -117,6 +117,16 @@ class TestLogoutView:
         assert token_are_revoked(user) is False
         assert get_user(client).is_authenticated is True
         assert has_ongoing_sessions(user) is True
+
+    def test_bad_id_token_hint_with_no_redirect_uri(self, client):
+        """This test simulates a call on logout endpoint with an unknown id_token_hint"""
+        response = call_logout(client, "get", {"id_token_hint": 111})
+        assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
+
+    def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, client):
+        """This test simulates a call on logout endpoint with an unknown id_token_hint"""
+        response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
+        assert response.status_code == 400
 
     def test_logout_clear_all_clients_sessions(self, client):
         user = UserFactory()
@@ -136,6 +146,41 @@ class TestLogoutView:
         assertRedirects(response, "http://callback/", fetch_redirect_response=False)
         assert get_user(client).is_authenticated is False
         assert get_user(other_client).is_authenticated is False
+
+    def test_multiple_logout_with_id_token_hint(self, client):
+        user = UserFactory()
+        application_1 = ApplicationFactory()
+        id_token_1 = oidc_complete_flow(client, user, application=application_1)
+        application_2 = ApplicationFactory()
+        params = OIDC_PARAMS.copy()
+        params["client_id"] = application_2.client_id
+        id_token_2 = oidc_complete_flow(client, user, application=application_2)
+
+        assert get_user(client).is_authenticated is True
+        assert token_are_revoked(user) is False
+        assert has_ongoing_sessions(user) is True
+
+        response = call_logout(
+            client,
+            "get",
+            {"id_token_hint": id_token_1, "post_logout_redirect_uri": "http://callback/"},
+        )
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+
+        assert get_user(client).is_authenticated is False
+        assert has_ongoing_sessions(user) is False
+        assert token_are_revoked(user) is True
+
+        response = call_logout(
+            client,
+            "get",
+            {"id_token_hint": id_token_2, "post_logout_redirect_uri": "http://callback/"},
+        )
+        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+
+        assert get_user(client).is_authenticated is False
+        assert has_ongoing_sessions(user) is False
+        assert token_are_revoked(user) is True
 
 
 class TestAuthorizeView:
