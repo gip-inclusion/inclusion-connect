@@ -2,6 +2,7 @@ import uuid
 
 import jwt
 from bs4 import BeautifulSoup
+from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
 from django.urls import reverse
 from django.utils import timezone
@@ -22,11 +23,11 @@ OIDC_PARAMS = {
 }
 
 
-def oidc_flow_followup(client, auth_response_params, user):
+def oidc_flow_followup(client, auth_response_params, user, client_id=None):
     # Call TOKEN endpoint
     # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
-        "client_id": OIDC_PARAMS["client_id"],
+        "client_id": client_id or OIDC_PARAMS["client_id"],
         "client_secret": DEFAULT_CLIENT_SECRET,
         "code": auth_response_params["code"],
         "grant_type": "authorization_code",
@@ -40,7 +41,7 @@ def oidc_flow_followup(client, auth_response_params, user):
         id_token,
         key=default_client_secret(),
         algorithms=["HS256"],
-        audience=OIDC_PARAMS["client_id"],
+        audience=client_id or OIDC_PARAMS["client_id"],
     )
     assert decoded_id_token["nonce"] == OIDC_PARAMS["nonce"]
     assert decoded_id_token["sub"] == str(user.pk)
@@ -66,22 +67,25 @@ def oidc_flow_followup(client, auth_response_params, user):
 
 def oidc_complete_flow(client, user, application=None):
     application = application or ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    params = OIDC_PARAMS.copy()
+    params["client_id"] = application.client_id
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, params)
     response = client.get(auth_complete_url)
-    assert client.session["next_url"] == auth_complete_url
-    response = client.post(
-        response.url,
-        data={
-            "email": user.email,
-            "password": DEFAULT_PASSWORD,
-        },
-    )
-    # The redirect cleans `next_url` from the session.
-    assert "next_url" not in client.session
-    response = client.get(response.url)
+    if not get_user(client).is_authenticated:
+        assert client.session["next_url"] == auth_complete_url
+        response = client.post(
+            response.url,
+            data={
+                "email": user.email,
+                "password": DEFAULT_PASSWORD,
+            },
+        )
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
+        response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
-    return oidc_flow_followup(client, auth_response_params, user)
+    return oidc_flow_followup(client, auth_response_params, user, client_id=application.client_id)
 
 
 def has_ongoing_sessions(user):
@@ -97,7 +101,7 @@ def token_are_revoked(user):
     return (
         not get_id_token_model().objects.filter(user=user).exists()
         and not get_access_token_model().objects.filter(user=user).exists()
-        and get_refresh_token_model().objects.get().revoked is not None
+        and not get_refresh_token_model().objects.filter(revoked=None).exists()
     )
 
 
