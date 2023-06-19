@@ -206,9 +206,9 @@ django-bootstrap4==23.1 \
     --hash=sha256:2c1ad756b44b17093d9b49d8840f5ad8537ec30cb4412834d9bf3c59e0d976ad \
     --hash=sha256:e324f40e2dda69725982cf6b5ac6004f29c55ac492aabd880ed57693d3c4c93c
     # via -r requirements/base.in
-django-cors-headers==4.0.0 \
-    --hash=sha256:a971cd4c75b29974068cc36b5c595698822f1e0edd5f1b32ea42ea37326ad4aa \
-    --hash=sha256:e3cbd247a1a835da4cf71a70d4214378813ea7e08337778b82cb2c1bc19d28d6
+django-cors-headers==4.1.0 \
+    --hash=sha256:36a8d7a6dee6a85f872fe5916cc878a36d0812043866355438dfeda0b20b6b78 \
+    --hash=sha256:88a4bfae24b6404dd0e0640203cb27704a2a57fd546a429e5d821dfa53dd1acf
     # via -r requirements/base.in
 django-csp==3.7 \
     --hash=sha256:01443a07723f9a479d498bd7bb63571aaa771e690f64bde515db6cdb76e8041a \
