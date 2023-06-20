@@ -14,6 +14,7 @@ import datetime
 import os
 from pathlib import Path
 
+import dj_database_url
 from dotenv import load_dotenv
 
 
@@ -113,24 +114,20 @@ RUN_SERVER_PORT = 8080
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-# Note how we use Clever Cloud environment variables here. No way for now to alias them :/
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRESQL_ADDON_DB"),
-        # FIXME(vperron): We should get rid of those Clever Cloud proprietary values in our code
-        # and alias them as soon as we can in our pre-build and pre-run scripts. But those scripts
-        # will be defined in a later PR.
-        "HOST": os.getenv("POSTGRESQL_ADDON_DIRECT_HOST") or os.getenv("POSTGRESQL_ADDON_HOST"),
-        "PORT": os.getenv("POSTGRESQL_ADDON_DIRECT_PORT") or os.getenv("POSTGRESQL_ADDON_PORT"),
-        "USER": os.getenv("POSTGRESQL_ADDON_CUSTOM_USER") or os.getenv("POSTGRESQL_ADDON_USER"),
-        "PASSWORD": os.getenv("POSTGRESQL_ADDON_CUSTOM_PASSWORD") or os.getenv("POSTGRESQL_ADDON_PASSWORD"),
         "ATOMIC_REQUESTS": True,
         "OPTIONS": {
             "connect_timeout": 5,
         },
     }
 }
+
+# Import postgreql url from Clever Cloud environment variables
+database_url = os.environ.get("POSTGRESQL_ADDON_DIRECT_URI")
+if database_url:
+    DATABASES["default"].update(dj_database_url.config(ssl_require=True))
 
 if os.getenv("DATABASE_PERSISTENT_CONNECTIONS") == "True":
     # Since we have the health checks enabled, no need to define a max age:
