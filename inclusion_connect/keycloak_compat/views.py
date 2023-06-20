@@ -1,17 +1,12 @@
 import jwt
-from django.contrib import messages
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
 from django.utils import http
 from django.views.generic import View
 
-from inclusion_connect.accounts.helpers import login
-from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
+from inclusion_connect.accounts.views import handle_email_confirmation, handle_signature_expired
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.keycloak_compat.utils import realm_from_request
-from inclusion_connect.users.models import EmailAddress
-from inclusion_connect.utils.oidc import get_next_url
 
 
 class ActionToken(View):
@@ -34,26 +29,13 @@ class ActionToken(View):
                     request_jwt, secret, algorithms=["HS256"], audience=audience, options={"verify_exp": False}
                 )
                 try:
-                    request.session[EMAIL_CONFIRM_KEY] = decoded["eml"]
+                    email = decoded["eml"]
                 except KeyError:
                     raise e
                 else:
-                    messages.error(request, "Le lien de vérification d’adresse e-mail a expiré.")
-                    return HttpResponseRedirect(reverse("accounts:confirm-email"))
+                    return handle_signature_expired(request, email)
         except jwt.exceptions.InvalidTokenError as e:
             raise Http404 from e
         if decoded["typ"] == "verify-email":
-            uid = decoded["sub"]
-            email = decoded["eml"]
-            email_address = get_object_or_404(EmailAddress.objects.select_related("user"), user_id=uid, email=email)
-            if email_address.verified_at:
-                messages.info(request, "Cette adresse e-mail est déjà vérifiée.")
-                if request.user.is_authenticated:
-                    url = reverse("accounts:edit_user_info")
-                else:
-                    url = reverse("accounts:login")
-                return HttpResponseRedirect(url)
-            email_address.verify()
-            login(request, email_address.user)
-            return HttpResponseRedirect(get_next_url(request))
+            return handle_email_confirmation(request, decoded["sub"], decoded["eml"])
         raise Http404
