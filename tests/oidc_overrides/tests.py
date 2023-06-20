@@ -9,13 +9,11 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertRedirects
 
-from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.conftest import Client
 from tests.helpers import (
-    OIDC_PARAMS,
     call_logout,
     has_ongoing_sessions,
     oidc_complete_flow,
@@ -59,10 +57,10 @@ class TestPostLogoutRedirectUris:
 
 
 class TestLogoutView:
-    def test_id_token_hint(self, client):
+    def test_id_token_hint(self, client, oidc_params):
         """This test simulates a call on logout endpoint with id_hint params"""
         user = UserFactory()
-        id_token = oidc_complete_flow(client, user)
+        id_token = oidc_complete_flow(client, user, oidc_params)
 
         assert get_user(client).is_authenticated is True
 
@@ -77,11 +75,11 @@ class TestLogoutView:
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
 
-    def test_expired_token_and_session(self, client):
+    def test_expired_token_and_session(self, client, oidc_params):
         """This test simulates a call on logout endpoint with expired token and sessions"""
         user = UserFactory()
         with freeze_time("2023-05-05 14:29:20"):
-            id_token = oidc_complete_flow(client, user)
+            id_token = oidc_complete_flow(client, user, oidc_params)
             assert get_user(client).is_authenticated is True
 
         with freeze_time("2023-05-05 14:59:21"):
@@ -104,10 +102,10 @@ class TestLogoutView:
             assert has_ongoing_sessions(user) is False
             assert token_are_revoked(user) is True
 
-    def test_bad_id_token_hint_with_logged_in_user_fails(self, client):
+    def test_bad_id_token_hint_with_logged_in_user_fails(self, client, oidc_params):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         user = UserFactory()
-        oidc_complete_flow(client, user)
+        oidc_complete_flow(client, user, oidc_params)
 
         assert get_user(client).is_authenticated is True
 
@@ -128,13 +126,14 @@ class TestLogoutView:
         response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
         assert response.status_code == 400
 
-    def test_logout_clear_all_clients_sessions(self, client):
+    def test_logout_clear_all_clients_sessions(self, client, oidc_params):
         user = UserFactory()
-        id_token = oidc_complete_flow(client, user)
+        application = ApplicationFactory(client_id=oidc_params["client_id"])
+        id_token = oidc_complete_flow(client, user, oidc_params, application=application)
         assert get_user(client).is_authenticated is True
 
         other_client = Client()
-        oidc_complete_flow(other_client, user, application=Application.objects.get(client_id=OIDC_PARAMS["client_id"]))
+        oidc_complete_flow(other_client, user, oidc_params, application=application)
         assert get_user(other_client).is_authenticated is True
         assert get_user(client) == get_user(other_client)
 
@@ -147,14 +146,14 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert get_user(other_client).is_authenticated is False
 
-    def test_multiple_logout_with_id_token_hint(self, client):
+    def test_multiple_logout_with_id_token_hint(self, client, oidc_params):
         user = UserFactory()
         application_1 = ApplicationFactory()
-        id_token_1 = oidc_complete_flow(client, user, application=application_1)
+        oidc_params["client_id"] = application_1.client_id
+        id_token_1 = oidc_complete_flow(client, user, oidc_params, application=application_1)
         application_2 = ApplicationFactory()
-        params = OIDC_PARAMS.copy()
-        params["client_id"] = application_2.client_id
-        id_token_2 = oidc_complete_flow(client, user, application=application_2)
+        oidc_params["client_id"] = application_2.client_id
+        id_token_2 = oidc_complete_flow(client, user, oidc_params, application=application_2)
 
         assert get_user(client).is_authenticated is True
         assert token_are_revoked(user) is False
@@ -184,69 +183,69 @@ class TestLogoutView:
 
 
 class TestAuthorizeView:
-    def test_bad_oidc_params(self, client, snapshot):
+    def test_bad_oidc_params(self, client, oidc_params, snapshot):
         # Application does not exist
         auth_url = reverse("oauth2_provider:authorize")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-    def test_not_authenticated(self, client):
-        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    def test_not_authenticated(self, client, oidc_params):
+        ApplicationFactory(client_id=oidc_params["client_id"])
         auth_url = reverse("oauth2_provider:authorize")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == oidc_params
 
 
 class TestRegisterView:
-    def test_bad_oidc_params(self, client, snapshot):
+    def test_bad_oidc_params(self, client, oidc_params, snapshot):
         # Application does not exist
         auth_url = reverse("oauth2_provider:register")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-    def test_not_authenticated(self, client):
-        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    def test_not_authenticated(self, client, oidc_params):
+        ApplicationFactory(client_id=oidc_params["client_id"])
         auth_url = reverse("oauth2_provider:register")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:register"))
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == oidc_params
 
 
 class TestActivateView:
-    def test_bad_oidc_params(self, client, snapshot):
+    def test_bad_oidc_params(self, client, oidc_params, snapshot):
         auth_url = reverse("oauth2_provider:activate")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-    def test_missing_user_info(self, client, snapshot):
-        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    def test_missing_user_info(self, client, oidc_params, snapshot):
+        ApplicationFactory(client_id=oidc_params["client_id"])
         auth_url = reverse("oauth2_provider:activate")
         # Missing: email, firstname and lastname.
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         # The user is redirected to the activation view as the oidc parameters are valid
         assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
         assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDC_SESSION_KEY] == OIDC_PARAMS
+        assert client.session[OIDC_SESSION_KEY] == oidc_params
 
         response = client.get(response.url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-    def test_not_authenticated(self, client):
-        ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-        auth_params = OIDC_PARAMS | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
+    def test_not_authenticated(self, client, oidc_params):
+        ApplicationFactory(client_id=oidc_params["client_id"])
+        auth_params = oidc_params | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
         auth_url = reverse("oauth2_provider:activate")
         auth_complete_url = add_url_params(auth_url, auth_params)
         response = client.get(auth_complete_url)
@@ -255,7 +254,7 @@ class TestActivateView:
         assert client.session[OIDC_SESSION_KEY] == auth_params
 
 
-def test_user_application_link(client):
+def test_user_application_link(client, oidc_params):
     application_1 = ApplicationFactory(client_id="ca713487-f4ac-4283-8429-cab7f0386a00")
     application_2 = ApplicationFactory(client_id="05fb7023-ef66-4b24-896e-35f54a6c637f")
     user = UserFactory()
@@ -268,12 +267,10 @@ def test_user_application_link(client):
             )
         )
 
-    auth_params_1 = OIDC_PARAMS.copy()
-    auth_params_1["client_id"] = application_1.client_id
-    auth_url_1 = add_url_params(reverse("oauth2_provider:authorize"), auth_params_1)
-    auth_params_2 = OIDC_PARAMS.copy()
-    auth_params_2["client_id"] = application_2.client_id
-    auth_url_2 = add_url_params(reverse("oauth2_provider:authorize"), auth_params_2)
+    oidc_params["client_id"] = application_1.client_id
+    auth_url_1 = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
+    oidc_params["client_id"] = application_2.client_id
+    auth_url_2 = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
 
     assert user.linked_applications.count() == 0
 
@@ -302,16 +299,15 @@ def test_user_application_link(client):
     ]
 
 
-def test_session_duration(client):
+def test_session_duration(client, oidc_params):
     application_1 = ApplicationFactory()
     application_2 = ApplicationFactory()
     user = UserFactory()
 
-    auth_params = OIDC_PARAMS.copy()
     auth_url = reverse("oauth2_provider:authorize")
 
-    auth_params["client_id"] = application_1.client_id
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    oidc_params["client_id"] = application_1.client_id
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     with freeze_time("2023/05/12 10:39"):
         now = timezone.now()
         response = client.get(auth_complete_url)
@@ -329,12 +325,12 @@ def test_session_duration(client):
     assert session.expire_date == now + datetime.timedelta(minutes=30)
 
     # 1O minutes later
-    auth_params["client_id"] = application_2.client_id
-    auth_complete_url = add_url_params(auth_url, auth_params)
+    oidc_params["client_id"] = application_2.client_id
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     with freeze_time("2023/05/12 10:49"):
         response = client.get(auth_complete_url)
         assert response.status_code == 302
-        assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+        assert response.url.startswith(oidc_params["redirect_uri"])
 
     # No change in expire_date
     session = Session.objects.get()

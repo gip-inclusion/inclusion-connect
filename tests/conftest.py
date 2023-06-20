@@ -51,3 +51,15 @@ class Client(ExecuteOnCommitCallbacksClient, NoInlineClient):
 @pytest.fixture
 def client():
     return Client()
+
+
+@pytest.fixture
+def oidc_params():
+    return {
+        "response_type": "code",
+        "client_id": "my_application",
+        "redirect_uri": "http://localhost/callback",
+        "scope": "openid profile email",
+        "state": "state",
+        "nonce": "nonce",
+    }
