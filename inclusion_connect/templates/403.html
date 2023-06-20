@@ -1,0 +1,10 @@
+{% extends "layout/left_content.html" %}
+{% block content %}
+    {% if exception %}
+        <div class="alert alert-warning">
+            <p class="mb-0">{{ exception }}</p>
+        </div>
+    {% else %}
+        <h1 class="h2">Accès refusé</h1>
+    {% endif %}
+{% endblock %}
