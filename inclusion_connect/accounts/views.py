@@ -148,6 +148,32 @@ class ConfirmEmailView(TemplateView):
         return HttpResponseRedirect(reverse("accounts:confirm-email"))
 
 
+def handle_email_confirmation(request, user_id, email):
+    # TODO: Move to ConfirmEmailTokenView when keycloak_compat ActionToken is dropped.
+    email_address = get_object_or_404(EmailAddress.objects.select_related("user"), email=email, user_id=user_id)
+    if email_address.verified_at:
+        messages.info(request, "Cette adresse e-mail est déjà vérifiée.")
+        if request.user.is_authenticated:
+            url = reverse("accounts:edit_user_info")
+        else:
+            url = reverse("accounts:login")
+        return HttpResponseRedirect(url)
+    email_address.verify()
+    login(request, email_address.user)
+    try:
+        del request.session[EMAIL_CONFIRM_KEY]
+    except KeyError:
+        pass
+    return HttpResponseRedirect(get_next_url(request))
+
+
+def handle_signature_expired(request, email):
+    # TODO: Move to ConfirmEmailTokenView when keycloak_compat ActionToken is dropped.
+    request.session[EMAIL_CONFIRM_KEY] = email
+    messages.error(request, "Le lien de vérification d’adresse e-mail a expiré.")
+    return HttpResponseRedirect(reverse("accounts:confirm-email"))
+
+
 class ConfirmEmailTokenView(View):
     @staticmethod
     def decode_email(encoded_email):
@@ -165,28 +191,12 @@ class ConfirmEmailTokenView(View):
         except SignatureExpired:
             encoded_email = signer.unsign(token)
             email = self.decode_email(encoded_email)
-            request.session[EMAIL_CONFIRM_KEY] = email
-            messages.error(request, "Le lien de vérification d’adresse e-mail a expiré.")
-            return HttpResponseRedirect(reverse("accounts:confirm-email"))
+            return handle_signature_expired(request, email)
         except BadSignature as e:
             raise Http404 from e
         # Signature matched, the payload is valid.
         email = self.decode_email(encoded_email)
-        email_address = get_object_or_404(EmailAddress.objects.select_related("user"), email=email, user_id=uid)
-        if email_address.verified_at:
-            messages.info(request, "Cette adresse e-mail est déjà vérifiée.")
-            if request.user.is_authenticated:
-                url = reverse("accounts:edit_user_info")
-            else:
-                url = reverse("accounts:login")
-            return HttpResponseRedirect(url)
-        email_address.verify()
-        login(request, email_address.user)
-        try:
-            del request.session[EMAIL_CONFIRM_KEY]
-        except KeyError:
-            pass
-        return HttpResponseRedirect(get_next_url(request))
+        return handle_email_confirmation(request, uid, email)
 
 
 class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
