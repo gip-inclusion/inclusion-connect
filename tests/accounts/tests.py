@@ -26,7 +26,7 @@ from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
-from tests.helpers import OIDC_PARAMS, parse_response_to_soup
+from tests.helpers import parse_response_to_soup
 from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
@@ -875,12 +875,12 @@ class TestConfirmEmailTokenView:
         assert "_auth_user_backend" not in client.session
 
     @freeze_time("2023-04-26 11:11:11")
-    def test_confirm_email_from_other_client(self, client):
+    def test_confirm_email_from_other_client(self, client, oidc_params):
         user = UserFactory(email="")
         email = "me@mailinator.com"
         email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
         token = email_verification_token(email)
-        next_url = add_url_params(reverse("oauth2_provider:register"), OIDC_PARAMS)
+        next_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
         user.save_next_redirect_uri(next_url)
         response = client.get(self.url(user, token))
         assertRedirects(response, next_url, fetch_redirect_response=False)

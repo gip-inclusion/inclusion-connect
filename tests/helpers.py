@@ -13,25 +13,15 @@ from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFac
 from tests.users.factories import DEFAULT_PASSWORD
 
 
-OIDC_PARAMS = {
-    "response_type": "code",
-    "client_id": "my_application",
-    "redirect_uri": "http://localhost/callback",
-    "scope": "openid profile email",
-    "state": "state",
-    "nonce": "nonce",
-}
-
-
-def oidc_flow_followup(client, auth_response_params, user, client_id=None):
+def oidc_flow_followup(client, auth_response_params, user, oidc_params):
     # Call TOKEN endpoint
     # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
-        "client_id": client_id or OIDC_PARAMS["client_id"],
+        "client_id": oidc_params["client_id"],
         "client_secret": DEFAULT_CLIENT_SECRET,
         "code": auth_response_params["code"],
         "grant_type": "authorization_code",
-        "redirect_uri": OIDC_PARAMS["redirect_uri"],
+        "redirect_uri": oidc_params["redirect_uri"],
     }
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
 
@@ -41,9 +31,9 @@ def oidc_flow_followup(client, auth_response_params, user, client_id=None):
         id_token,
         key=default_client_secret(),
         algorithms=["HS256"],
-        audience=client_id or OIDC_PARAMS["client_id"],
+        audience=oidc_params["client_id"],
     )
-    assert decoded_id_token["nonce"] == OIDC_PARAMS["nonce"]
+    assert decoded_id_token["nonce"] == oidc_params["nonce"]
     assert decoded_id_token["sub"] == str(user.pk)
     assert uuid.UUID(decoded_id_token["sub"]), "Sub should be an uuid"
     assert decoded_id_token["given_name"] == user.first_name
@@ -65,12 +55,10 @@ def oidc_flow_followup(client, auth_response_params, user, client_id=None):
     return token_json["id_token"]
 
 
-def oidc_complete_flow(client, user, application=None):
-    application = application or ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
-    params = OIDC_PARAMS.copy()
-    params["client_id"] = application.client_id
+def oidc_complete_flow(client, user, oidc_params, application=None):
+    application = application or ApplicationFactory(client_id=oidc_params["client_id"])
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, params)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     if not get_user(client).is_authenticated:
         assert client.session["next_url"] == auth_complete_url
@@ -85,7 +73,7 @@ def oidc_complete_flow(client, user, application=None):
         assert "next_url" not in client.session
         response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
-    return oidc_flow_followup(client, auth_response_params, user, client_id=application.client_id)
+    return oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
 
 def has_ongoing_sessions(user):

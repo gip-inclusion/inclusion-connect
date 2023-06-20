@@ -16,7 +16,7 @@ from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
 from tests.conftest import Client
-from tests.helpers import OIDC_PARAMS, call_logout, oidc_flow_followup, token_are_revoked
+from tests.helpers import call_logout, oidc_flow_followup, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -40,11 +40,11 @@ def get_verification_link(body):
         f"{reverse('oauth2_provider:register')}?next=http://evil.com",
     ],
 )
-def test_register_endpoint(auth_url, client, mailoutbox):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_register_endpoint(auth_url, client, oidc_params, mailoutbox):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
@@ -82,19 +82,19 @@ def test_register_endpoint(auth_url, client, mailoutbox):
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
     assert user.linked_applications.count() == 1
 
-    oidc_flow_followup(client, auth_response_params, user)
+    oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_register_endpoint_confirm_email_from_other_client(client, mailoutbox):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_register_endpoint_confirm_email_from_other_client(client, oidc_params, mailoutbox):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), OIDC_PARAMS)
+    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
@@ -133,19 +133,19 @@ def test_register_endpoint_confirm_email_from_other_client(client, mailoutbox):
 
     response = other_client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
     assert user.linked_applications.count() == 1
 
-    oidc_flow_followup(other_client, auth_response_params, user)
+    oidc_flow_followup(other_client, auth_response_params, user, oidc_params)
 
 
 @pytest.mark.parametrize("use_other_client", [True, False])
-def test_register_endpoint_email_not_received(client, use_other_client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_register_endpoint_email_not_received(client, oidc_params, use_other_client):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), OIDC_PARAMS)
+    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
 
@@ -214,11 +214,11 @@ def test_register_endpoint_email_not_received(client, use_other_client):
 
     response = other_client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
     assert user.linked_applications.count() == 1
 
-    oidc_flow_followup(other_client, auth_response_params, user)
+    oidc_flow_followup(other_client, auth_response_params, user, oidc_params)
 
     user.refresh_from_db()
     assert user.next_redirect_uri is None
@@ -233,17 +233,17 @@ def test_register_endpoint_email_not_received(client, use_other_client):
         f"{reverse('oauth2_provider:activate')}?next=http://evil.com",
     ],
 )
-def test_activate_endpoint(auth_url, client, mailoutbox):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_activate_endpoint(auth_url, client, oidc_params, mailoutbox):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oauth2_provider:activate")
-    auth_params = OIDC_PARAMS | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
+    auth_params = oidc_params | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))
@@ -281,11 +281,11 @@ def test_activate_endpoint(auth_url, client, mailoutbox):
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
     assert user.linked_applications.count() == 1
 
-    oidc_flow_followup(client, auth_response_params, user)
+    oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
 
 @pytest.mark.parametrize(
@@ -296,11 +296,11 @@ def test_activate_endpoint(auth_url, client, mailoutbox):
         f"{reverse('oauth2_provider:authorize')}?next=http://evil.com",
     ],
 )
-def test_login_endpoint(auth_url, client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_login_endpoint(auth_url, client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
 
@@ -318,19 +318,19 @@ def test_login_endpoint(auth_url, client):
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
     assert user.linked_applications.count() == 1
 
-    oidc_flow_followup(client, auth_response_params, user)
+    oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
 
-def test_login_after_password_reset(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_login_after_password_reset(client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
 
@@ -360,18 +360,18 @@ def test_login_after_password_reset(client):
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
 
-    oidc_flow_followup(client, auth_response_params, user)
+    oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
 
-def test_login_after_password_reset_other_client(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_login_after_password_reset_other_client(client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
 
@@ -403,19 +403,19 @@ def test_login_after_password_reset_other_client(client):
 
     response = other_client.get(auth_complete_url)
     assert response.status_code == 302
-    assert response.url.startswith(OIDC_PARAMS["redirect_uri"])
+    assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
 
-    oidc_flow_followup(other_client, auth_response_params, user)
+    oidc_flow_followup(other_client, auth_response_params, user, oidc_params)
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_login_hint_is_preserved(client):
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+def test_login_hint_is_preserved(client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oauth2_provider:register")
-    auth_params = OIDC_PARAMS | {"login_hint": user_email}
+    auth_params = oidc_params | {"login_hint": user_email}
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url, follow=True)
     assertContains(
@@ -448,12 +448,12 @@ def test_login_hint_is_preserved(client):
     )
 
 
-def test_logout_no_confirmation(client):
+def test_logout_no_confirmation(client, oidc_params):
     user = UserFactory()
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
 
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
 
@@ -461,7 +461,7 @@ def test_logout_no_confirmation(client):
     assert get_user(client).is_authenticated is True
     response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
-    id_token = oidc_flow_followup(client, auth_response_params, user)
+    id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
     assert get_user(client).is_authenticated is True
     response = call_logout(client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"})
@@ -473,13 +473,13 @@ def test_logout_no_confirmation(client):
     assertRedirects(response, reverse("accounts:login"))
 
 
-def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_token_hint(client):
+def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_token_hint(client, oidc_params):
     user = UserFactory()
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
 
     with freeze_time("2023-05-25 9:34"):
         auth_url = reverse("oauth2_provider:authorize")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
 
@@ -487,7 +487,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         assert get_user(client).is_authenticated is True
         response = client.get(response.url)
         auth_response_params = get_url_params(response.url)
-        id_token = oidc_flow_followup(client, auth_response_params, user)
+        id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params)
         assert get_user(client).is_authenticated is True
 
     with freeze_time("2023-05-25 20:05"):
@@ -504,12 +504,12 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         assertRedirects(response, reverse("accounts:login"))
 
 
-def test_logout_with_confirmation(client):
+def test_logout_with_confirmation(client, oidc_params):
     user = UserFactory()
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
 
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+    auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
 
@@ -517,11 +517,11 @@ def test_logout_with_confirmation(client):
     assert get_user(client).is_authenticated is True
     response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
-    oidc_flow_followup(client, auth_response_params, user)
+    oidc_flow_followup(client, auth_response_params, user, oidc_params)
 
     assert get_user(client).is_authenticated is True
     response = call_logout(
-        client, "get", {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/"}
+        client, "get", {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/"}
     )
     assert response.status_code == 200
     assertContains(
@@ -532,7 +532,7 @@ def test_logout_with_confirmation(client):
     response = call_logout(
         client,
         "post",
-        {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+        {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
     )
     assertRedirects(response, "http://callback/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
@@ -542,13 +542,13 @@ def test_logout_with_confirmation(client):
     assertRedirects(response, reverse("accounts:login"))
 
 
-def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_client_id(client):
+def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_client_id(client, oidc_params):
     user = UserFactory()
-    ApplicationFactory(client_id=OIDC_PARAMS["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
 
     with freeze_time("2023-05-25 9:34"):
         auth_url = reverse("oauth2_provider:authorize")
-        auth_complete_url = add_url_params(auth_url, OIDC_PARAMS)
+        auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
 
@@ -556,13 +556,13 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         assert get_user(client).is_authenticated is True
         response = client.get(response.url)
         auth_response_params = get_url_params(response.url)
-        oidc_flow_followup(client, auth_response_params, user)
+        oidc_flow_followup(client, auth_response_params, user, oidc_params)
         assert get_user(client).is_authenticated is True
 
     with freeze_time("2023-05-25 20:05"):
         assert get_user(client).is_authenticated is False
         response = call_logout(
-            client, "get", {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/"}
+            client, "get", {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/"}
         )
         assert response.status_code == 200
         assertContains(
@@ -573,7 +573,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         response = call_logout(
             client,
             "post",
-            {"client_id": OIDC_PARAMS["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+            {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
         )
 
         assertRedirects(response, "http://callback/", fetch_redirect_response=False)
@@ -585,7 +585,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         assertRedirects(response, reverse("accounts:login"))
 
 
-def test_edit_user_info_and_password(client, mailoutbox):
+def test_edit_user_info_and_password(client, oidc_params, mailoutbox):
     user = UserFactory()
     verified_email = user.email
     referrer_uri = "https://go/back/there"
@@ -654,7 +654,7 @@ def test_edit_user_info_and_password(client, mailoutbox):
     assert get_user(client).is_authenticated is True
 
 
-def test_edit_user_info_other_client(client, mailoutbox):
+def test_edit_user_info_other_client(client, oidc_params, mailoutbox):
     user = UserFactory()
     verified_email = user.email
     referrer_uri = "https://go/back/there"
