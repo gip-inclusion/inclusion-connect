@@ -1,0 +1,51 @@
+name: 🏗 Deploy to Scalingo
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    concurrency: "deploy-to-scalingo"
+    environment: Scalingo
+    env:
+      SCALINGO_APP_NAME: ${{ secrets.SCALINGO_APP_NAME }}
+      SCALINGO_GIT_URL: ${{ secrets.SCALINGO_GIT_URL }}
+      SCALINGO_POSTGRESQL_ADDON_ID: ${{ secrets.SCALINGO_POSTGRESQL_ADDON_ID }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
+
+    steps:
+    - uses: actions/checkout@v3.5.3
+      with:
+        fetch-depth: 0
+
+    - name: Setup SSH
+      run: |
+        mkdir ~/.ssh
+        touch ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        echo "$SSH_SECRET_KEY" >~/.ssh/id_ed25519
+        echo "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
+
+    - name: Deploy to Scalingo
+      run: git push $SCALINGO_GIT_URL HEAD:main --force
+
+    - name: Install Scalingo CLI
+      run: curl -O https://cli-dl.scalingo.com/install && bash install
+
+    - name: Login to Scalingo
+      run: scalingo login --ssh --ssh-identity ~/.ssh/id_ed25519
+
+    - name: Restore latest database backup
+      run: scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME run --size S python restore-backup.py
+
+    - name: Failover
+      if: ${{ github.event_name == 'workflow_dispatch' }}
+      run: >-
+        scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME addons-upgrade $SCALINGO_POSTGRESQL_ADDON_ID postgresql-starter-1024
+        scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME scale web:1:XL
