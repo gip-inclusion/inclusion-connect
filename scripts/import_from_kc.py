@@ -209,7 +209,7 @@ for user_id, username, email, first_name, last_name, email_verified, created_tim
         must_reset_password=user_id in users_must_reset_password,
         terms_accepted_at=None if user_id in users_must_accept_terms else max(created_at, settings.NEW_TERMS_DATE),
     )
-    email_addresses.append(EmailAddress(user=user, email=email, verified_at=created_at if email_verified else None))
+    email_addresses.append(EmailAddress(user=user, email=email, verified_at=created_at if email_verified else None, created_at=created_at))
 
     for client_id, last_login in users_app_links[user_id]:
         if client_id in applications:
