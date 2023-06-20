@@ -1,0 +1,5 @@
+#!/bin/sh
+
+python manage.py collectstatic --noinput
+gzip --recursive --keep inclusion_connect/static_collected
+python manage.py migrate --no-input

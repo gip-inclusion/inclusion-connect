@@ -1,0 +1,12 @@
+{
+    "jobs": [
+        {
+            "command": "0 3 * * * django-admin clearsessions",
+            "size": "S"
+        },
+        {
+            "command": "0 3 * * * django-admin cleartokens",
+            "size": "S"
+        }
+    ]
+}

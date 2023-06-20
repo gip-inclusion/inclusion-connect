@@ -1,0 +1,2 @@
+# Scalingo requires a requirements.txt file at the root of the repository
+-r requirements/base.txt
