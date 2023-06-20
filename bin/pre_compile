@@ -1,0 +1,8 @@
+#!/bin/sh
+set -x
+
+wget https://github.com/mozilla/sops/releases/download/v3.7.3/sops-v3.7.3.linux -O sops
+chmod +x sops
+curl -H "Authorization: token $IC_GH_TOKEN" -L $IC_SECRETS_REPO_TAR_URL | tar -zx
+./sops -d itou-secrets-master/c5/"$IC_ENVIRONMENT".enc.env > .env
+./sops -d itou-secrets-master/c5/"$IC_ENVIRONMENT"_OIDC_RSA.enc.pem > oidc.pem
