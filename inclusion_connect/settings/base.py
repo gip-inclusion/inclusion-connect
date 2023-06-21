@@ -115,20 +115,15 @@ RUN_SERVER_PORT = 8080
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
+    "default": dj_database_url.config(env="POSTGRESQL_ADDON_URI", ssl_require=True)
+    | {
         "ENGINE": "django.db.backends.postgresql",
         "ATOMIC_REQUESTS": True,
         "OPTIONS": {
             "connect_timeout": 5,
         },
-    }
+    },
 }
-
-# Import postgreql url from Clever Cloud environment variables
-database_url = os.getenv("POSTGRESQL_ADDON_URI")
-if database_url:
-    DATABASES["default"].update(dj_database_url.config(ssl_require=True))
-
 if os.getenv("DATABASE_PERSISTENT_CONNECTIONS") == "True":
     # Since we have the health checks enabled, no need to define a max age:
     # if the connection was closed on the database side, the check will detect it
