@@ -125,7 +125,7 @@ DATABASES = {
 }
 
 # Import postgreql url from Clever Cloud environment variables
-database_url = os.environ.get("POSTGRESQL_ADDON_DIRECT_URI")
+database_url = os.getenv("POSTGRESQL_ADDON_URI")
 if database_url:
     DATABASES["default"].update(dj_database_url.config(ssl_require=True))
 
