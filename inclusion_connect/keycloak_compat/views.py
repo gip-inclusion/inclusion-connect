@@ -11,8 +11,7 @@ from inclusion_connect.keycloak_compat.utils import realm_from_request
 
 class ActionToken(View):
     # This view is transitional, will only live for less than a week in production.
-    # Can ignore “Too many branches ({branches} > {max_branches})”
-    def get(self, request):  # noqa: PLR0912
+    def get(self, request):
         try:
             request_jwt = request.GET["key"]
         except KeyError as e:
