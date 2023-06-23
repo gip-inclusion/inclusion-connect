@@ -31,6 +31,12 @@ class User(AbstractUser):
     next_redirect_uri = models.TextField(blank=True, null=True)
     next_redirect_uri_stored_at = models.DateTimeField(blank=True, null=True)
 
+    support_for = models.ManyToManyField(
+        settings.OAUTH2_PROVIDER_APPLICATION_MODEL,
+        verbose_name="support pour les partanaires",
+        related_name="support_for",
+    )
+
     class Meta:
         verbose_name = "utilisateur"
         constraints = [

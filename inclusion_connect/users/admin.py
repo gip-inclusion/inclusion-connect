@@ -166,6 +166,7 @@ class UserAdmin(auth_admin.UserAdmin):
         "last_name",
         "is_staff",
     )
+    filter_horizontal = ("support_for",)
 
     @admin.display(description="Email à valider")
     def email_to_validate(self, obj):
@@ -192,6 +193,8 @@ class UserAdmin(auth_admin.UserAdmin):
                 if obj and not obj.is_staff:
                     # Hide space-consuming widgets for groups and user_permissions.
                     fieldsets[2] = ("Permissions", {"fields": ["is_active", "is_staff", "is_superuser"]})
+                else:
+                    fieldsets[2][1]["fields"] += ("support_for",)
             else:
                 del fieldsets[2]
         return fieldsets
@@ -203,7 +206,7 @@ class UserAdmin(auth_admin.UserAdmin):
         return rof
 
     def get_queryset(self, request):
-        return (
+        queryset = (
             super()
             .get_queryset(request)
             .prefetch_related(
@@ -214,3 +217,8 @@ class UserAdmin(auth_admin.UserAdmin):
                 )
             )
         )
+
+        if not request.user.is_superuser:
+            queryset = queryset.filter(linked_applications__application__in=request.user.support_for.all())
+
+        return queryset
