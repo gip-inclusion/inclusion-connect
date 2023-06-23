@@ -97,6 +97,11 @@
                           <p class="mb-3">
                               Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
                           </p>
+                          <p class="mb-3">
+                              Vous constatez un problème de sécurité sur le service ?
+                              <br>
+                              Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
+                          </p>
                           <ul>
                               <li>
                                   <a target="_blank" href="https://legifrance.gouv.fr">
@@ -120,11 +125,6 @@
                               </li>
                           </ul>
                       </div>
-                  </div>
-                  <div class="fr-footer__content col-12 col-lg-6 d-flex align-items-center">
-                      <p class="fr-footer__content-desc"></p>
-                      <ul class="fr-footer__content-list">
-                      </ul>
                   </div>
               </div>
           </div>
