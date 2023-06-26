@@ -164,7 +164,10 @@ def handle_email_confirmation(request, user_id, email):
         del request.session[EMAIL_CONFIRM_KEY]
     except KeyError:
         pass
-    return HttpResponseRedirect(get_next_url(request))
+    next_url = get_next_url(request)
+    if next_url.startswith(reverse("accounts:edit_user_info")):
+        messages.success(request, "Votre adresse e-mail a été mise à jour.")
+    return HttpResponseRedirect(next_url)
 
 
 def handle_signature_expired(request, email):
@@ -274,6 +277,8 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
             self.request.session[EMAIL_CONFIRM_KEY] = email
             user.save_next_redirect_uri(self.request.get_full_path())
             return HttpResponseRedirect(reverse("accounts:confirm-email"))
+        if form.changed_data:
+            messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
         return response
 
 
