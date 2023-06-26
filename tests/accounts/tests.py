@@ -699,8 +699,10 @@ class TestEditUserInfoView:
         response = client.post(
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": user.email},
+            follow=True,
         )
         assertRedirects(response, edit_user_info_url)
+        assertContains(response, "Vos informations personnelles ont été mises à jour.")
         user.refresh_from_db()
         assert user.first_name == "John"
         assert user.last_name == "Doe"
@@ -861,6 +863,7 @@ class TestConfirmEmailTokenView:
 
     @freeze_time("2023-04-26 11:11:11")
     def test_confirm_email(self, client):
+        email_updated_msg = "Votre adresse e-mail a été mise à jour."
         user = UserFactory(email="")
         email = "me@mailinator.com"
         email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
@@ -868,8 +871,9 @@ class TestConfirmEmailTokenView:
         session = client.session
         session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
         session.save()
-        response = client.get(self.url(user, token))
+        response = client.get(self.url(user, token), follow=True)
         assertRedirects(response, reverse("accounts:edit_user_info"))
+        assertContains(response, email_updated_msg)
         email_address.refresh_from_db()
         assert email_address.verified_at == timezone.now()
         user.refresh_from_db()
@@ -880,9 +884,10 @@ class TestConfirmEmailTokenView:
 
         client.logout()
         with freeze_time(timezone.now() + datetime.timedelta(days=1)):
-            response = client.get(self.url(user, token))
+            response = client.get(self.url(user, token), follow=True)
         assertMessages(response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée.")])
         assertRedirects(response, reverse("accounts:login"))
+        assertNotContains(response, email_updated_msg)
         user.refresh_from_db()
         assert user.email == "me@mailinator.com"
         email_address.refresh_from_db()
@@ -915,8 +920,9 @@ class TestConfirmEmailTokenView:
         email = "new@mailinator.com"
         email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
         token = email_verification_token(email)
-        response = client.get(self.url(user, token))
+        response = client.get(self.url(user, token), follow=True)
         assertRedirects(response, reverse("accounts:edit_user_info"))
+        assertContains(response, "Votre adresse e-mail a été mise à jour.")
         # Previous and unused emails were deleted.
         email_address = EmailAddress.objects.get()
         assert email_address.verified_at == timezone.now()
