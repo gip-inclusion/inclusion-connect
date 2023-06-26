@@ -136,6 +136,22 @@ class TestLoginView:
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
 
+    def test_empty_login_hint(self, client):
+        url = add_url_params(reverse("accounts:login"), {"login_hint": ""})
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, reverse("accounts:register"))  # Link to registration page
+        assertContains(
+            response,
+            # Not pre-filled with email address since login_hint is empty
+            '<input type="email" name="email" placeholder="nom@domaine.fr" '
+            # Not disabled.
+            'autocomplete="email" class="form-control" title="" required id="id_email">',
+            count=1,
+        )
+
 
 class TestRegisterView:
     @freeze_time("2023-04-26 11:11:11")
