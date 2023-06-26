@@ -1610,7 +1610,7 @@ class TestChangeTemporaryPasswordView:
         assert user.must_reset_password is False
 
     def test_invalid_password(self, caplog, client):
-        user = UserFactory(must_reset_password=True)
+        user = UserFactory(must_reset_password=True, first_name="Manuel", last_name="Calavera")
         client.force_login(user)
         response = client.post(
             reverse("accounts:change_temporary_password"),
