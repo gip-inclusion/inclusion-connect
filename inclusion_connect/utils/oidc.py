@@ -11,10 +11,10 @@ def oidc_params(request):
 
 
 def initial_from_login_hint(request):
-    try:
-        return {"email": oidc_params(request)["login_hint"]}
-    except KeyError:
-        return {}
+    login_hint = oidc_params(request).get("login_hint")
+    if login_hint:
+        return {"email": login_hint}
+    return {}
 
 
 def get_next_url(request):
