@@ -221,12 +221,12 @@ class ConfirmEmailView(TemplateView):
     template_name = "email_confirmation.html"
     EVENT_NAME = "send_verification_email"
 
-    def setup(self, request, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
         try:
             self.email_address = EmailAddress.objects.get(email=request.session[EMAIL_CONFIRM_KEY], verified_at=None)
-        except (KeyError, EmailAddress.DoesNotExist) as e:
-            raise Http404 from e
+        except (KeyError, EmailAddress.DoesNotExist):
+            return HttpResponseRedirect(reverse("accounts:edit_user_info"))
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request):
         messages.success(request, "E-mail de vérification envoyé.")
