@@ -11,7 +11,7 @@ from pytest_django.asserts import assertContains, assertRedirects
 
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
-from inclusion_connect.utils.urls import add_url_params
+from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.conftest import Client
 from tests.helpers import (
     call_logout,
@@ -20,7 +20,7 @@ from tests.helpers import (
     parse_response_to_soup,
     token_are_revoked,
 )
-from tests.oidc_overrides.factories import ApplicationFactory
+from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -335,3 +335,40 @@ def test_session_duration(client, oidc_params):
     # No change in expire_date
     session = Session.objects.get()
     assert session.expire_date == now + datetime.timedelta(minutes=30)
+
+
+def test_access_token_lifespan(client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
+    user = UserFactory()
+    client.force_login(user)
+
+    auth_url = reverse("oauth2_provider:authorize")
+    auth_complete_url = add_url_params(auth_url, oidc_params)
+    with freeze_time("2023-05-05 14:29:20"):
+        response = client.get(auth_complete_url)
+        params = get_url_params(response.url)
+
+        token_data = {
+            "client_id": oidc_params["client_id"],
+            "client_secret": DEFAULT_CLIENT_SECRET,
+            "code": params["code"],
+            "grant_type": "authorization_code",
+            "redirect_uri": oidc_params["redirect_uri"],
+        }
+        response = client.post(reverse("oauth2_provider:token"), data=token_data)
+        token_json = response.json()
+        assert token_json["expires_in"] == 60 * 30  # 30 minutes
+
+    with freeze_time("2023-05-05 14:59:19"):
+        response = client.get(
+            reverse("oauth2_provider:user-info"),
+            HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+        )
+        assert response.status_code == 200
+
+    with freeze_time("2023-05-05 14:59:20"):
+        response = client.get(
+            reverse("oauth2_provider:user-info"),
+            HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+        )
+        assert response.status_code == 401
