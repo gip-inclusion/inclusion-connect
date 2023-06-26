@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.utils.cache import add_never_cache_headers
 from django.utils.html import format_html
 
+from inclusion_connect.utils.urls import add_url_params
+
 
 def never_cache(get_response):
     def middleware(request):
@@ -22,7 +24,7 @@ def limit_staff_users_to_admin(get_response):
             exception = format_html(
                 "Les comptes administrateurs n'ont pas accès à cette page.<br>"
                 '<a href="{}">Vous pouvez-vous déconnecter ici.</a>',
-                reverse("admin:logout"),
+                add_url_params(reverse("admin:logout"), {"next": request.get_full_path()}),
             )
             raise PermissionDenied(exception)
 
