@@ -235,11 +235,11 @@ class MyAccountMixin(LoginRequiredMixin):
         return context | {
             "edit_user_info": {
                 "url": add_url_params(edit_user_info_url, {"referrer_uri": referrer_uri}),
-                "active": self.request.path == edit_user_info_url,
+                "active": False,
             },
             "edit_password": {
                 "url": add_url_params(edit_password_url, {"referrer_uri": referrer_uri}),
-                "active": self.request.path == edit_password_url,
+                "active": False,
             },
             "referrer_uri": referrer_uri,
         }
@@ -256,6 +256,11 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
     template_name = "edit_user_info.html"
     form_class = forms.EditUserInfoForm
     model = User
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["edit_user_info"]["active"] = True
+        return context
 
     # FIXME Add a message on success to tell the user to click on return if he's done ?
     def form_valid(self, form):
@@ -278,6 +283,11 @@ class PasswordChangeView(MyAccountMixin, FormView):
 
     def get_form_kwargs(self):
         return super().get_form_kwargs() | {"user": self.get_object()}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["edit_password"]["active"] = True
+        return context
 
     def form_valid(self, form):
         form.save()
