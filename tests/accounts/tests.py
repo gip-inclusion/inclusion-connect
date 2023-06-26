@@ -1203,14 +1203,16 @@ def test_new_terms(caplog, client, terms_accepted_at):
 
 class TestConfirmEmailView:
     def test_get_anonymous(self, client):
-        response = client.get(reverse("accounts:confirm-email"))
-        assert response.status_code == 404
+        response = client.get(reverse("accounts:confirm-email"), follow=True)
+        assertRedirects(
+            response, add_url_params(reverse("accounts:login"), {"next": reverse("accounts:edit_user_info")})
+        )
 
     def test_get_with_confirmed_email(self, client):
         user = UserFactory()
         client.force_login(user)
         response = client.get(reverse("accounts:confirm-email"))
-        assert response.status_code == 404
+        assertRedirects(response, reverse("accounts:edit_user_info"))
 
     def test_get(self, client, snapshot):
         user = UserFactory(email="")
