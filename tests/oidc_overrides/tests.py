@@ -372,3 +372,8 @@ def test_access_token_lifespan(client, oidc_params):
             HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
         )
         assert response.status_code == 401
+
+
+def test_discovery_view(client):
+    response = client.get(reverse("oauth2_provider:oidc-connect-discovery-info"))
+    assert response.status_code == 200

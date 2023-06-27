@@ -32,7 +32,7 @@ from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFac
 
 class TestLoginView:
     def test_login(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory()
 
@@ -78,7 +78,7 @@ class TestLoginView:
         assert client.session["next_url"] == "anything"
 
     def test_email_not_verified(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user_email = "me@mailinator.com"
         user = UserFactory(email="")
@@ -105,7 +105,7 @@ class TestLoginView:
         assert client.session["next_url"] == redirect_url
 
     def test_login_hint(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(email="me@mailinator.com")
         client_session = client.session
@@ -156,7 +156,7 @@ class TestLoginView:
 class TestRegisterView:
     @freeze_time("2023-04-26 11:11:11")
     def test_register(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
 
         response = client.get(url)
@@ -210,7 +210,7 @@ class TestRegisterView:
         )
 
     def test_error_email_exists(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
         user = UserFactory()
 
@@ -238,7 +238,7 @@ class TestRegisterView:
         )
 
     def test_error_email_not_verified(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
         user = UserFactory(email="")
         user_email = "me@mailinator.com"
@@ -268,7 +268,7 @@ class TestRegisterView:
         assert email.to == [user_email]
 
     def test_email_already_exists_and_not_verified(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
         user_email = "me@mailinator.com"
         EmailAddressFactory.create(email=user_email, verified_at=timezone.now())
@@ -293,7 +293,7 @@ class TestRegisterView:
         assertContains(response, msg, count=1)
 
     def test_terms_are_required(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
         user = UserFactory.build()
 
@@ -314,7 +314,7 @@ class TestRegisterView:
 
     @freeze_time("2023-04-26 11:11:11")
     def test_login_hint(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
 
         client_session = client.session
@@ -382,7 +382,7 @@ class TestRegisterView:
 
 class TestActivateAccountView:
     def test_activate_account(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory.build()
 
@@ -422,7 +422,7 @@ class TestActivateAccountView:
         assert email_address.verified_at is None
 
     def test_email_already_exists(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory()
 
@@ -462,7 +462,7 @@ class TestActivateAccountView:
         assert client.session["next_url"] == redirect_url
 
     def test_email_already_exists_not_verified(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory(email="")
         user_email = "me@mailinator.com"
@@ -497,7 +497,7 @@ class TestActivateAccountView:
         assert client.session["next_url"] == redirect_url
 
     def test_terms_are_required(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory.build()
 
@@ -530,7 +530,7 @@ class TestPasswordResetView:
         user = UserFactory()
 
         with freeze_time("2023-06-08 09:10:03"):
-            redirect_url = reverse("oauth2_provider:logout")
+            redirect_url = reverse("oauth2_provider:rp-initiated-logout")
             url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
             response = client.get(url)
             password_reset_url = reverse("accounts:password_reset")
@@ -579,7 +579,7 @@ class TestPasswordResetView:
             assert "next_url" not in client.session
 
     def test_password_reset_unknown_email(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         response = client.get(url)
         password_reset_url = reverse("accounts:password_reset")
@@ -609,7 +609,7 @@ class TestPasswordResetView:
     def test_login_hint(self, client, mailoutbox):
         user = UserFactory(email="me@mailinator.com")
 
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
 
         client_session = client.session
@@ -793,7 +793,7 @@ def test_change_password(client):
 @pytest.mark.parametrize("terms_accepted_at", (None, datetime.datetime(2022, 1, 1, tzinfo=datetime.UTC)))
 @freeze_time("2023-05-09 14:01:56")
 def test_new_terms(client, terms_accepted_at):
-    redirect_url = reverse("oauth2_provider:logout")
+    redirect_url = reverse("oauth2_provider:rp-initiated-logout")
     url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
     user = UserFactory(terms_accepted_at=terms_accepted_at)
 
@@ -1053,7 +1053,7 @@ class TestConfirmEmailTokenView:
 
 class TestChangeTemporaryPasswordView:
     def test_view(self, client):
-        redirect_url = reverse("oauth2_provider:logout")
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(must_reset_password=True)
 
@@ -1124,5 +1124,7 @@ class TestMiddleware:
             must_reset_password=True,
         )
         client.force_login(user)
-        response = client.get(add_url_params(reverse("oauth2_provider:logout"), {"state": "random_string"}))
+        response = client.get(
+            add_url_params(reverse("oauth2_provider:rp-initiated-logout"), {"state": "random_string"})
+        )
         assert response.status_code == 200

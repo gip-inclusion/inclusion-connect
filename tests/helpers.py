@@ -112,7 +112,7 @@ def parse_response_to_soup(response, selector=None, no_html_body=False, status_c
 
 
 def call_logout(client, method, params):
-    url = reverse("oauth2_provider:logout")
+    url = reverse("oauth2_provider:rp-initiated-logout")
     if method == "get":
         return client.get(add_url_params(url, params))
     elif method == "post":

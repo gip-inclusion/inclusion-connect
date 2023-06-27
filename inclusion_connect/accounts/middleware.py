@@ -15,7 +15,7 @@ def post_login_actions(get_response):
     def middleware(request):
         user = request.user
 
-        whitelisted_urls = [reverse("oauth2_provider:logout")] + [
+        whitelisted_urls = [reverse("oauth2_provider:rp-initiated-logout")] + [
             reverse(f"keycloak_compat_{realm}:logout") for realm in settings.KEYCLOAK_REALMS
         ]
 
