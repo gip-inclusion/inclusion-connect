@@ -1,0 +1,21 @@
+# serializer version: 1
+# name: test_login_form
+  '''
+  <form action="/admin/login/" id="login-form" method="post"><input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+    <div class="form-row">
+      
+      <label class="required" for="id_username">Adresse e-mail :</label> <input autocapitalize="none" autocomplete="username" autofocus="" id="id_username" maxlength="32" name="username" required="" type="text"/>
+    </div>
+    <div class="form-row">
+      
+      <label class="required" for="id_password">Mot de passe :</label> <input autocomplete="current-password" id="id_password" name="password" required="" type="password"/>
+      <input name="next" type="hidden" value="/admin/"/>
+    </div>
+    
+    
+    <div class="submit-row">
+      <input type="submit" value="Connexion"/>
+    </div>
+  </form>
+  '''
+# ---
