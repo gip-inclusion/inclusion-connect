@@ -21,5 +21,5 @@ urlpatterns = [
     ),
     re_path(r"^\.well-known/jwks.json$", oauth2_views.JwksInfoView.as_view(), name="jwks-info"),
     re_path(r"^userinfo/$", oauth2_views.UserInfoView.as_view(), name="user-info"),
-    re_path(r"^logout/", views.LogoutView.as_view(), name="logout"),
+    re_path(r"^logout/", views.LogoutView.as_view(), name="rp-initiated-logout"),
 ]
