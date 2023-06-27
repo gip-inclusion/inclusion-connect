@@ -39,7 +39,6 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Inclusion Connect <contact
 # Application definition
 
 DJANGO_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -55,6 +54,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "inclusion_connect.admin.apps.AdminConfig",
     "inclusion_connect.keycloak_compat",
     "inclusion_connect.oidc_overrides",
     "inclusion_connect.users",

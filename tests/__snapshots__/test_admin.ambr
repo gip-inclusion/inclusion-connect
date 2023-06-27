@@ -4,7 +4,7 @@
   <form action="/admin/login/" id="login-form" method="post"><input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
     <div class="form-row">
       
-      <label class="required" for="id_username">Adresse e-mail :</label> <input autocapitalize="none" autocomplete="username" autofocus="" id="id_username" maxlength="32" name="username" required="" type="text"/>
+      <label class="required" for="id_username">Adresse e-mail :</label> <input autocapitalize="none" autocomplete="username" autofocus="" id="id_username" maxlength="254" name="username" required="" type="text"/>
     </div>
     <div class="form-row">
       
