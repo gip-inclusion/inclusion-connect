@@ -410,3 +410,9 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
+
+
+@pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
+def test_discovery(client, realm):
+    response = client.get(f"/realms/{realm}/.well-known/openid-configuration/")
+    assert response.status_code == 200
