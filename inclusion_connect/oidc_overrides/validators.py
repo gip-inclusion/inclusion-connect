@@ -1,3 +1,4 @@
+from django.conf import settings
 from oauth2_provider.oauth2_validators import OAuth2Validator
 
 
@@ -13,3 +14,9 @@ class CustomOAuth2Validator(OAuth2Validator):
             "family_name": lambda request: request.user.last_name,
             "email": lambda request: request.user.email,
         }
+
+    def is_origin_allowed(self, client_id, origin, request, *args, **kwargs):
+        if settings.ALLOW_ALL_REDIRECT_URIS:
+            return True
+
+        return super().is_origin_allowed(client_id, origin, request, *args, **kwargs)
