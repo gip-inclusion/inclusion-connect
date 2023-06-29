@@ -9,10 +9,12 @@ from django.contrib.auth import get_user
 from django.core import mail
 from django.db.models import F
 from django.urls import reverse
+from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
 
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
+from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages
@@ -42,7 +44,7 @@ def get_verification_link(body):
     ],
 )
 def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -125,13 +127,17 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 @freeze_time("2023-05-05 11:11:11")
 def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_params, mailoutbox):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
@@ -220,13 +226,17 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+    )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
 
 
 @pytest.mark.parametrize("use_other_client", [True, False])
 def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_other_client):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
@@ -354,6 +364,10 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(timezone.localdate().replace(day=1), user.pk, application.pk, "register")],
+    )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
 
@@ -371,7 +385,7 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     ],
 )
 def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -466,6 +480,10 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
@@ -479,7 +497,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     ],
 )
 def test_login_endpoint(auth_url, caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -529,12 +547,16 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 def test_login_after_password_reset(caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
@@ -607,12 +629,16 @@ def test_login_after_password_reset(caplog, client, oidc_params):
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 def test_login_after_password_reset_other_client(caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
@@ -688,6 +714,10 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
         )
     ]
     caplog.clear()
+    assertQuerysetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+    )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
 
