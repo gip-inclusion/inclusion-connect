@@ -13,6 +13,7 @@ from oauth2_provider.settings import oauth2_settings
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
+from inclusion_connect.stats.models import Actions, Stats
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
 from inclusion_connect.utils.urls import is_inclusion_connect_url
@@ -69,11 +70,18 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
     def create_authorization_response(self, request, scopes, credentials, allow):
         response = super().create_authorization_response(request, scopes, credentials, allow)
 
+        application = Application.objects.get(client_id=credentials["client_id"])
         # Only link if authorization response was created
         UserApplicationLink.objects.update_or_create(
             user=self.request.user,
-            application=Application.objects.get(client_id=credentials["client_id"]),
+            application=application,
             defaults={"last_login": timezone.now()},
+        )
+        Stats.objects.get_or_create(
+            user=self.request.user,
+            application=application,
+            date=timezone.localdate().replace(day=1),
+            action=self.action,
         )
         return response
 
@@ -92,14 +100,17 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
 
 class AuthorizationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:login")
+    action = Actions.LOGIN
 
 
 class RegistrationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:register")
+    action = Actions.REGISTER
 
 
 class ActivationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:activate")
+    action = Actions.REGISTER
 
 
 original_validate_logout_request = oauth2_views.oidc.validate_logout_request

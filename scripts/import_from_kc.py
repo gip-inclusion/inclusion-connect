@@ -23,6 +23,7 @@ from django.utils import timezone
 
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.oidc_overrides.models import Application
+from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import EmailAddress, User, UserApplicationLink
 
 
@@ -173,6 +174,16 @@ with KeyCloakCursor() as cursor:
     for client_id, value in redirect_uris_data:
         redirect_uris[client_id].append(value)
 
+    # stats
+    cursor.execute(
+        """
+        SELECT user_id, client_id, event_time, type
+        FROM event_entity
+        WHERE type IN ('LOGIN', 'REGISTER')
+        """
+    )
+    stats_data = cursor.fetchall()
+
 applications = {}
 for client_id, secret, name, realm_name in application_data:
     if realm_name not in REALMS:
@@ -188,7 +199,7 @@ for client_id, secret, name, realm_name in application_data:
         post_logout_redirect_uris=" ".join(redirect_uris[client_id]),
     )
 
-users = []
+users = {}
 email_addresses = []
 app_links = []
 for user_id, username, email, first_name, last_name, email_verified, created_timestamp, realm_name in users_data:
@@ -209,7 +220,9 @@ for user_id, username, email, first_name, last_name, email_verified, created_tim
         must_reset_password=user_id in users_must_reset_password,
         terms_accepted_at=None if user_id in users_must_accept_terms else max(created_at, settings.NEW_TERMS_DATE),
     )
-    email_addresses.append(EmailAddress(user=user, email=email, verified_at=created_at if email_verified else None, created_at=created_at))
+    email_addresses.append(
+        EmailAddress(user=user, email=email, verified_at=created_at if email_verified else None, created_at=created_at)
+    )
 
     for client_id, last_login in users_app_links[user_id]:
         if client_id in applications:
@@ -221,20 +234,41 @@ for user_id, username, email, first_name, last_name, email_verified, created_tim
                 )
             )
 
-    users.append(user)
+    users[user_id] = user
 
 jwt_hash_secrets = []
 for realm, secret in jwt_secrets_data:
     jwt_hash_secrets.append(JWTHashSecret(realm_id=realm, secret=secret))
 
+stats = []
+stats_data_2 = set(
+    [
+        (user_id, client_id, parse_keycloak_dt(event_time).date().replace(day=1), action)
+        for user_id, client_id, event_time, action in stats_data
+    ]
+)
+for user_id, client_id, event_time, action in stats_data_2:
+    application = applications.get(client_id)
+    user = users.get(user_id)
+    if application and user:
+        stats.append(
+            Stats(
+                user=user,
+                application=application,
+                timestamp=event_time,
+                action=action.lower(),
+            )
+        )
+
 
 # Write in db
 with transaction.atomic():
     Application.objects.bulk_create(applications.values())
-    User.objects.bulk_create(users)
+    User.objects.bulk_create(users.values())
     EmailAddress.objects.bulk_create(email_addresses)
     UserApplicationLink.objects.bulk_create(app_links)
     JWTHashSecret.objects.bulk_create(jwt_hash_secrets)
+    Stats.objects.bulk_create(stats, ignore_conflicts=True)
 
 
 print(f"Created {Application.objects.count()} Applications")
@@ -242,6 +276,7 @@ print(f"Created {User.objects.count()} Users")
 print(f"Created {EmailAddress.objects.count()} EmailAddresses")
 print(f"Created {UserApplicationLink.objects.count()} UserApplicationLinks")
 print(f"Created {JWTHashSecret.objects.count()} JWTHashSecrets")
+print(f"Created {Stats.objects.count()} Stats")
 
 # Handle admin users separatly
 # Handle users that have accounts in multiple realms ? (in staging) or anly keep demo accounts and realm ?

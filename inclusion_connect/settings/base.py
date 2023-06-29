@@ -59,6 +59,7 @@ LOCAL_APPS = [
     "inclusion_connect.admin.apps.AdminConfig",
     "inclusion_connect.keycloak_compat",
     "inclusion_connect.oidc_overrides",
+    "inclusion_connect.stats",
     "inclusion_connect.users",
     "inclusion_connect.utils",
 ]
