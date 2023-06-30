@@ -32,3 +32,4 @@ pytest-django # https://github.com/pytest-dev/pytest-django/
 pytest-mock  # https://github.com/pytest-dev/pytest-mock/
 pytest-xdist  # https://pypi.org/project/pytest-xdist/
 syrupy  # https://github.com/tophat/syrupy
+requests-mock  #https://github.com/jamielennox/requests-mock
