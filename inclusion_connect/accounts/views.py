@@ -59,6 +59,9 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         stats_helpers.account_action(form.get_user(), Actions.LOGIN, self.request, self.get_success_url())
         return response
 
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs) | {"peama_enabled": settings.PEAMA_ENABLED}
+
 
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegisterForm
@@ -187,6 +190,7 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     form_class = forms.SetPasswordForm
     post_reset_login = True
     EVENT_NAME = "reset_password"
+    post_reset_login_backend = settings.DEFAULT_AUTH_BACKEND
 
     def get_success_url(self):
         return get_next_url(self.request)

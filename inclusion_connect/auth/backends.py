@@ -4,6 +4,9 @@ from inclusion_connect.users.models import User
 
 
 class EmailAuthenticationBackend(ModelBackend):
+    def user_can_authenticate(self, user):
+        return user.federation is None and super().user_can_authenticate(user)
+
     def authenticate(self, request, email=None, password=None, **kwargs):
         # Admin form sends a username
         auth_str = email or kwargs.get("username")
