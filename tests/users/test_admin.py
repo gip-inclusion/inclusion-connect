@@ -7,6 +7,7 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertNotContains, assertQuerySetEqual, assertRedirects
 
+from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import EmailAddress, User
 from tests.helpers import assertRecords, parse_response_to_soup
 from tests.users.factories import UserFactory
@@ -766,3 +767,27 @@ class TestUserAdmin:
         user.must_reset_password = True
         user.save()
         assert get_password_form_field() == snapshot(name="temporary password")
+
+    def test_admin_federated_user(self, client, snapshot):
+        admin_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(admin_user)
+        user = UserFactory(
+            first_name="John",
+            last_name="Doe",
+            email="john@doe.net",
+            username="11111111-1111-1111-1111-111111111111",
+            federation=Federation.PEAMA,
+            federation_sub="id_pe",
+            federation_data={"site_pe": "aaa", "structure_pe": 111},
+        )
+        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
+        assertNotContains(response, "field-must_reset_password")
+        assert str(parse_response_to_soup(response, selector='[class="form-row field-federation"]')) == snapshot(
+            name="federation"
+        )
+        assert str(parse_response_to_soup(response, selector='[class*="field-federation_sub"]')) == snapshot(
+            name="federation_sub"
+        )
+        assert str(parse_response_to_soup(response, selector='[class*="field-federation_data"]')) == snapshot(
+            name="federation_data"
+        )

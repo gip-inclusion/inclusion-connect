@@ -6,7 +6,7 @@ body {
 
 main {
   flex-grow: 1;
-  background-color: #fff;
+  background-color: #FFFFFF;
   background-image: url('../img/illustration-bg-ic.svg');
   background-repeat: no-repeat;
   background-position: top -120px left;
@@ -15,4 +15,19 @@ main {
 .form-group > label,
 .input-group > label {
   font-weight: 500;
+}
+
+.pe-connect {
+  color: #000000 !important;
+  background-color: #FFFFFF;
+  border-color: #E6E6EB;
+  font-weight: 400 !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pe-connect:hover {
+  background-color: #F2F3F5;
+  border-color: #E6E6EB;
 }

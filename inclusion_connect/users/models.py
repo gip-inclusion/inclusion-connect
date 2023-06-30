@@ -4,8 +4,11 @@ import uuid
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import CIEmailField
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
+
+from inclusion_connect.oidc_federation.enums import Federation
 
 
 class User(AbstractUser):
@@ -30,6 +33,16 @@ class User(AbstractUser):
     # Allow to redirect user correctly even when using a link from another browser (without session data)
     next_redirect_uri = models.TextField(blank=True, null=True)
     next_redirect_uri_stored_at = models.DateTimeField(blank=True, null=True)
+
+    # Federation
+    federation_sub = models.TextField(verbose_name="identifiant (sub)", null=True)
+    federation = models.TextField(verbose_name="Fournisseur d'identité", choices=Federation.choices, null=True)
+    federation_data = models.JSONField(
+        verbose_name="informations complémentaires",
+        blank=True,
+        null=True,
+        encoder=DjangoJSONEncoder,
+    )
 
     class Meta:
         verbose_name = "utilisateur"

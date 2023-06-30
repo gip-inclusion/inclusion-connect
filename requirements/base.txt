@@ -184,7 +184,10 @@ cryptography==41.0.4 \
     --hash=sha256:efc8ad4e6fc4f1752ebfb58aefece8b4e3c4cae940b0994d43649bdfce8d0d4f
     # via
     #   django-anymail
+    #   josepy
     #   jwcrypto
+    #   mozilla-django-oidc
+    #   pyopenssl
 deprecated==1.2.14 \
     --hash=sha256:6fac8b097794a90302bdbb17b9b815e732d3c4720583ff1b198499d78470466c \
     --hash=sha256:e5323eb936458dccc2582dc6f9c322c852a775a27065ff2b0c4970b9d53d01b3
@@ -204,6 +207,7 @@ django==4.2.6 \
     #   django-cors-headers
     #   django-csp
     #   django-oauth-toolkit
+    #   mozilla-django-oidc
 django-anymail==10.1 \
     --hash=sha256:5c4f26bd0f5507324ed1da31e430bca3293bb2c16f386e813484f2ea2df83d06 \
     --hash=sha256:e0a65c1e235dcb863dab67a3e193e899a48503b650df483d7b73f73983fd874b
@@ -236,9 +240,17 @@ idna==3.4 \
     --hash=sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4 \
     --hash=sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2
     # via requests
+josepy==1.13.0 \
+    --hash=sha256:6f64eb35186aaa1776b7a1768651b1c616cab7f9685f9660bffc6491074a5390 \
+    --hash=sha256:8931daf38f8a4c85274a0e8b7cb25addfd8d1f28f9fb8fbed053dd51aec75dc9
+    # via mozilla-django-oidc
 jwcrypto==1.5.0 \
     --hash=sha256:2c1dc51cf8e38ddf324795dfe9426dee9dd46caf47f535ccbc18781fba810b8d
     # via django-oauth-toolkit
+mozilla-django-oidc==3.0.0 \
+    --hash=sha256:a7d447af83cb5aa1671a24009b0ce6b2f0d259e9c58d8c88c7a8d0c27c05c04d \
+    --hash=sha256:f535eeddf03698ad9fd89dd87037828e9c7d503771acef21f0509f6cc42fc875
+    # via -r requirements/base.in
 oauthlib==3.2.2 \
     --hash=sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca \
     --hash=sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918
@@ -311,6 +323,10 @@ pyjwt==2.8.0 \
     --hash=sha256:57e28d156e3d5c10088e0c68abb90bfac3df82b40a71bd0daa20c65ccd5c23de \
     --hash=sha256:59127c392cc44c2da5bb3192169a91f429924e17aff6534d70fdc02ab3e04320
     # via -r requirements/base.in
+pyopenssl==23.2.0 \
+    --hash=sha256:24f0dc5227396b3e831f4c7f602b950a5e9833d292c8e4a2e06b709292806ae2 \
+    --hash=sha256:276f931f55a452e7dea69c7173e984eb2a4407ce413c918aa34b55f82f9b8bac
+    # via josepy
 python-dotenv==1.0.0 \
     --hash=sha256:a8df96034aae6d2d50a4ebe8216326c61c3eb64836776504fcca410e5937a3ba \
     --hash=sha256:f5971a9226b701070a4bf2c38c89e5a3f0d64de8debda981d1db98583009122a
@@ -325,6 +341,7 @@ requests==2.31.0 \
     # via
     #   django-anymail
     #   django-oauth-toolkit
+    #   mozilla-django-oidc
 sentry-sdk==1.31.0 \
     --hash=sha256:64a7141005fb775b9db298a30de93e3b83e0ddd1232dc6f36eb38aebc1553291 \
     --hash=sha256:6de2e88304873484207fed836388e422aeff000609b104c802749fd89d56ba5b
@@ -427,3 +444,9 @@ wrapt==1.15.0 \
     --hash=sha256:fbec11614dba0424ca72f4e8ba3c420dba07b4a7c206c8c8e4e73f2e98f4c559 \
     --hash=sha256:fd69666217b62fa5d7c6aa88e507493a34dec4fa20c5bd925e4bc12fce586639
     # via deprecated
+
+# The following packages are considered to be unsafe in a requirements file:
+setuptools==68.2.2 \
+    --hash=sha256:4ac1475276d2f1c48684874089fefcd83bd7162ddaafb81fac866ba0db282a87 \
+    --hash=sha256:b454a35605876da60632df1a60f736524eb73cc47bbc9f3f1ef1b644de74fd2a
+    # via josepy

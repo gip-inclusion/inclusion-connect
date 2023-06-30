@@ -20,6 +20,8 @@ from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
 from tests.helpers import call_logout, oidc_complete_flow, oidc_flow_followup, token_are_revoked
+from tests.helpers import call_logout, oidc_flow_followup, token_are_revoked
+from tests.oidc_federation.test_peama import mock_peama_oauth_dance
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -1512,3 +1514,21 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
         ],
         ordered=False,
     )
+
+
+def test_use_peama(client, oidc_params, requests_mock):
+    ApplicationFactory(client_id=oidc_params["client_id"])
+
+    auth_url = reverse("oauth2_provider:authorize")
+    auth_complete_url = add_url_params(auth_url, oidc_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:login"))
+
+    response = client.get(reverse("accounts:login"))
+    assertContains(response, "Connexion agents Pôle emploi")
+
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, _peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    assertRedirects(response, reverse("accounts:accept_terms"))
+
+    # Check logout

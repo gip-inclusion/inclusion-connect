@@ -52,6 +52,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "django_bootstrap5",
     "corsheaders",
+    "mozilla_django_oidc",
     "oauth2_provider",
 ]
 
@@ -265,7 +266,13 @@ if elasticsearch_url := os.getenv("ES_ADDON_URI"):
 
 AUTH_USER_MODEL = "users.User"
 
-AUTHENTICATION_BACKENDS = ("inclusion_connect.auth.backends.EmailAuthenticationBackend",)
+AUTHENTICATION_BACKENDS = (
+    "inclusion_connect.auth.backends.EmailAuthenticationBackend",
+    "inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
+)
+
+DEFAULT_AUTH_BACKEND = AUTHENTICATION_BACKENDS[0]
+
 
 PASSWORD_RESET_TIMEOUT = 24 * 60 * 60  # 1 day in seconds
 
@@ -385,3 +392,16 @@ CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"
 cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
 if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
     CORS_ALLOWED_ORIGINS = cors_allowed_origins.split(",")
+
+
+# OIDC Federation
+# ---------------
+
+PEAMA_CLIENT_ID = os.getenv("PEAMA_CLIENT_ID")
+PEAMA_ENABLED = PEAMA_CLIENT_ID is not None
+PEAMA_CLIENT_SECRET = os.getenv("PEAMA_CLIENT_SECRET")
+PEAMA_AUTH_ENDPOINT = os.getenv("PEAMA_AUTH_ENDPOINT")
+PEAMA_TOKEN_ENDPOINT = os.getenv("PEAMA_TOKEN_ENDPOINT")
+PEAMA_USER_ENDPOINT = os.getenv("PEAMA_USER_ENDPOINT")
+PEAMA_SCOPES = os.getenv("PEAMA_SCOPES")
+PEAMA_JWKS_ENDPOINT = os.getenv("PEAMA_JWKS_ENDPOINT")

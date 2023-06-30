@@ -24,6 +24,11 @@
         <div>{% bootstrap_button "Connexion" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
     </form>
 
+    {% if peama_enabled %}
+        <hr class="my-3 my-lg-4">
+        {% include "includes/pe_connect.html" %}
+    {% endif %}
+
     <hr class="my-3 my-lg-4">
     <div class="text-center">
         <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
