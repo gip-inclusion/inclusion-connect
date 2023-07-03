@@ -1098,7 +1098,8 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
         edit_user_info_url,
         data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
     )
-    assertRedirects(response, reverse("accounts:confirm-email"))
+    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": referrer_uri}))
+    confirm_email_url = response.url
     user.refresh_from_db()
     assert user.first_name == "John"
     assert user.last_name == "Doe"
@@ -1131,6 +1132,20 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     [verification_email] = mailoutbox
     assert verification_email.to == ["my@email.com"]
     assert verification_email.subject == "Vérification de l’adresse e-mail"
+
+    # send new link
+    response = client.post(confirm_email_url, follow=True)
+    assertRedirects(response, confirm_email_url)
+    assert caplog.record_tuples == [
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', 'event': 'send_verification_email', 'user': UUID('%s')}" % user.pk,
+        )
+    ]
+    caplog.clear()
+
+    # Verify email address
     verification_url = get_verification_link(verification_email.body)
     response = client.get(verification_url)
     assertRedirects(response, edit_user_info_url)
@@ -1223,7 +1238,8 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
         edit_user_info_url,
         data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
     )
-    assertRedirects(response, reverse("accounts:confirm-email"))
+    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": referrer_uri}))
+    confirm_email_url = response.url
     user.refresh_from_db()
     assert user.first_name == "John"
     assert user.last_name == "Doe"
@@ -1276,6 +1292,18 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
 
     # Page still contains return to referrer link
     response = other_client.get(response.url)
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
+
+    # Still dsplay the return button if the user asks again for a verification e-mail
+    response = client.post(confirm_email_url, follow=True)
+    assertRedirects(response, add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}))
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
+
+    # Same thing if the user refreshes the page (why would he do that?)
+    response = client.get(confirm_email_url, follow=True)
+    assertRedirects(response, add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}))
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
 

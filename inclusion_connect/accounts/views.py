@@ -225,7 +225,7 @@ class ConfirmEmailView(TemplateView):
         try:
             self.email_address = EmailAddress.objects.get(email=request.session[EMAIL_CONFIRM_KEY], verified_at=None)
         except (KeyError, EmailAddress.DoesNotExist):
-            return HttpResponseRedirect(reverse("accounts:edit_user_info"))
+            return HttpResponseRedirect(reverse("accounts:edit_user_info") + "?" + self.request.GET.urlencode())
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request):
@@ -235,7 +235,7 @@ class ConfirmEmailView(TemplateView):
         log["event"] = self.EVENT_NAME
         log["user"] = self.email_address.user_id
         transaction.on_commit(partial(logger.info, log))
-        return HttpResponseRedirect(reverse("accounts:confirm-email"))
+        return HttpResponseRedirect(self.request.get_full_path())
 
 
 def handle_email_confirmation(request, user_id, email):
@@ -424,7 +424,7 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
             emails.send_verification_email(self.request, email_address)
             self.request.session[EMAIL_CONFIRM_KEY] = email
             user.save_next_redirect_uri(self.request.get_full_path())
-            return HttpResponseRedirect(reverse("accounts:confirm-email"))
+            return HttpResponseRedirect(reverse("accounts:confirm-email") + "?" + self.request.GET.urlencode())
         if form.changed_data:
             messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
         return response

@@ -995,7 +995,7 @@ class TestEditUserInfoView:
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "jo-with-typo@email.com"},
         )
-        assertRedirects(response, reverse("accounts:confirm-email"))
+        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": "rp_url"}))
         user.refresh_from_db()
         assert user.first_name == "John"
         assert user.last_name == "Doe"
@@ -1027,7 +1027,7 @@ class TestEditUserInfoView:
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "joe@email.com"},
         )
-        assertRedirects(response, reverse("accounts:confirm-email"))
+        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": "rp_url"}))
         user.refresh_from_db()
         assert user.first_name == "John"
         assert user.last_name == "Doe"
