@@ -1334,7 +1334,8 @@ class TestConfirmEmailTokenView:
                 "{'ip_address': '127.0.0.1', "
                 "'email': 'me@mailinator.com', "
                 f"'user': UUID('{user.pk}'), "
-                "'event': 'confirm_email_address'}",
+                "'event': 'confirm_email_address', "
+                "'application': 'my_application'}",
             )
         ]
 

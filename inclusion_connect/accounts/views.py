@@ -185,7 +185,8 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         return get_next_url(self.request)
 
     def log(self, event_name, form):
-        log = log_data(self.request)
+        next_url = self.get_success_url()
+        log = log_data(self.request, next_url=next_url)
         log["event"] = event_name
         log["user"] = self.request.user.pk
         if form.errors:
@@ -261,7 +262,6 @@ def handle_email_confirmation(request, user_id, email):
             url = reverse("accounts:login")
         return HttpResponseRedirect(url)
     log["event"] = ConfirmEmailTokenView.EVENT_NAME
-    transaction.on_commit(partial(logger.info, log))
     email_address.verify()
     login(request, email_address.user)
     try:
@@ -271,6 +271,10 @@ def handle_email_confirmation(request, user_id, email):
     next_url = get_next_url(request)
     if next_url.startswith(reverse("accounts:edit_user_info")):
         messages.success(request, "Votre adresse e-mail a été mise à jour.")
+
+    if "application" not in log:
+        log |= log_data(request, next_url)
+    transaction.on_commit(partial(logger.info, log))
     return HttpResponseRedirect(next_url)
 
 
