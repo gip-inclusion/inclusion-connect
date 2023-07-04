@@ -93,7 +93,6 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
         log["event"] = "redirect"
         log["user"] = self.request.user.pk
         log["url"] = redirect_to
-        log["client_id"] = application.client_id
         transaction.on_commit(partial(logger.info, log))
         return super().redirect(redirect_to, application)
 
@@ -171,7 +170,6 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
         log = log_data(request)
         if application:
             log["application"] = application.client_id
-            log["client_id"] = application.client_id
         log["event"] = event_name
         request_data = request.GET if request.method == "GET" else request.POST
         for param in ["id_token_hint", "logout_hint", "client_id", "post_logout_redirect_uri", "state"]:
