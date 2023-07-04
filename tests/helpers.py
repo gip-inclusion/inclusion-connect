@@ -97,8 +97,7 @@ def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
             f"'application': '{application.client_id}', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            f"'client_id': '{application.client_id}'"
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
             "}",
         )
     ]

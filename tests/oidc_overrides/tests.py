@@ -82,7 +82,6 @@ class TestLogoutView:
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 "'application': 'my_application', "
-                "'client_id': 'my_application', "
                 "'event': 'logout', "
                 f"'id_token_hint': '{id_token}', "
                 "'post_logout_redirect_uri': 'http://callback/', "
@@ -123,7 +122,6 @@ class TestLogoutView:
                     logging.INFO,
                     "{'ip_address': '127.0.0.1', "
                     "'application': 'my_application', "
-                    "'client_id': 'my_application', "
                     "'event': 'logout', "
                     f"'id_token_hint': '{id_token}', "
                     "'post_logout_redirect_uri': 'http://callback/', "
@@ -214,7 +212,6 @@ class TestLogoutView:
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 "'application': 'my_application', "
-                "'client_id': 'my_application', "
                 "'event': 'logout', "
                 f"'id_token_hint': '{id_token}', "
                 "'post_logout_redirect_uri': 'http://callback/', "
@@ -252,7 +249,6 @@ class TestLogoutView:
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 f"'application': '{application_1.client_id}', "
-                f"'client_id': '{application_1.client_id}', "
                 "'event': 'logout', "
                 f"'id_token_hint': '{id_token_1}', "
                 "'post_logout_redirect_uri': 'http://callback/', "
@@ -278,7 +274,6 @@ class TestLogoutView:
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 f"'application': '{application_2.client_id}', "
-                f"'client_id': '{application_2.client_id}', "
                 "'event': 'logout', "
                 f"'id_token_hint': '{id_token_2}', "
                 "'post_logout_redirect_uri': 'http://callback/', "

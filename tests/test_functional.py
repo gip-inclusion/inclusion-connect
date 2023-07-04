@@ -122,8 +122,8 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -221,8 +221,8 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -359,8 +359,8 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -475,8 +475,8 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -542,8 +542,8 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -624,8 +624,8 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -709,8 +709,8 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -796,8 +796,8 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -814,7 +814,6 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
             logging.INFO,
             "{'ip_address': '127.0.0.1', "
             "'application': 'my_application', "
-            "'client_id': 'my_application', "
             "'event': 'logout', "
             f"'id_token_hint': '{id_token}', "
             "'post_logout_redirect_uri': 'http://callback/', "
@@ -864,8 +863,8 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                 "'application': 'my_application', "
                 "'event': 'redirect', "
                 f"'user': UUID('{user.pk}'), "
-                f"'url': 'http://localhost/callback?code={code}&state=state', "
-                "'client_id': 'my_application'}",
+                f"'url': 'http://localhost/callback?code={code}&state=state'"
+                "}",
             )
         ]
         caplog.clear()
@@ -884,7 +883,6 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 "'application': 'my_application', "
-                "'client_id': 'my_application', "
                 "'event': 'logout', "
                 f"'id_token_hint': '{id_token}', "
                 "'post_logout_redirect_uri': 'http://callback/', "
@@ -936,8 +934,8 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'redirect', "
             f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state', "
-            "'client_id': 'my_application'}",
+            f"'url': 'http://localhost/callback?code={code}&state=state'"
+            "}",
         )
     ]
     caplog.clear()
@@ -968,8 +966,8 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
             logging.INFO,
             "{'ip_address': '127.0.0.1', "
             "'application': 'my_application', "
-            "'client_id': 'my_application', "
             "'event': 'logout', "
+            "'client_id': 'my_application', "
             "'post_logout_redirect_uri': 'http://callback/', "
             f"'user': UUID('{user.pk}')"
             "}",
@@ -1015,8 +1013,8 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                 "'application': 'my_application', "
                 "'event': 'redirect', "
                 f"'user': UUID('{user.pk}'), "
-                f"'url': 'http://localhost/callback?code={code}&state=state', "
-                "'client_id': 'my_application'}",
+                f"'url': 'http://localhost/callback?code={code}&state=state'"
+                "}",
             )
         ]
         caplog.clear()
@@ -1047,8 +1045,8 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', "
                 "'application': 'my_application', "
-                "'client_id': 'my_application', "
                 "'event': 'logout', "
+                "'client_id': 'my_application', "
                 "'post_logout_redirect_uri': 'http://callback/', "
                 "'user': None}",  # User is anonymous.
             )
