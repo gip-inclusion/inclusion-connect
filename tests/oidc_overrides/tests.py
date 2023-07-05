@@ -8,7 +8,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import UserApplicationLink
@@ -428,7 +428,7 @@ def test_stats(client, oidc_params):
     with freeze_time("2023-05-01 00:08"):
         client.get(auth_url_1)
 
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action").order_by("date", "application__client_id"),
         [
             (datetime.date(2023, 4, 1), user.pk, application_1.pk, "login"),
