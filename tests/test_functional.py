@@ -11,7 +11,7 @@ from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertQuerysetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.stats.models import Stats
@@ -90,7 +90,7 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert get_user(client).is_authenticated is True
     user.refresh_from_db()
     assert user.email == user_email
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
         [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
     )
@@ -127,7 +127,7 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
     )
@@ -185,7 +185,7 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     assert get_user(other_client).is_authenticated is True
     user.refresh_from_db()
     assert user.email == user_email
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
         [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
     )
@@ -226,7 +226,7 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
     )
@@ -364,7 +364,7 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(timezone.localdate().replace(day=1), user.pk, application.pk, "register")],
     )
@@ -438,7 +438,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert get_user(client).is_authenticated is True
     user.refresh_from_db()
     assert user.email == user_email
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
         [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
     )
@@ -480,7 +480,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
     )
@@ -547,7 +547,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
     )
@@ -629,7 +629,7 @@ def test_login_after_password_reset(caplog, client, oidc_params):
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
     )
@@ -714,7 +714,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
         )
     ]
     caplog.clear()
-    assertQuerysetEqual(
+    assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
         [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
     )

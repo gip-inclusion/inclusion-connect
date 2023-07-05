@@ -16,7 +16,7 @@ from freezegun import freeze_time
 from pytest_django.asserts import (
     assertContains,
     assertNotContains,
-    assertQuerysetEqual,
+    assertQuerySetEqual,
     assertRedirects,
     assertTemplateUsed,
 )
@@ -264,7 +264,7 @@ class TestRegisterView:
         assert user_from_db.first_name == "Jack"
         assert user_from_db.last_name == "Jackson"
         assert user_from_db.email == ""
-        assertQuerysetEqual(
+        assertQuerySetEqual(
             EmailAddress.objects.values_list("user_id", "email", "verified_at"),
             [(user_from_db.pk, user_email, None)],
         )
@@ -500,7 +500,7 @@ class TestRegisterView:
         assert user_from_db.first_name == "John"
         assert user_from_db.last_name == "Backy"
         assert user_from_db.email == ""
-        assertQuerysetEqual(
+        assertQuerySetEqual(
             EmailAddress.objects.values_list("user_id", "email", "verified_at"),
             [(user_from_db.pk, "me@mailinator.com", None)],
         )

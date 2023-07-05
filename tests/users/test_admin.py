@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertNotContains, assertQuerysetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertNotContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.users.models import EmailAddress, User
 from tests.helpers import parse_response_to_soup
@@ -138,7 +138,7 @@ class TestUserAdmin:
         assert user.first_name == "Manuel"
         assert user.last_name == "Calavera"
         assert user.email == "manny.calavera@mailinator.com"
-        assertQuerysetEqual(user.groups.all(), [])
+        assertQuerySetEqual(user.groups.all(), [])
         assert caplog.record_tuples == [
             (
                 "inclusion_connect.auth",
@@ -185,7 +185,7 @@ class TestUserAdmin:
         assert user.first_name == "Manuel"
         assert user.last_name == "Calavera"
         assert user.email == "manny.calavera@mailinator.com"
-        assertQuerysetEqual(user.groups.all(), [staff_group])
+        assertQuerySetEqual(user.groups.all(), [staff_group])
         assert caplog.record_tuples == [
             (
                 "inclusion_connect.auth",
@@ -638,7 +638,7 @@ class TestUserAdmin:
         staff_user.refresh_from_db()
         assert staff_user.is_staff is True
         assert staff_user.is_superuser is False
-        assertQuerysetEqual(staff_user.groups.all(), [staff_group])
+        assertQuerySetEqual(staff_user.groups.all(), [staff_group])
         assert staff_user.get_user_permissions() == set()
 
     def test_superuser_cant_add_privileges_to_regular_users(self, client):
@@ -677,7 +677,7 @@ class TestUserAdmin:
         staff_user.refresh_from_db()
         assert user.is_staff is False
         assert user.is_superuser is False
-        assertQuerysetEqual(user.groups.all(), [])
+        assertQuerySetEqual(user.groups.all(), [])
         assert user.get_user_permissions() == set()
 
     def test_superuser_can_promote_user(self, client):
