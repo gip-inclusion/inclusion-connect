@@ -88,7 +88,7 @@ def test_login(client, realm):
     # Test USER INFO endpoint
     response = client.get(
         f"/realms/{realm}/protocol/openid-connect/userinfo",
-        HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+        headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
     assert response.json() == {
         "sub": str(user.pk),
@@ -181,7 +181,7 @@ def test_registration(client, realm):
     # Test USER INFO endpoint
     response = client.get(
         f"/realms/{realm}/protocol/openid-connect/userinfo",
-        HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+        headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
     assert response.json() == {
         "sub": str(user.pk),

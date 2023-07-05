@@ -501,14 +501,14 @@ def test_access_token_lifespan(client, oidc_params):
     with freeze_time("2023-05-05 14:59:19"):
         response = client.get(
             reverse("oauth2_provider:user-info"),
-            HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+            headers={"Authorization": f"Bearer {token_json['access_token']}"},
         )
         assert response.status_code == 200
 
     with freeze_time("2023-05-05 14:59:20"):
         response = client.get(
             reverse("oauth2_provider:user-info"),
-            HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+            headers={"Authorization": f"Bearer {token_json['access_token']}"},
         )
         assert response.status_code == 401
 
