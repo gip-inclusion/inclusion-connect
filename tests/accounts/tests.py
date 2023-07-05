@@ -197,7 +197,7 @@ class TestLoginView:
             # Pre-filled with email address from login_hint.
             '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
             # Disabled, users cannot change data passed by the RP.
-            'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+            'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
             count=1,
         )
 
@@ -227,7 +227,7 @@ class TestLoginView:
             # Not pre-filled with email address since login_hint is empty
             '<input type="email" name="email" placeholder="nom@domaine.fr" '
             # Not disabled.
-            'autocomplete="email" class="form-control" title="" required id="id_email">',
+            'autocomplete="email" maxlength="320" class="form-control" title="" required id="id_email">',
             count=1,
         )
 
@@ -846,7 +846,7 @@ class TestPasswordResetView:
             # Pre-filled with email address from login_hint.
             '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
             # Disabled, users cannot change data passed by the RP.
-            'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+            'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
             count=1,
         )
 
