@@ -25,8 +25,12 @@ INSTALLED_APPS.extend(  # noqa: F405
     ]
 )
 
-# `ManifestStaticFilesStorage` (used in base settings) requires `collectstatic` to be run.
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STORAGES = {
+    "staticfiles": {
+        # `ManifestStaticFilesStorage` (used in base settings) requires `collectstatic` to be run.
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
 DEBUG_TOOLBAR_CONFIG = {
