@@ -28,7 +28,7 @@ git push $SCALINGO_GIT_URL ${GIT_BRANCH}:main --force
 
 echo -e "\n>> Importing psql dump from Scaleway"
 # TODO when Django is deployed on prod use real backups
-scalingo --app $SCALINGO_APP_NAME db-tunnel $SCALINGO_POSTGRESQL_URL &
+scalingo --app $SCALINGO_APP_NAME db-tunnel $SCALINGO_POSTGRESQL_URL --port 10000 &
 pid=$!
 sleep 2
 pg_restore \
