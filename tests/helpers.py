@@ -45,7 +45,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
     # Call USER INFO endpoint
     response = client.get(
         reverse("oauth2_provider:user-info"),
-        HTTP_AUTHORIZATION=f"Bearer {token_json['access_token']}",
+        headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
     assert response.json() == {
         "sub": str(user.pk),
