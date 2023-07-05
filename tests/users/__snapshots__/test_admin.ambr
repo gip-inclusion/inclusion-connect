@@ -6,20 +6,23 @@
               
                   <div>
                       
-                      
-                          <label for="id_must_reset_password">Mot de passe :</label>
-                          
-                              <div>
+                          <div class="flex-container">
+                              
+                                  <label for="id_must_reset_password">Mot de passe :</label>
+                                  
+                                      <div>
       
       <p>
           Pour remplacer le mot de passe avec un mot de passe temporaire,
           utilisez <a href="../password">ce formulaire</a>.
       </p>
   </div>
-                          
-                      
+                                  
+                              
+                          </div>
                       
                   </div>
+              
               
           </div>
   '''
@@ -31,10 +34,11 @@
               
                   <div>
                       
-                      
-                          <label for="id_must_reset_password">Mot de passe :</label>
-                          
-                              <div>
+                          <div class="flex-container">
+                              
+                                  <label for="id_must_reset_password">Mot de passe :</label>
+                                  
+                                      <div>
       
           <p>
               <img alt="True" src="/static/admin/img/icon-alert.svg"/>
@@ -46,10 +50,12 @@
           utilisez <a href="../password">ce formulaire</a>.
       </p>
   </div>
-                          
-                      
+                                  
+                              
+                          </div>
                       
                   </div>
+              
               
           </div>
   '''
@@ -115,20 +121,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=.chaplin" title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=.chaplin" title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=.chaplin">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=.chaplin">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -140,21 +142,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=.chaplin">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=.chaplin">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=.chaplin">Statut équipe</a></div>
      <div class="clear"></div>
@@ -183,20 +179,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=a.a" title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=a.a" title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=a.a">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=a.a">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -208,21 +200,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=a.a">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=a.a">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=a.a">Statut équipe</a></div>
      <div class="clear"></div>
@@ -251,20 +237,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=b.b" title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=b.b" title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=b.b">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=b.b">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -276,21 +258,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=b.b">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=b.b">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=b.b">Statut équipe</a></div>
      <div class="clear"></div>
@@ -319,20 +295,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=c." title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=c." title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=c.">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=c.">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -344,21 +316,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=c.">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=c.">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=c.">Statut équipe</a></div>
      <div class="clear"></div>
@@ -390,20 +356,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=charlie+chaplin" title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=charlie+chaplin" title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=charlie+chaplin">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=charlie+chaplin">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -415,21 +377,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=charlie+chaplin">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=charlie+chaplin">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=charlie+chaplin">Statut équipe</a></div>
      <div class="clear"></div>
@@ -458,20 +414,16 @@
   </th>
   <th class="sortable column-username sorted ascending" scope="col">
      
-       
          <div class="sortoptions">
            <a class="sortremove" href="?o=&amp;q=mAiLiNaToR" title="Enlever du tri"></a>
            
            <a class="toggle ascending" href="?o=-1&amp;q=mAiLiNaToR" title="Inverser le tri"></a>
          </div>
-       
      
      <div class="text"><a href="?o=-1&amp;q=mAiLiNaToR">Username</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-email" scope="col">
-     
-       
      
      <div class="text"><a href="?o=2.1&amp;q=mAiLiNaToR">Adresse e-mail</a></div>
      <div class="clear"></div>
@@ -483,21 +435,15 @@
   </th>
   <th class="sortable column-first_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=4.1&amp;q=mAiLiNaToR">Prénom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-last_name" scope="col">
      
-       
-     
      <div class="text"><a href="?o=5.1&amp;q=mAiLiNaToR">Nom</a></div>
      <div class="clear"></div>
   </th>
   <th class="sortable column-is_staff" scope="col">
-     
-       
      
      <div class="text"><a href="?o=6.1&amp;q=mAiLiNaToR">Statut équipe</a></div>
      <div class="clear"></div>

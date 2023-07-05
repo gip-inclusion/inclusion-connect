@@ -746,7 +746,7 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
         # Pre-filled with email address from login_hint.
         '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
         # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
         count=1,
     )
 
