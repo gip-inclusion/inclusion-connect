@@ -18,12 +18,8 @@ def ensure_support_group(*args, **kwargs):
     group.permissions.set(
         Permission.objects.filter(
             codename__in=[
-                "add_user",
                 "change_user",
                 "view_user",
-                "add_emailaddress",
-                "change_emailaddress",
-                "delete_emailaddress",
                 "view_emailaddress",
                 "view_userapplicationlink",
             ]
