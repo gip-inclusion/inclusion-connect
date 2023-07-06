@@ -8,9 +8,8 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertRedirects
 
-from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -398,39 +397,6 @@ def test_user_application_link(client, oidc_params):
         (application_2.pk, user.pk, dt_2),
         (application_1.pk, user.pk, dt_3),  # last_login was updated
     ]
-
-
-def test_stats(client, oidc_params):
-    application_1 = ApplicationFactory(client_id="00000000-0000-0000-0000-000000000000")
-    application_2 = ApplicationFactory(client_id="11111111-1111-1111-1111-111111111111")
-    user = UserFactory()
-    client.force_login(user)
-
-    oidc_params["client_id"] = application_1.client_id
-    auth_url_1 = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
-    oidc_params["client_id"] = application_2.client_id
-    auth_url_2 = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
-
-    with freeze_time("2023-04-27 14:06"):
-        client.get(auth_url_1)
-
-    with freeze_time("2023-04-27 14:07"):
-        client.get(auth_url_2)
-
-    with freeze_time("2023-04-27 14:08"):
-        client.get(auth_url_1)
-
-    with freeze_time("2023-05-01 00:08"):
-        client.get(auth_url_1)
-
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action").order_by("date", "application__client_id"),
-        [
-            (datetime.date(2023, 4, 1), user.pk, application_1.pk, "login"),
-            (datetime.date(2023, 4, 1), user.pk, application_2.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application_1.pk, "login"),
-        ],
-    )
 
 
 def test_session_duration(client, oidc_params):

@@ -28,6 +28,7 @@ from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages
 from tests.helpers import parse_response_to_soup
+from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
@@ -1312,6 +1313,7 @@ class TestConfirmEmailTokenView:
     @freeze_time("2023-04-26 11:11:11")
     def test_confirm_email_from_other_client(self, caplog, client, oidc_params):
         user = UserFactory(email="")
+        ApplicationFactory(client_id=oidc_params["client_id"])
         email = "me@mailinator.com"
         email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
         token = email_verification_token(email)

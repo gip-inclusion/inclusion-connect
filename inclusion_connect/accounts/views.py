@@ -18,6 +18,8 @@ from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
+from inclusion_connect.stats import helpers as stats_helpers
+from inclusion_connect.stats.models import Actions
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint, oidc_params
 from inclusion_connect.utils.urls import add_url_params
@@ -51,6 +53,7 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         log = form.log
         log["event"] = self.EVENT_NAME
         transaction.on_commit(partial(logger.info, log))
+        stats_helpers.account_action(form.get_user(), Actions.LOGIN, self.request, self.get_success_url())
         return response
 
 
@@ -84,6 +87,7 @@ class BaseUserCreationView(OIDCSessionMixin, CreateView):
             self.object.save_next_redirect_uri(next_url)
         form.log["event"] = self.EVENT_NAME
         transaction.on_commit(partial(logger.info, form.log))
+        stats_helpers.account_action(form.instance, Actions.REGISTER, self.request)
         return response
 
 
@@ -201,6 +205,8 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def form_valid(self, form):
         response = super().form_valid(form)
         self.log(self.EVENT_NAME, form)
+        # FIXME: add login log !
+        stats_helpers.account_action(form.user, Actions.LOGIN, self.request, self.get_success_url())
         return response
 
 
@@ -272,9 +278,11 @@ def handle_email_confirmation(request, user_id, email):
     if next_url.startswith(reverse("accounts:edit_user_info")):
         messages.success(request, "Votre adresse e-mail a été mise à jour.")
 
-    if "application" not in log:
-        log |= log_data(request, next_url)
+    application = stats_helpers.get_application(request, next_url)
+    if application and "application" not in log:
+        log["application"] = application.client_id
     transaction.on_commit(partial(logger.info, log))
+    stats_helpers.account_action(email_address.user, Actions.LOGIN, request, next_url)
     return HttpResponseRedirect(next_url)
 
 
