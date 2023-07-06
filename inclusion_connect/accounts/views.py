@@ -205,7 +205,7 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def form_valid(self, form):
         response = super().form_valid(form)
         self.log(self.EVENT_NAME, form)
-        # FIXME: add login log !
+        self.log(LoginView.EVENT_NAME, form)  # Also log a login here
         stats_helpers.account_action(form.user, Actions.LOGIN, self.request, self.get_success_url())
         return response
 
@@ -281,6 +281,10 @@ def handle_email_confirmation(request, user_id, email):
     application = stats_helpers.get_application(request, next_url)
     if application and "application" not in log:
         log["application"] = application.client_id
+    transaction.on_commit(partial(logger.info, log))
+
+    log = log.copy()
+    log["event"] = LoginView.EVENT_NAME  # Also log a login here
     transaction.on_commit(partial(logger.info, log))
     stats_helpers.account_action(email_address.user, Actions.LOGIN, request, next_url)
     return HttpResponseRedirect(next_url)

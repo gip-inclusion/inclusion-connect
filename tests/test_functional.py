@@ -103,7 +103,16 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "'email': 'email@mailinator.com', "
             f"'user': UUID('{user.pk}'), "
             "'event': 'confirm_email_address'}",
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            "'application': 'my_application', "
+            "'email': 'email@mailinator.com', "
+            f"'user': UUID('{user.pk}'), "
+            "'event': 'login'}",
+        ),
     ]
     caplog.clear()
 
@@ -196,16 +205,23 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
         (
             "inclusion_connect.auth",
             logging.INFO,
-            # 'application' not available, OIDC params were stored in session,
-            # and users lose their sessions when changing browsers.
-            # It is simply nice to have, a best effort solution is OK.
             "{'ip_address': '127.0.0.1', "
             f"'email': '{user_email}', "
             f"'user': UUID('{user.pk}'), "
             "'event': 'confirm_email_address', "
             "'application': 'my_application'"
             "}",
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            f"'email': '{user_email}', "
+            f"'user': UUID('{user.pk}'), "
+            "'event': 'login', "
+            "'application': 'my_application'"
+            "}",
+        ),
     ]
     caplog.clear()
 
@@ -465,7 +481,20 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             f"'user': UUID('{user.pk}'), "
             "'event': 'confirm_email_address'"
             "}",
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            # 'application' not available, OIDC params were stored in session,
+            # and users lose their sessions when changing browsers.
+            # It is simply nice to have, a best effort solution is OK.
+            "{'ip_address': '127.0.0.1', "
+            "'application': 'my_application', "
+            "'email': 'email@mailinator.com', "
+            f"'user': UUID('{user.pk}'), "
+            "'event': 'login'"
+            "}",
+        ),
     ]
     caplog.clear()
 
@@ -621,7 +650,15 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             "'application': 'my_application', "
             "'event': 'reset_password', "
             "'user': UUID('%s')}" % user.pk,
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            "'application': 'my_application', "
+            "'event': 'login', "
+            "'user': UUID('%s')}" % user.pk,
+        ),
     ]
     caplog.clear()
 
@@ -702,12 +739,19 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
         (
             "inclusion_connect.auth",
             logging.INFO,
-            "{'ip_address': '127.0.0.1', 'application': 'my_application', 'event': 'reset_password', "
-            # 'application' not available, OIDC params were stored in session,
-            # and users lose their sessions when changing browsers.
-            # It is simply nice to have, a best effort solution is OK.
+            "{'ip_address': '127.0.0.1', "
+            "'application': 'my_application', "
+            "'event': 'reset_password', "
             "'user': UUID('%s')}" % user.pk,
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            "'application': 'my_application', "
+            "'event': 'login', "
+            "'user': UUID('%s')}" % user.pk,
+        ),
     ]
     caplog.clear()
 
@@ -1172,7 +1216,15 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
             "'email': 'my@email.com', "
             f"'user': UUID('{user.pk}'), "
             "'event': 'confirm_email_address'}",
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            "'email': 'my@email.com', "
+            f"'user': UUID('{user.pk}'), "
+            "'event': 'login'}",
+        ),
     ]
     caplog.clear()
 
@@ -1299,7 +1351,15 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
             "'email': 'my@email.com', "
             f"'user': UUID('{user.pk}'), "
             "'event': 'confirm_email_address'}",
-        )
+        ),
+        (
+            "inclusion_connect.auth",
+            logging.INFO,
+            "{'ip_address': '127.0.0.1', "
+            "'email': 'my@email.com', "
+            f"'user': UUID('{user.pk}'), "
+            "'event': 'login'}",
+        ),
     ]
     caplog.clear()
 
