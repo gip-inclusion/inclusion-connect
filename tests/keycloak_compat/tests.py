@@ -278,7 +278,15 @@ class TestActionToken:
                 "'email': 'me@mailinator.com', "
                 f"'user': UUID('{user.pk}'), "
                 "'event': 'confirm_email_address'}",
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login'}",
+            ),
         ]
         caplog.clear()
 
@@ -457,7 +465,15 @@ class TestActionToken:
                 "'email': 'me@mailinator.com', "
                 f"'user': UUID('{user.pk}'), "
                 "'event': 'confirm_email_address'}",
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login'}",
+            ),
         ]
 
 

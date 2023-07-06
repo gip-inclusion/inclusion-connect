@@ -792,7 +792,12 @@ class TestPasswordResetView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     "{'ip_address': '127.0.0.1', 'event': 'reset_password', 'user': UUID('%s')}" % user.pk,
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    "{'ip_address': '127.0.0.1', 'event': 'login', 'user': UUID('%s')}" % user.pk,
+                ),
             ]
 
     def test_password_reset_unknown_email(self, caplog, client):
@@ -899,7 +904,12 @@ class TestPasswordResetView:
                 "inclusion_connect.auth",
                 logging.INFO,
                 "{'ip_address': '127.0.0.1', 'event': 'reset_password', 'user': UUID('%s')}" % user.pk,
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', 'event': 'login', 'user': UUID('%s')}" % user.pk,
+            ),
         ]
 
 
@@ -1282,7 +1292,15 @@ class TestConfirmEmailTokenView:
                 "'email': 'me@mailinator.com', "
                 f"'user': UUID('{user.pk}'), "
                 "'event': 'confirm_email_address'}",
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login'}",
+            ),
         ]
         caplog.clear()
 
@@ -1338,7 +1356,16 @@ class TestConfirmEmailTokenView:
                 f"'user': UUID('{user.pk}'), "
                 "'event': 'confirm_email_address', "
                 "'application': 'my_application'}",
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'me@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login', "
+                "'application': 'my_application'}",
+            ),
         ]
 
     @freeze_time("2023-04-26 11:11:11")
@@ -1501,7 +1528,15 @@ class TestConfirmEmailTokenView:
                 "'email': 'new@mailinator.com', "
                 f"'user': UUID('{user.pk}'), "
                 "'event': 'confirm_email_address'}",
-            )
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', "
+                "'email': 'new@mailinator.com', "
+                f"'user': UUID('{user.pk}'), "
+                "'event': 'login'}",
+            ),
         ]
         caplog.clear()
 
