@@ -10,7 +10,7 @@ from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 from pytest_django.asserts import (
@@ -939,12 +939,14 @@ class TestPasswordResetConfirmView:
 
 class TestEditUserInfoView:
     def test_edit_name(self, caplog, client):
+        application = ApplicationFactory()
         user = UserFactory(first_name="Manuel", last_name="Calavera")
         verified_email = user.email
         client.force_login(user)
         referrer_uri = "https://go/back/there"
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
-        change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
+        params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+        change_password_url = add_url_params(reverse("accounts:change_password"), params)
 
         # Dont display return button without referrer_uri
         response = client.get(reverse("accounts:edit_user_info"))
@@ -961,8 +963,8 @@ class TestEditUserInfoView:
         response = client.get(edit_user_info_url)
         assertContains(response, "<h1>\n                Informations générales\n            </h1>")
         # Left menu contains both pages
-        assertContains(response, edit_user_info_url)
-        assertContains(response, change_password_url)
+        assertContains(response, escape(edit_user_info_url))
+        assertContains(response, escape(change_password_url))
         # Page contains return to referrer link
         assertContains(response, return_text)
         assertContains(response, referrer_uri)
@@ -986,7 +988,7 @@ class TestEditUserInfoView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'edit_user_info', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {'referrer_uri': 'https://go/back/there'}, "
+                f"'application': '{application.client_id}', "
                 "'old_last_name': 'Calavera', "
                 "'new_last_name': 'Doe', "
                 "'old_first_name': 'Manuel', "
@@ -996,17 +998,19 @@ class TestEditUserInfoView:
         ]
 
     def test_edit_email(self, caplog, client):
+        application = ApplicationFactory()
         verified_email = "oldjo@email.com"
         user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
         client.force_login(user)
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": "rp_url"})
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
 
         # Edit user info
         response = client.post(
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "jo-with-typo@email.com"},
         )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": "rp_url"}))
+        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
         user.refresh_from_db()
         assert user.first_name == "John"
         assert user.last_name == "Doe"
@@ -1025,7 +1029,7 @@ class TestEditUserInfoView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'edit_user_info', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {'referrer_uri': 'rp_url'}, "
+                f"'application': '{application.client_id}', "
                 f"'old_email': '{verified_email}', "
                 "'new_email': 'jo-with-typo@email.com'"
                 "}",
@@ -1038,7 +1042,7 @@ class TestEditUserInfoView:
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "joe@email.com"},
         )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": "rp_url"}))
+        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
         user.refresh_from_db()
         assert user.first_name == "John"
         assert user.last_name == "Doe"
@@ -1057,7 +1061,7 @@ class TestEditUserInfoView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'edit_user_info', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {'referrer_uri': 'rp_url'}, "
+                f"'application': '{application.client_id}', "
                 f"'old_email': '{verified_email}', "
                 "'new_email': 'joe@email.com'"
                 "}",
@@ -1065,10 +1069,12 @@ class TestEditUserInfoView:
         ]
 
     def test_edit_invalid(self, caplog, client):
+        application = ApplicationFactory()
         verified_email = "verified@email.com"
         user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
         client.force_login(user)
-        response = client.post(add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": "rp_url"}))
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        response = client.post(add_url_params(reverse("accounts:edit_user_info"), params))
         assert response.status_code == 200
         user.refresh_from_db()
         assert user.first_name == "John"
@@ -1084,7 +1090,7 @@ class TestEditUserInfoView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'edit_user_info_error', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {'referrer_uri': 'rp_url'}, "
+                f"'application': '{application.client_id}', "
                 "'errors': {'email': [{'message': 'Ce champ est obligatoire.', 'code': 'required'}]}"
                 "}",
             )
@@ -1093,11 +1099,13 @@ class TestEditUserInfoView:
 
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
+        application = ApplicationFactory()
         user = UserFactory()
         client.force_login(user)
         referrer_uri = "https://go/back/there"
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
-        change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
+        params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+        change_password_url = add_url_params(reverse("accounts:change_password"), params)
 
         # Dont display return button without referrer_uri
         response = client.get(reverse("accounts:change_password"))
@@ -1108,8 +1116,8 @@ class TestPasswordChangeView:
         response = client.get(change_password_url)
         assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
         # Left menu contains both pages
-        assertContains(response, edit_user_info_url)
-        assertContains(response, change_password_url)
+        assertContains(response, escape(edit_user_info_url))
+        assertContains(response, escape(change_password_url))
         # Page contains return to referrer link
         assertContains(response, return_text)
         assertContains(response, referrer_uri)
@@ -1128,7 +1136,7 @@ class TestPasswordChangeView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'change_password', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {'referrer_uri': 'https://go/back/there'}"
+                f"'application': '{application.client_id}'"
                 "}",
             )
         ]
@@ -1165,7 +1173,6 @@ class TestPasswordChangeView:
                 "{'ip_address': '127.0.0.1', "
                 "'event': 'change_password_error', "
                 f"'user': UUID('{user.pk}'), "
-                "'params': {}, "
                 "'errors': {'new_password2': ["
                 "{'message': 'Ce mot de passe est trop court. Il doit contenir au minimum 12 caractères.', "
                 "'code': 'password_too_short'}, "

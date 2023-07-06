@@ -353,17 +353,25 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
         data={"email": user.email, "password": DEFAULT_PASSWORD},
     )
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    # 'application' not available, OIDC params were stored in session,
-    # and users lose their sessions when changing browsers.
-    # It is simply nice to have, a best effort solution is OK.
-    maybe_application = "" if use_other_client else "'application': 'my_application', "
-    assert caplog.record_tuples == [
-        (
-            "inclusion_connect.auth",
-            logging.INFO,
-            "{'ip_address': '127.0.0.1', " + maybe_application + "'user': UUID('%s'), 'event': 'login'}" % user.pk,
-        )
-    ]
+    if use_other_client:
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', 'user': UUID('%s'), 'event': 'login', 'application': 'my_application'}"
+                % user.pk,
+            )
+        ]
+    else:
+        assert caplog.record_tuples == [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                "{'ip_address': '127.0.0.1', 'application': 'my_application', 'user': UUID('%s'), 'event': 'login'}"
+                % user.pk,
+            )
+        ]
+
     caplog.clear()
 
     response = other_client.get(auth_complete_url)
@@ -1123,11 +1131,13 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
 
 
 def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
+    application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
     verified_email = user.email
     referrer_uri = "https://go/back/there"
-    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
-    change_password_url = add_url_params(reverse("accounts:change_password"), {"referrer_uri": referrer_uri})
+    params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+    change_password_url = add_url_params(reverse("accounts:change_password"), params)
 
     # User is redirected to login
     response = client.get(edit_user_info_url)
@@ -1155,7 +1165,7 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
         edit_user_info_url,
         data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
     )
-    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": referrer_uri}))
+    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
     confirm_email_url = response.url
     user.refresh_from_db()
     assert user.first_name == "John"
@@ -1174,7 +1184,7 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
             "{'ip_address': '127.0.0.1', "
             "'event': 'edit_user_info', "
             f"'user': UUID('{user.pk}'), "
-            "'params': {'referrer_uri': 'https://go/back/there'}, "
+            f"'application': '{application.client_id}', "
             "'old_last_name': 'Calavera', "
             "'new_last_name': 'Doe', "
             "'old_first_name': 'Manuel', "
@@ -1248,7 +1258,7 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
             "{'ip_address': '127.0.0.1', "
             "'event': 'change_password', "
             f"'user': UUID('{user.pk}'), "
-            "'params': {'referrer_uri': 'https://go/back/there'}"
+            f"'application': '{application.client_id}'"
             "}",
         )
     ]
@@ -1272,10 +1282,12 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
 
 
 def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
+    application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
     verified_email = user.email
     referrer_uri = "https://go/back/there"
-    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri})
+    params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
 
     # User is redirected to login
     response = client.get(edit_user_info_url)
@@ -1303,7 +1315,7 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
         edit_user_info_url,
         data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
     )
-    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), {"referrer_uri": referrer_uri}))
+    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
     confirm_email_url = response.url
     user.refresh_from_db()
     assert user.first_name == "John"
@@ -1322,7 +1334,7 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
             "{'ip_address': '127.0.0.1', "
             "'event': 'edit_user_info', "
             f"'user': UUID('{user.pk}'), "
-            "'params': {'referrer_uri': 'https://go/back/there'}, "
+            f"'application': '{application.client_id}', "
             "'old_last_name': 'Calavera', "
             "'new_last_name': 'Doe', "
             "'old_first_name': 'Manuel', "
@@ -1370,13 +1382,13 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
 
     # Still dsplay the return button if the user asks again for a verification e-mail
     response = client.post(confirm_email_url, follow=True)
-    assertRedirects(response, add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}))
+    assertRedirects(response, edit_user_info_url)
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
 
     # Same thing if the user refreshes the page (why would he do that?)
     response = client.get(confirm_email_url, follow=True)
-    assertRedirects(response, add_url_params(reverse("accounts:edit_user_info"), {"referrer_uri": referrer_uri}))
+    assertRedirects(response, edit_user_info_url)
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
 
