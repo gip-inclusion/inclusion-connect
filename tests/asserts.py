@@ -1,3 +1,4 @@
+import logging
 from typing import List, NamedTuple
 
 from django.contrib.messages import DEFAULT_LEVELS, get_messages
@@ -18,3 +19,15 @@ def assertMessages(response: HttpResponse, expected_messages: List[Message]):
         msg_levelname = LEVEL_TO_NAME.get(message.level, message.level)
         expected_levelname = LEVEL_TO_NAME.get(expected_level, expected_level)
         assert (msg_levelname, message.message) == (expected_levelname, expected_msg)
+
+
+def assertRecords(caplog, logger, logs, i=0):
+    assert caplog.record_tuples[i:] == [
+        (
+            logger,
+            logging.INFO,
+            str({"ip_address": "127.0.0.1"} | log),
+        )
+        for log in logs
+    ]
+    caplog.clear()

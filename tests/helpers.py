@@ -1,4 +1,3 @@
-import logging
 import uuid
 
 import jwt
@@ -10,6 +9,7 @@ from django.utils import timezone
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.asserts import assertRecords
 from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
 from tests.users.factories import DEFAULT_PASSWORD
 
@@ -25,7 +25,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
         "redirect_uri": oidc_params["redirect_uri"],
     }
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
-    assert caplog.record_tuples == []
+    assertRecords(caplog, None, [])
 
     token_json = response.json()
     id_token = token_json["id_token"]
@@ -53,7 +53,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
         "family_name": user.last_name,
         "email": user.email,
     }
-    assert caplog.record_tuples == []
+    assertRecords(caplog, None, [])
 
     return token_json["id_token"]
 
@@ -74,34 +74,26 @@ def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
         )
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                f"'application': '{application.client_id}', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'login'}",
-            )
-        ]
-        caplog.clear()
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [{"application": application.client_id, "user": user.pk, "event": "login"}],
+        )
         response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
     code = auth_response_params["code"]
-    assert caplog.record_tuples == [
-        (
-            "inclusion_connect.oidc",
-            logging.INFO,
-            "{'ip_address': '127.0.0.1', "
-            # auth_complete_url contains the client_id, 'application' can be logged.
-            f"'application': '{application.client_id}', "
-            "'event': 'redirect', "
-            f"'user': UUID('{user.pk}'), "
-            f"'url': 'http://localhost/callback?code={code}&state=state'"
-            "}",
-        )
-    ]
-    caplog.clear()
+    assertRecords(
+        caplog,
+        "inclusion_connect.oidc",
+        [
+            {
+                "application": application.client_id,
+                "event": "redirect",
+                "user": user.pk,
+                "url": f"http://localhost/callback?code={code}&state=state",
+            }
+        ],
+    )
 
     return oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
