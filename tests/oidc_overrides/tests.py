@@ -13,6 +13,7 @@ from pytest_django.asserts import assertContains, assertRedirects
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params, get_url_params
+from tests.asserts import assertRecords
 from tests.conftest import Client
 from tests.helpers import (
     call_logout,
@@ -75,19 +76,19 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'application': 'my_application', "
-                "'event': 'logout', "
-                f"'id_token_hint': '{id_token}', "
-                "'post_logout_redirect_uri': 'http://callback/', "
-                f"'user': UUID('{user.pk}')"
-                "}",
-            )
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "application": "my_application",
+                    "event": "logout",
+                    "id_token_hint": id_token,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                }
+            ],
+        )
 
     def test_expired_token_and_session(self, caplog, client, oidc_params):
         """This test simulates a call on logout endpoint with expired token and sessions"""
@@ -115,19 +116,19 @@ class TestLogoutView:
             assert get_user(client).is_authenticated is False
             assert has_ongoing_sessions(user) is False
             assert token_are_revoked(user) is True
-            assert caplog.record_tuples == [
-                (
-                    "inclusion_connect.oidc",
-                    logging.INFO,
-                    "{'ip_address': '127.0.0.1', "
-                    "'application': 'my_application', "
-                    "'event': 'logout', "
-                    f"'id_token_hint': '{id_token}', "
-                    "'post_logout_redirect_uri': 'http://callback/', "
-                    f"'user': UUID('{user.pk}')"
-                    "}",
-                )
-            ]
+            assertRecords(
+                caplog,
+                "inclusion_connect.oidc",
+                [
+                    {
+                        "application": "my_application",
+                        "event": "logout",
+                        "id_token_hint": id_token,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": user.pk,
+                    }
+                ],
+            )
 
     def test_bad_id_token_hint_with_logged_in_user_fails(self, caplog, client, oidc_params):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
@@ -142,49 +143,49 @@ class TestLogoutView:
         assert token_are_revoked(user) is False
         assert get_user(client).is_authenticated is True
         assert has_ongoing_sessions(user) is True
-        assert caplog.record_tuples == [
-            ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'application': 'my_application', "
-                "'event': 'logout_error', "
-                "'id_token_hint': '111', "
-                "'error': '(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.'"
-                "}",
-            ),
-        ]
+        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, "Bad Request: /auth/logout/")
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "application": "my_application",
+                    "event": "logout_error",
+                    "id_token_hint": "111",
+                    "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.",
+                }
+            ],
+            i=1,
+        )
 
     def test_bad_id_token_hint_with_no_redirect_uri(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111})
         assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', 'event': 'logout', 'id_token_hint': '111', 'user': None}",
-            ),
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [{"event": "logout", "id_token_hint": "111", "user": None}],
+        )
 
     def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
         assert response.status_code == 400
-        assert caplog.record_tuples == [
-            ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'event': 'logout_error', "
-                "'id_token_hint': '111', "
-                "'post_logout_redirect_uri': 'http://callback/', "
-                "'error': '(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.'"
-                "}",
-            ),
-        ]
+        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, "Bad Request: /auth/logout/")
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "event": "logout_error",
+                    "id_token_hint": "111",
+                    "post_logout_redirect_uri": "http://callback/",
+                    "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.",
+                }
+            ],
+            i=1,
+        )
 
     def test_logout_clear_all_clients_sessions(self, caplog, client, oidc_params):
         user = UserFactory()
@@ -205,19 +206,19 @@ class TestLogoutView:
         assertRedirects(response, "http://callback/", fetch_redirect_response=False)
         assert get_user(client).is_authenticated is False
         assert get_user(other_client).is_authenticated is False
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'application': 'my_application', "
-                "'event': 'logout', "
-                f"'id_token_hint': '{id_token}', "
-                "'post_logout_redirect_uri': 'http://callback/', "
-                f"'user': UUID('{user.pk}')"
-                "}",
-            )
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "application": "my_application",
+                    "event": "logout",
+                    "id_token_hint": id_token,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                }
+            ],
+        )
 
     def test_multiple_logout_with_id_token_hint(self, caplog, client, oidc_params):
         user = UserFactory()
@@ -242,20 +243,19 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                f"'application': '{application_1.client_id}', "
-                "'event': 'logout', "
-                f"'id_token_hint': '{id_token_1}', "
-                "'post_logout_redirect_uri': 'http://callback/', "
-                f"'user': UUID('{user.pk}')"
-                "}",
-            )
-        ]
-        caplog.clear()
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "application": application_1.client_id,
+                    "event": "logout",
+                    "id_token_hint": id_token_1,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                }
+            ],
+        )
 
         response = call_logout(
             client,
@@ -267,19 +267,19 @@ class TestLogoutView:
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
         assert token_are_revoked(user) is True
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                f"'application': '{application_2.client_id}', "
-                "'event': 'logout', "
-                f"'id_token_hint': '{id_token_2}', "
-                "'post_logout_redirect_uri': 'http://callback/', "
-                "'user': None"
-                "}",
-            )
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "application": application_2.client_id,
+                    "event": "logout",
+                    "id_token_hint": id_token_2,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": None,
+                }
+            ],
+        )
 
 
 class TestAuthorizeView:

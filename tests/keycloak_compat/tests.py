@@ -1,5 +1,4 @@
 import datetime
-import logging
 import uuid
 
 import jwt
@@ -17,7 +16,7 @@ from inclusion_connect.keycloak_compat.hashers import KeycloakPasswordHasher
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.urls import add_url_params, get_url_params
-from tests.asserts import assertMessages
+from tests.asserts import assertMessages, assertRecords
 from tests.helpers import token_are_revoked
 from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
@@ -270,25 +269,14 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'confirm_email_address'}",
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'login'}",
-            ),
-        ]
-        caplog.clear()
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+            ],
+        )
 
         # Validating again fails.
         with freeze_time("2023-04-26 11:11:12"):
@@ -300,17 +288,18 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'confirm_email_address_error', "
-                "'error': 'already verified'}",
-            )
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {
+                    "email": "me@mailinator.com",
+                    "user": user.pk,
+                    "event": "confirm_email_address_error",
+                    "error": "already verified",
+                }
+            ],
+        )
 
     def test_verify_bad_signature(self, caplog, client):
         secret = "secret"
@@ -395,18 +384,18 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'event': 'confirm_email_address_error', "
-                "'error': 'link expired', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}')"
-                "}",
-            )
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {
+                    "event": "confirm_email_address_error",
+                    "error": "link expired",
+                    "email": "me@mailinator.com",
+                    "user": user.pk,
+                }
+            ],
+        )
 
     def test_unknown_action(self, caplog, client):
         secret = "secret"
@@ -457,24 +446,14 @@ class TestActionToken:
         assert address.verified_at == now
         user.refresh_from_db()
         assert user.email == email
-        assert caplog.record_tuples == [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'confirm_email_address'}",
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                "{'ip_address': '127.0.0.1', "
-                "'email': 'me@mailinator.com', "
-                f"'user': UUID('{user.pk}'), "
-                "'event': 'login'}",
-            ),
-        ]
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+            ],
+        )
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
