@@ -9,7 +9,6 @@ from django.contrib.auth import get_user
 from django.core import mail
 from django.db.models import F
 from django.urls import reverse
-from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
 
@@ -128,8 +127,11 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     ]
     caplog.clear()
     assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
+        [
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
+        ],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
@@ -227,13 +229,17 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     ]
     caplog.clear()
     assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
+        [
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
+        ],
     )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
 
 
+@freeze_time("2023-05-05 11:11:11")
 @pytest.mark.parametrize("use_other_client", [True, False])
 def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_other_client):
     application = ApplicationFactory(client_id=oidc_params["client_id"])
@@ -365,8 +371,11 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     ]
     caplog.clear()
     assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(timezone.localdate().replace(day=1), user.pk, application.pk, "register")],
+        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
+        [
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
+        ],
     )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
@@ -481,13 +490,17 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     ]
     caplog.clear()
     assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "register")],
+        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
+        [
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
+            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
+        ],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
+@freeze_time("2023-05-05 11:11:11")
 @pytest.mark.parametrize(
     "auth_url",
     [
@@ -549,12 +562,13 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
     caplog.clear()
     assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
-        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
+@freeze_time("2023-05-05 11:11:11")
 def test_login_after_password_reset(caplog, client, oidc_params):
     application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
@@ -631,12 +645,13 @@ def test_login_after_password_reset(caplog, client, oidc_params):
     caplog.clear()
     assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
-        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
+@freeze_time("2023-05-05 11:11:11")
 def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     application = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
@@ -716,7 +731,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     caplog.clear()
     assertQuerySetEqual(
         Stats.objects.values_list("date", "user", "application", "action"),
-        [(timezone.localdate().replace(day=1), user.pk, application.pk, "login")],
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
     )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
