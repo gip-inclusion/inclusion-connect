@@ -17,12 +17,12 @@ from django.views.generic import CreateView, FormView, TemplateView, UpdateView,
 from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.logging import log_data
+from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.stats import helpers as stats_helpers
 from inclusion_connect.stats.models import Actions
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint, oidc_params
-from inclusion_connect.utils.urls import add_url_params
 
 
 logger = logging.getLogger("inclusion_connect.auth")
@@ -52,6 +52,9 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         response = super().form_valid(form)
         log = form.log
         log["event"] = self.EVENT_NAME
+        if "application" not in log:
+            if application := stats_helpers.get_application(self.request, self.get_success_url()):
+                log["application"] = application.client_id
         transaction.on_commit(partial(logger.info, log))
         stats_helpers.account_action(form.get_user(), Actions.LOGIN, self.request, self.get_success_url())
         return response
@@ -368,10 +371,12 @@ class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
 
 
 class MyAccountMixin(LoginRequiredMixin):
-    # FIXME: Also handle referrer params as in keycloak
-    # - we can display the application name in the return button: "Retour vers Dora"
-    #   but it may be too long in some cases
-    # - we can log that the user came from the given application
+    application = None
+
+    def setup(self, request, *args, **kwargs):
+        referrer = request.GET.get("referrer")
+        self.application = Application.objects.filter(client_id=referrer).first()
+        return super().setup(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -382,14 +387,14 @@ class MyAccountMixin(LoginRequiredMixin):
         referrer_uri = self.request.GET.get("referrer_uri")
         return context | {
             "edit_user_info": {
-                "url": add_url_params(edit_user_info_url, {"referrer_uri": referrer_uri}),
+                "url": edit_user_info_url + "?" + self.request.GET.urlencode(),
                 "active": False,
             },
             "edit_password": {
-                "url": add_url_params(edit_password_url, {"referrer_uri": referrer_uri}),
+                "url": edit_password_url + "?" + self.request.GET.urlencode(),
                 "active": False,
             },
-            "referrer_uri": referrer_uri,
+            "referrer_uri": self.application and referrer_uri,
         }
 
     def get_object(self, queryset=None):
@@ -411,7 +416,8 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         log = log_data(self.request)
         log["event"] = f"{self.EVENT_NAME}_error"
         log["user"] = self.request.user.pk
-        log["params"] = self.request.GET.dict()
+        if self.application:
+            log["application"] = self.application.client_id
         log["errors"] = form.errors.get_json_data()
         transaction.on_commit(partial(logger.info, log))
         return response
@@ -429,7 +435,8 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         log = log_data(self.request)
         log["event"] = self.EVENT_NAME
         log["user"] = self.request.user.pk
-        log["params"] = self.request.GET.dict()
+        if self.application:
+            log["application"] = self.application.client_id
         for key in form.changed_data:
             log[f"old_{key}"] = form.initial[key]
             log[f"new_{key}"] = form.cleaned_data[key]
@@ -463,7 +470,8 @@ class PasswordChangeView(MyAccountMixin, FormView):
         log = log_data(self.request)
         log["event"] = event_name
         log["user"] = self.request.user.pk
-        log["params"] = self.request.GET.dict()
+        if self.application:
+            log["application"] = self.application.client_id
         if form.errors:
             log["errors"] = form.errors.get_json_data()
         transaction.on_commit(partial(logger.info, log))
