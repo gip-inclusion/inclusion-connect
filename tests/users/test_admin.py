@@ -580,7 +580,7 @@ class TestUserAdmin:
         assert response.status_code == 200
 
         response = client.get(reverse("admin:users_user_add"))
-        assert response.status_code == 200
+        assert response.status_code == 403
 
         response = client.get(reverse("admin:users_user_change", args=(user.pk,)))
         assert response.status_code == 200
