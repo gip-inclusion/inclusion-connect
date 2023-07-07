@@ -2,6 +2,7 @@ from django.contrib.auth import get_user
 from django.urls import reverse
 
 from inclusion_connect.auth.backends import EmailAuthenticationBackend
+from inclusion_connect.oidc_federation.enums import Federation
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -14,6 +15,12 @@ def test_admin_login(client):
 
     response = client.post(admin_login_url, data={"username": user.email, "password": DEFAULT_PASSWORD})
     assert get_user(client).is_authenticated is True
+
+
+def test_peama_cant_log_with_default_backend():
+    user = UserFactory(federation=Federation.PEAMA)
+    assert not EmailAuthenticationBackend().user_can_authenticate(user)
+    assert not EmailAuthenticationBackend().authenticate(request=None, username=user.email, password=DEFAULT_PASSWORD)
 
 
 def test_authentication_backend_with_username():

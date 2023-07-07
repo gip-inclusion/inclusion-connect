@@ -24,6 +24,16 @@
         <div>{% bootstrap_button "Connexion" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
     </form>
 
+    {% if peama_enabled %}
+        <hr class="my-3 my-lg-4">
+        <div class="text-center">
+            <a href="{% url 'oidc_federation:peama:init' %}">Se connecter avec PEAMA</a>
+            <p class="text-sm">
+                Cette fonctionnalité est en cours de développement et n'est utilisable qu'avec un compte de démonstration
+            </p>
+        </div>
+    {% endif %}
+
     <hr class="my-3 my-lg-4">
     <div class="text-center">
         <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>

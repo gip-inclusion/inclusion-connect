@@ -16,6 +16,9 @@ dj-database-url  # https://github.com/jazzband/dj-database-url
 # Add Content Security Policy headers
 django-csp  # https://github.com/mozilla/django-csp
 
+# client for OIDC federation
+mozilla-django-oidc  # https://github.com/mozilla/mozilla-django-oidc
+
 # Third party applications
 # ------------------------------------------------------------------------------
 
