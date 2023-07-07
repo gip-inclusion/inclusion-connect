@@ -37,4 +37,7 @@ max_attribute_length=200
 preserve_blank_lines=true
 
 [tool.ruff.extend-per-file-ignores]
-"tests/*" = ["PLR0915"]  # pylint too-many-statements
+"tests/*" = [
+  "PLR0915", # pylint too-many-statements
+  "PLR0913" # pylint too-many-arguments
+]
