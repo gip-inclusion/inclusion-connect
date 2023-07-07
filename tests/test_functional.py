@@ -20,8 +20,7 @@ from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
 from tests.helpers import call_logout, oidc_complete_flow, oidc_flow_followup, token_are_revoked
-from tests.helpers import call_logout, oidc_flow_followup, token_are_revoked
-from tests.oidc_federation.test_peama import mock_peama_oauth_dance
+from tests.oidc_federation.test_peama import PEAMA_ADDITIONAL_DATA, mock_peama_oauth_dance
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -1516,7 +1515,7 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
     )
 
 
-def test_use_peama(client, oidc_params, requests_mock):
+def test_use_peama(client, oidc_params, requests_mock, caplog):
     ApplicationFactory(client_id=oidc_params["client_id"])
 
     auth_url = reverse("oauth2_provider:authorize")
@@ -1530,5 +1529,22 @@ def test_use_peama(client, oidc_params, requests_mock):
     response = client.get(reverse("oidc_federation:peama:init"))
     response, _peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
     assertRedirects(response, reverse("accounts:accept_terms"))
+    # Check log
 
-    # Check logout
+    response = client.post(reverse("accounts:accept_terms"))
+    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
+    # Check log
+
+    response = client.get(auth_complete_url)
+    assert response.status_code == 302
+    assert response.url.startswith(oidc_params["redirect_uri"])
+    auth_response_params = get_url_params(response.url)
+    # Check log
+    caplog.clear()
+
+    user = User.objects.get()
+    additional_claims = {
+        "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+        "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
+    }
+    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims)

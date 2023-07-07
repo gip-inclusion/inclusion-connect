@@ -15,7 +15,7 @@ from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFac
 from tests.users.factories import DEFAULT_PASSWORD
 
 
-def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
+def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims=None):
     # Call TOKEN endpoint
     token_data = {
         "client_id": oidc_params["client_id"],
@@ -54,6 +54,8 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
     assert decoded_id_token["given_name"] == user.first_name
     assert decoded_id_token["family_name"] == user.last_name
     assert decoded_id_token["email"] == user.email
+    for k, v in (additional_claims or {}).items():
+        assert decoded_id_token[k] == v
 
     # Call USER INFO endpoint
     response = client.get(
@@ -65,7 +67,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
         "given_name": user.first_name,
         "family_name": user.last_name,
         "email": user.email,
-    }
+    } | (additional_claims or {})
     assertRecords(caplog, [])
 
     return token_json["id_token"]
