@@ -1,0 +1,33 @@
+name: 🏗 Deploy to Scalingo
+on:
+  push:
+    branches:
+      - main
+      - alaurent/scalingo_failover
+  schedule:
+    - cron: '0 11 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: Scalingo
+    env:
+      SCALINGO_GIT_URL: ${{ secrets.SCALINGO_GIT_URL }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
+
+    steps:
+    - uses: actions/checkout@v3.5.3
+      with:
+        fetch-depth: 0
+
+    - name: Setup SSH
+      run: |
+        mkdir ~/.ssh
+        touch ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        echo "$SSH_SECRET_KEY" >~/.ssh/id_ed25519
+        echo "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
+
+    - name: Deploy to Scalingo
+      run: git push $SCALINGO_GIT_URL HEAD:main --force
