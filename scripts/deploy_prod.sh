@@ -8,28 +8,28 @@ if ! git diff-index --quiet HEAD; then
   exit
 fi
 
-# Fast forward dev on master, then push master
+# Fast forward main on main_clever, then push main_clever
 # Deployment to Clever Cloud is actually triggered via a hook
 # on a push on this branch
 
-# synchronize dev and master by replaying the local branches on top of remote ones
+# synchronize main and maint_clever by replaying the local branches on top of remote ones
 git fetch origin
-git checkout dev
-git rebase origin/dev dev
-git checkout master
-git rebase origin/master master
+git checkout main
+git rebase origin/main main
+git checkout main_clever
+git rebase origin/main_clever main_clever
 
-# fast merge master onto dev
-git rebase dev master
-git push origin master
+# fast merge main_clever onto main
+git rebase main main_clever
+git push origin main_clever
 
 # When we are done, we want to restore the initial state
-# (in order to avoid writing things directly on master by accident)
+# (in order to avoid writing things directly on main_clever by accident)
 if [ -z $initial_branch ]; then
-    # The initial_branch is empty when user is in detached state, so we simply go back to dev
-    git checkout dev
+    # The initial_branch is empty when user is in detached state, so we simply go back to main
+    git checkout main
     echo
-    echo "You were on detached state before deploying, you are back to dev"
+    echo "You were on detached state before deploying, you are back to main"
 else
     git checkout $initial_branch
     echo
