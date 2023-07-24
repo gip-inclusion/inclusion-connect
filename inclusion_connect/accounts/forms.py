@@ -37,6 +37,16 @@ class LoginForm(forms.Form):
         password = self.cleaned_data.get("password")
 
         if email is not None and password:
+            # Don't allow federated users
+            user = User.objects.filter(email=email).first()
+            if user and user.federation:
+                identity_provider = user.get_federation_display()
+                error_message = (
+                    f"Votre compte est relié à {identity_provider}. Merci de vous connecter avec ce service."
+                )
+                self.log["user"] = user.pk
+                raise forms.ValidationError(error_message)
+
             self.user_cache = authenticate(self.request, email=email, password=password)
             if self.user_cache:
                 self.log["user"] = self.user_cache.pk
