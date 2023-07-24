@@ -283,13 +283,44 @@ class TestLogoutView:
 
 
 class TestAuthorizeView:
-    def test_bad_oidc_params(self, client, oidc_params, snapshot):
+    def test_bad_oidc_params_400(self, client, oidc_params, snapshot, caplog):
         # Application does not exist
         auth_url = reverse("oauth2_provider:authorize")
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
+
+        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [{"oidc_params": oidc_params}],
+            i=1,
+        )
+
+    def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
+        ApplicationFactory(client_id=oidc_params["client_id"])
+        auth_url = reverse("oauth2_provider:authorize")
+        oidc_params["scope"] = "invalid_scope"
+        auth_complete_url = add_url_params(auth_url, oidc_params)
+        client.get(auth_complete_url)
+
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {"oidc_params": oidc_params},
+                {
+                    "application": oidc_params["client_id"],
+                    "event": "redirect",
+                    "user": None,
+                    "url": add_url_params(
+                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                    ),
+                },
+            ],
+        )
 
     def test_not_authenticated(self, client, oidc_params):
         ApplicationFactory(client_id=oidc_params["client_id"])
@@ -302,13 +333,44 @@ class TestAuthorizeView:
 
 
 class TestRegisterView:
-    def test_bad_oidc_params(self, client, oidc_params, snapshot):
+    def test_bad_oidc_params_400(self, client, oidc_params, snapshot, caplog):
         # Application does not exist
         auth_url = reverse("oauth2_provider:register")
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
+
+        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [{"oidc_params": oidc_params}],
+            i=1,
+        )
+
+    def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
+        ApplicationFactory(client_id=oidc_params["client_id"])
+        auth_url = reverse("oauth2_provider:register")
+        oidc_params["scope"] = "invalid_scope"
+        auth_complete_url = add_url_params(auth_url, oidc_params)
+        client.get(auth_complete_url)
+
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {"oidc_params": oidc_params},
+                {
+                    "application": oidc_params["client_id"],
+                    "event": "redirect",
+                    "user": None,
+                    "url": add_url_params(
+                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                    ),
+                },
+            ],
+        )
 
     def test_not_authenticated(self, client, oidc_params):
         ApplicationFactory(client_id=oidc_params["client_id"])
@@ -321,12 +383,43 @@ class TestRegisterView:
 
 
 class TestActivateView:
-    def test_bad_oidc_params(self, client, oidc_params, snapshot):
+    def test_bad_oidc_params_400(self, client, oidc_params, snapshot, caplog):
         auth_url = reverse("oauth2_provider:activate")
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
+
+        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [{"oidc_params": oidc_params}],
+            i=1,
+        )
+
+    def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
+        ApplicationFactory(client_id=oidc_params["client_id"])
+        auth_url = reverse("oauth2_provider:activate")
+        oidc_params["scope"] = "invalid_scope"
+        auth_complete_url = add_url_params(auth_url, oidc_params)
+        client.get(auth_complete_url)
+
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {"oidc_params": oidc_params},
+                {
+                    "application": oidc_params["client_id"],
+                    "event": "redirect",
+                    "user": None,
+                    "url": add_url_params(
+                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                    ),
+                },
+            ],
+        )
 
     def test_missing_user_info(self, client, oidc_params, snapshot):
         ApplicationFactory(client_id=oidc_params["client_id"])
