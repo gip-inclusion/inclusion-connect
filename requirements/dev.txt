@@ -4,10 +4,6 @@
 #
 #    pip-compile --allow-unsafe --config=pyproject.toml --generate-hashes --output-file=requirements/dev.txt requirements/dev.in
 #
-anyio==3.7.0 \
-    --hash=sha256:275d9973793619a5374e1c89a4f4ad3f4b0a5510a2b5b939444bee8f4c4d37ce \
-    --hash=sha256:eddca883c4175f14df8aedce21054bfca3adb70ffe76a9f607aef9d7fa2ea7f0
-    # via httpcore
 asgiref==3.7.2 \
     --hash=sha256:89b2ef2247e3b562a16eef663bc0e2e703ec6468e2fa8a5cd61cd449786d4f6e \
     --hash=sha256:9e0ce3aa93a819ba5b45120216b23878cf6e8525eb3848653452b4192b92afed
@@ -63,8 +59,6 @@ certifi==2023.5.7 \
     # via
     #   -r requirements/base.txt
     #   elastic-transport
-    #   httpcore
-    #   httpx
     #   requests
     #   sentry-sdk
 cffi==1.15.1 \
@@ -435,10 +429,6 @@ freezegun==1.2.2 \
     --hash=sha256:cd22d1ba06941384410cd967d8a99d5ae2442f57dfafeff2fda5de8dc5c05446 \
     --hash=sha256:ea1b963b993cb9ea195adbd893a48d573fda951b0da64f60883d7e988b606c9f
     # via -r requirements/dev.in
-h11==0.14.0 \
-    --hash=sha256:8f19fbbe99e72420ff35c00b27a34cb9937e902a8b810e2c88300c6f0a3b699d \
-    --hash=sha256:e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
-    # via httpcore
 html-tag-names==0.1.2 \
     --hash=sha256:04924aca48770f36b5a41c27e4d917062507be05118acb0ba869c97389084297 \
     --hash=sha256:eeb69ef21078486b615241f0393a72b41352c5219ee648e7c61f5632d26f0420
@@ -451,14 +441,6 @@ html5lib==1.1 \
     --hash=sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d \
     --hash=sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f
     # via -r requirements/dev.in
-httpcore==0.17.2 \
-    --hash=sha256:125f8375ab60036db632f34f4b627a9ad085048eef7cb7d2616fea0f739f98af \
-    --hash=sha256:5581b9c12379c4288fe70f43c710d16060c10080617001e6b22a3b6dbcbefd36
-    # via httpx
-httpx==0.24.1 \
-    --hash=sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd \
-    --hash=sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd
-    # via respx
 identify==2.5.24 \
     --hash=sha256:0aac67d5b4812498056d28a9a512a483f5085cc28640b02b258a59dac34301d4 \
     --hash=sha256:986dbfb38b1140e763e413e6feb44cd731faf72d1909543178aa79b0e258265d
@@ -468,8 +450,6 @@ idna==3.4 \
     --hash=sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2
     # via
     #   -r requirements/base.txt
-    #   anyio
-    #   httpx
     #   requests
 iniconfig==2.0.0 \
     --hash=sha256:2d91e135bf72d31a410b17c16da610a82cb55f6b0477d1a902134b24a455b8b3 \
@@ -783,10 +763,6 @@ requests==2.31.0 \
     #   -r requirements/base.txt
     #   django-anymail
     #   django-oauth-toolkit
-respx==0.20.1 \
-    --hash=sha256:372f06991c03d1f7f480a420a2199d01f1815b6ed5a802f4e4628043a93bd03e \
-    --hash=sha256:cc47a86d7010806ab65abdcf3b634c56337a737bb5c4d74c19a0dfca83b3bc73
-    # via -r requirements/dev.in
 ruff==0.0.280 \
     --hash=sha256:2dae8f2d9c44c5c49af01733c2f7956f808db682a4193180dedb29dd718d7bbe \
     --hash=sha256:2e7c15828d09f90e97bea8feefcd2907e8c8ce3a1f959c99f9b4b3469679f33c \
@@ -819,13 +795,6 @@ six==1.16.0 \
     #   html5lib
     #   jsbeautifier
     #   python-dateutil
-sniffio==1.3.0 \
-    --hash=sha256:e60305c5e5d314f5389259b7f22aaa33d8f7dee49763119234af3755c55b9101 \
-    --hash=sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384
-    # via
-    #   anyio
-    #   httpcore
-    #   httpx
 soupsieve==2.4.1 \
     --hash=sha256:1c1bfee6819544a3447586c889157365a27e10d88cde3ad3da0cf0ddf646feb8 \
     --hash=sha256:89d12b2d5dfcd2c9e8c22326da9d9aa9cb3dfab0a83a024f05704076ee8d35ea
