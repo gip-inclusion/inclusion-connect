@@ -24,6 +24,7 @@ from pytest_django.asserts import (
 
 from inclusion_connect.accounts.tokens import email_verification_token
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY, PasswordResetView
+from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
@@ -275,6 +276,48 @@ class TestLoginView:
             'autocomplete="email" maxlength="320" class="form-control" required id="id_email">',
             count=1,
         )
+
+    def test_federated_user_cannot_use_login_password(self, client, caplog):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(
+            email="michel@pole-emploi.fr",
+            first_name="old_first_name",
+            last_name="old_last_name",
+            federation=Federation.PEAMA,
+            federation_sub="sub",
+        )
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, reverse("accounts:register"))  # Link to register page
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assert get_user(client).is_authenticated is False
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce "
+                                    "service.",
+                                    "code": "",
+                                }
+                            ]
+                        },
+                    },
+                )
+            ],
+        )
+        assertContains(response, "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.")
 
 
 class TestRegisterView:
