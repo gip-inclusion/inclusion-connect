@@ -29,8 +29,8 @@ class ActionToken(View):
                 )
                 try:
                     email = decoded["eml"]
-                except KeyError:
-                    raise e
+                except KeyError as err:
+                    raise e from err
                 else:
                     return handle_signature_expired(request, email)
         except jwt.exceptions.InvalidTokenError as e:
