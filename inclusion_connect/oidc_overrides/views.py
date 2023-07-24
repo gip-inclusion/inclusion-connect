@@ -15,7 +15,7 @@ from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
-from inclusion_connect.utils.urls import is_inclusion_connect_url
+from inclusion_connect.utils.urls import get_url_params, is_inclusion_connect_url
 
 
 logger = logging.getLogger("inclusion_connect.oidc")
@@ -58,6 +58,8 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             self.validate_authorization_request(request)
         except OAuthToolkitError as error:
             # Application is not available at this time.
+            log = log_data(self.request) | {"oidc_params": get_url_params(self.request.get_full_path())}
+            transaction.on_commit(partial(logger.info, log))
             return self.error_response(error, application=None)
 
         return super().dispatch(request, *args, **kwargs)
@@ -80,9 +82,12 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
 
     def redirect(self, redirect_to, application):
         log = log_data(self.request)
-        # OIDC params may have been lost when the client changed browser,
-        # make sure the application is set.
-        log["application"] = application.client_id
+        if application:
+            log["application"] = application.client_id
+        elif client_id := self.request.GET.get("client_id"):
+            # On auth errors, the application might not be set.
+            # Fallback on oidc_params client_id
+            log["application"] = client_id
         log["event"] = "redirect"
         log["user"] = self.request.user.pk
         log["url"] = redirect_to

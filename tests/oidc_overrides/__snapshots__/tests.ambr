@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: TestActivateView.test_bad_oidc_params
+# name: TestActivateView.test_bad_oidc_params_400
   '''
   <main class="s-main" id="main" role="main">
   
@@ -83,7 +83,7 @@
           </main>
   '''
 # ---
-# name: TestAuthorizeView.test_bad_oidc_params
+# name: TestAuthorizeView.test_bad_oidc_params_400
   '''
   <main class="s-main" id="main" role="main">
   
@@ -125,7 +125,7 @@
           </main>
   '''
 # ---
-# name: TestRegisterView.test_bad_oidc_params
+# name: TestRegisterView.test_bad_oidc_params_400
   '''
   <main class="s-main" id="main" role="main">
   
