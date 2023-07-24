@@ -783,9 +783,9 @@ requests==2.31.0 \
     #   -r requirements/base.txt
     #   django-anymail
     #   django-oauth-toolkit
-respx==0.20.1 \
-    --hash=sha256:372f06991c03d1f7f480a420a2199d01f1815b6ed5a802f4e4628043a93bd03e \
-    --hash=sha256:cc47a86d7010806ab65abdcf3b634c56337a737bb5c4d74c19a0dfca83b3bc73
+respx==0.20.2 \
+    --hash=sha256:07cf4108b1c88b82010f67d3c831dae33a375c7b436e54d87737c7f9f99be643 \
+    --hash=sha256:ab8e1cf6da28a5b2dd883ea617f8130f77f676736e6e9e4a25817ad116a172c9
     # via -r requirements/dev.in
 ruff==0.0.280 \
     --hash=sha256:2dae8f2d9c44c5c49af01733c2f7956f808db682a4193180dedb29dd718d7bbe \
