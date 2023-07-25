@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 
 import jwt
@@ -10,6 +11,7 @@ from pytest_django.asserts import assertRedirects
 from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import get_url_params
+from tests.asserts import assertRecords
 from tests.users.factories import UserFactory
 
 
@@ -91,7 +93,7 @@ class TestFederation:
             "nonce",
         ]
 
-    def test_new_user(self, client, requests_mock):
+    def test_new_user(self, client, requests_mock, caplog):
         response = client.get(reverse("oidc_federation:peama:init"))
         response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
         user = User.objects.get()
@@ -106,10 +108,19 @@ class TestFederation:
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         }
         assertRedirects(response, reverse("accounts:accept_terms"))
-        # TODO check log
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "register", "federation": Federation.PEAMA},
+                )
+            ],
+        )
 
-    def test_update_existing_pe_user(self, client, requests_mock):
-        UserFactory(
+    def test_update_existing_pe_user(self, client, requests_mock, caplog):
+        user = UserFactory(
             email="old_email",
             first_name="old_first_name",
             last_name="old_last_name",
@@ -125,13 +136,38 @@ class TestFederation:
         assert user.federation_sub == peama_data.user_info["sub"]
         assert user.federation == Federation.PEAMA
         assert user.federation_data == {
-            "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+            "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
         }
         assertRedirects(response, reverse("accounts:edit_user_info"))
-        # TODO check log
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+                ),
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "old_first_name": "old_first_name",
+                        "new_first_name": peama_data.user_info["given_name"],
+                        "old_last_name": "old_last_name",
+                        "new_last_name": peama_data.user_info["family_name"],
+                        "old_email": "old_email",
+                        "new_email": peama_data.user_info["email"],
+                        "old_federation_data": None,
+                        "new_federation_data": user.federation_data,
+                    },
+                ),
+            ],
+        )
 
-    def test_convert_existing_ic_user(self, client, requests_mock):
+    def test_convert_existing_ic_user(self, client, requests_mock, caplog):
         UserFactory(
             email="michel@pole-emploi.fr",
             first_name="old_first_name",
@@ -150,10 +186,37 @@ class TestFederation:
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         }
         assertRedirects(response, reverse("accounts:edit_user_info"))
-        # TODO check log
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+                ),
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "old_first_name": "old_first_name",
+                        "new_first_name": peama_data.user_info["given_name"],
+                        "old_last_name": "old_last_name",
+                        "new_last_name": peama_data.user_info["family_name"],
+                        "old_federation_sub": None,
+                        "new_federation_sub": peama_data.user_info["sub"],
+                        "old_federation": None,
+                        "new_federation": Federation.PEAMA,
+                        "old_federation_data": None,
+                        "new_federation_data": user.federation_data,
+                    },
+                ),
+            ],
+        )
 
-    def test_block_user_from_another_federation(self, client, requests_mock):
-        UserFactory(
+    def test_block_user_from_another_federation(self, client, requests_mock, caplog):
+        user = UserFactory(
             email="michel@pole-emploi.fr",
             first_name="old_first_name",
             last_name="old_last_name",
@@ -171,9 +234,24 @@ class TestFederation:
         assert user.federation_sub != peama_data.user_info["sub"]
         assert user.federation == "other"
         assert user.federation_data is None
-        # TODO check log
+        assertRecords(
+            caplog,
+            [
+                (
+                    "mozilla_django_oidc.auth",
+                    logging.WARNING,
+                    "failed to get or create user: email=michel@pole-emploi.fr from federation=peama is already used "
+                    "by other",
+                ),
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "login_error", "federation": Federation.PEAMA},
+                ),
+            ],
+        )
 
-    def test_block_user_from_another_federation_same_sub(self, client, requests_mock):
+    def test_block_user_from_another_federation_same_sub(self, client, requests_mock, caplog):
         # This shouldn"t happen often since subs should be long random keys, but we never know
         UserFactory(
             email="michel@pole-emploi.fr",
@@ -193,4 +271,19 @@ class TestFederation:
         assert user.federation_sub == peama_data.user_info["sub"]
         assert user.federation == "other"
         assert user.federation_data is None
-        # TODO check log
+        assertRecords(
+            caplog,
+            [
+                (
+                    "mozilla_django_oidc.auth",
+                    logging.WARNING,
+                    "failed to get or create user: email=michel@pole-emploi.fr from federation=peama is already used "
+                    "by other",
+                ),
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "login_error", "federation": Federation.PEAMA},
+                ),
+            ],
+        )

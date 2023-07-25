@@ -14,6 +14,7 @@ from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
+from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -1516,7 +1517,7 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
 
 
 def test_use_peama(client, oidc_params, requests_mock, caplog):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
 
     auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -1529,18 +1530,57 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     response = client.get(reverse("oidc_federation:peama:init"))
     response, _peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
     assertRedirects(response, reverse("accounts:accept_terms"))
-    # Check log
+    user = User.objects.get()
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "email": user.email,
+                    "user": user.pk,
+                    "event": "register",
+                    "federation": Federation.PEAMA,
+                },
+            )
+        ],
+    )
 
     response = client.post(reverse("accounts:accept_terms"))
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    # Check log
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": application.client_id, "event": "accept_terms", "user": user.pk},
+            )
+        ],
+    )
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
     assert response.url.startswith(oidc_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
-    # Check log
-    caplog.clear()
+    code = auth_response_params["code"]
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
+        ],
+    )
 
     user = User.objects.get()
     additional_claims = {
