@@ -23,12 +23,16 @@ with connection.cursor() as cursor:
             oidc_overrides_application,
             stats_stats,
             users_emailaddress,
-            users_user,
             users_userapplicationlink
         CASCADE
         """
     )
+    cursor.execute("DELETE FROM users_user WHERE is_staff IS NOT True")
     for sequence in [
+        "oidc_overrides_application_id_seq",
+        "stats_stats_id_seq",
+        "users_emailaddress_id_seq",
+        "users_userapplicationlink_id_seq",
         "users_user_groups_id_seq",
         "users_user_user_permissions_id_seq",
         "django_admin_log_id_seq",

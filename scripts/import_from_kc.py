@@ -255,7 +255,7 @@ for user_id, client_id, event_time, action in stats_data_2:
             Stats(
                 user=user,
                 application=application,
-                timestamp=event_time,
+                date=event_time,
                 action=action.lower(),
             )
         )
