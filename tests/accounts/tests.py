@@ -540,6 +540,7 @@ class TestRegisterView:
 
 class TestActivateAccountView:
     def test_activate_account(self, caplog, client):
+        application = ApplicationFactory()
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory.build(email="me@mailinator.com")
@@ -555,6 +556,7 @@ class TestActivateAccountView:
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
+            "client_id": application.client_id,
         }
         client_session.save()
         response = client.get(url)
@@ -581,10 +583,20 @@ class TestActivateAccountView:
         assert email_address.user_id == email_address.user.pk
         assert email_address.verified_at is None
         assertRecords(
-            caplog, "inclusion_connect.auth", [{"email": "me@mailinator.com", "user": user.pk, "event": "activate"}]
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {
+                    "application": application.client_id,
+                    "email": "me@mailinator.com",
+                    "user": user.pk,
+                    "event": "activate",
+                }
+            ],
         )
 
     def test_email_already_exists(self, caplog, client):
+        application = ApplicationFactory()
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory()
@@ -600,6 +612,7 @@ class TestActivateAccountView:
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
+            "client_id": application.client_id,
         }
         client_session.save()
         response = client.get(url)
@@ -630,6 +643,7 @@ class TestActivateAccountView:
             "inclusion_connect.auth",
             [
                 {
+                    "application": application.client_id,
                     "user": user.pk,
                     "event": "activate_error",
                     "errors": {
@@ -653,6 +667,7 @@ class TestActivateAccountView:
         )
 
     def test_email_already_exists_not_verified(self, caplog, client):
+        application = ApplicationFactory()
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory(email="")
@@ -664,6 +679,7 @@ class TestActivateAccountView:
             "login_hint": user_email,
             "firstname": user.first_name,
             "lastname": user.last_name,
+            "client_id": application.client_id,
         }
         client_session.save()
         response = client.post(
@@ -691,6 +707,7 @@ class TestActivateAccountView:
             "inclusion_connect.auth",
             [
                 {
+                    "application": application.client_id,
                     "user": user.pk,
                     "event": "activate_error",
                     "errors": {
@@ -714,6 +731,7 @@ class TestActivateAccountView:
         )
 
     def test_terms_are_required(self, caplog, client):
+        application = ApplicationFactory()
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
         user = UserFactory.build()
@@ -723,6 +741,7 @@ class TestActivateAccountView:
             "login_hint": user.email,
             "firstname": user.first_name,
             "lastname": user.last_name,
+            "client_id": application.client_id,
         }
         client_session.save()
 
@@ -744,6 +763,7 @@ class TestActivateAccountView:
             "inclusion_connect.auth",
             [
                 {
+                    "application": application.client_id,
                     "email": user.email,
                     "event": "activate_error",
                     "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
