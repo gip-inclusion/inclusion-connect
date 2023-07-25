@@ -380,9 +380,12 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))
+    activation_url = response.url
+    response = client.get(activation_url)
+    assertContains(response, f"Vous pouvez réutiliser celui de votre compte sur {application.name}")
 
     response = client.post(
-        response.url,
+        activation_url,
         data={
             "email": user_email,
             "first_name": user.first_name,

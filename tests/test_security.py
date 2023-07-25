@@ -5,6 +5,7 @@ import pytest
 from django.urls import reverse
 
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
+from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import UserFactory
 
 
@@ -22,7 +23,12 @@ OIDCSessionMixin_accounts: List[OIDCSessionMixinTestInput] = [
     OIDCSessionMixinTestInput(
         False,
         "accounts:activate",
-        {"firstname": "Mercedes", "lastname": "Colomar", "login_hint": "m.c@mailinator.com"},
+        {
+            "firstname": "Mercedes",
+            "lastname": "Colomar",
+            "login_hint": "m.c@mailinator.com",
+            "client_id": "client_id",
+        },
     ),
 ]
 
@@ -45,6 +51,7 @@ class NextUrlExpected:
 class TestOpenRedirectWithNextParameter:
     @pytest.mark.parametrize("view", OIDCSessionMixin_accounts)
     def test_accounts(self, client, testinput, view):
+        ApplicationFactory(client_id="client_id")
         if view.requires_login:
             client.force_login(UserFactory())
         if view.oidc_data:

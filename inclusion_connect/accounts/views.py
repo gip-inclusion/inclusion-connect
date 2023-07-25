@@ -114,7 +114,9 @@ class ActivateAccountView(BaseUserCreationView):
         # Check user info is provided
         try:
             self.get_user_info()
-        except KeyError:
+            params = oidc_params(self.request)
+            self.application = Application.objects.get(client_id=params["client_id"])
+        except (KeyError, Application.DoesNotExist):
             return render(
                 request,
                 "oidc_authorize.html",
@@ -133,8 +135,7 @@ class ActivateAccountView(BaseUserCreationView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # TODO Get oauth2 application name from client_id
-        return context | {"application_name": "Les emplois de l'inclusion"} | self.get_user_info()
+        return context | {"application_name": self.application.name} | self.get_user_info()
 
     def get_initial(self):
         return super().get_initial() | self.get_user_info()
