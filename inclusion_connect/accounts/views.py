@@ -427,7 +427,6 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         context["edit_user_info"]["active"] = True
         return context
 
-    # FIXME Add a message on success to tell the user to click on return if he's done ?
     def form_valid(self, form):
         response = super().form_valid(form)
         user = self.object

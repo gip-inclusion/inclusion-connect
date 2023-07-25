@@ -16,7 +16,6 @@ from tests.users.factories import DEFAULT_PASSWORD
 
 def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
     # Call TOKEN endpoint
-    # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
         "client_id": oidc_params["client_id"],
         "client_secret": DEFAULT_CLIENT_SECRET,

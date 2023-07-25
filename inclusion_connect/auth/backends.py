@@ -10,9 +10,6 @@ class EmailAuthenticationBackend(ModelBackend):
         if auth_str is None:
             return
         try:
-            # TODO: beware of email case (maybe override user model)
-            # TODO: how do we handle login after the user asked to change his email,
-            # but before he varified the new one ?
             user = User.objects.get(email__iexact=auth_str)
         except User.DoesNotExist:
             # Run the default password hasher once to reduce the timing

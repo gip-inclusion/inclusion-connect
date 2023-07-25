@@ -57,7 +57,6 @@ def test_login(client, realm):
     auth_response_params = get_url_params(response.url)
 
     # Test TOKEN endpoint
-    # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
         "client_id": application.client_id,
         "client_secret": DEFAULT_CLIENT_SECRET,
@@ -150,7 +149,6 @@ def test_registration(client, realm):
     auth_response_params = get_url_params(response.url)
 
     # Test TOKEN endpoint
-    # FIXME it's recommanded to use basic auth here, maybe update our documentation ?
     token_data = {
         "client_id": application.client_id,
         "client_secret": DEFAULT_CLIENT_SECRET,
