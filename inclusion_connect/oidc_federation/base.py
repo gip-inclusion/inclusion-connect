@@ -1,11 +1,20 @@
+import logging
+from functools import partial
+
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
+from django.db import transaction
+from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from mozilla_django_oidc import auth, views
 
+from inclusion_connect.accounts.views import EditUserInfoView, LoginView, RegisterView
+from inclusion_connect.logging import log_data
 from inclusion_connect.utils.oidc import get_next_url
 
+
+logger = logging.getLogger("inclusion_connect.auth.oidc_federation")
 
 CONFIG = {}
 
@@ -46,7 +55,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
     additionnal_claims = []
 
     def get_additional_data(self, claims):
-        return {k: v for k, v in claims.items() if k in self.additionnal_claims}
+        return {k: v for k, v in sorted(claims.items()) if k in self.additionnal_claims}
 
     def filter_users_by_claims(self, claims):
         sub_users = self.UserModel.objects.filter(federation_sub=claims["sub"], federation=self.name)
@@ -56,10 +65,16 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         email_users = super().filter_users_by_claims(claims)
 
         if email_users:
-            other_federation = email_users.exclude(federation=None).values_list("federation", flat=True).first()
-            if other_federation:
+            user = email_users.exclude(federation=None).first()
+            if user:
+                log = log_data(self.request)
+                log["email"] = user.email
+                log["user"] = user.pk
+                log["event"] = f"{LoginView.EVENT_NAME}_error"
+                log["federation"] = self.name
+                transaction.on_commit(partial(logger.info, log))
                 raise SuspiciousOperation(
-                    f"email={claims['email']} from federation={self.name} is already used by {other_federation}"
+                    f"email={claims['email']} from federation={self.name} is already used by {user.federation}"
                 )
 
         return email_users
@@ -73,18 +88,42 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             federation=self.name,
             federation_data=self.get_additional_data(claims),
         )
-        # TODO: Log
+        log = log_data(self.request)
+        log["email"] = user.email
+        log["user"] = user.pk
+        log["event"] = RegisterView.EVENT_NAME
+        log["federation"] = self.name
+        transaction.on_commit(partial(logger.info, log))
+
         return user
 
     def update_user(self, user, claims):
-        # TODO: Log
+        old_user_data = model_to_dict(user)
         user.email = claims["email"]
         user.first_name = claims["given_name"]
         user.last_name = claims["family_name"]
         user.federation_sub = claims["sub"]
         user.federation = self.name
         user.federation_data = self.get_additional_data(claims)
+        new_user_data = model_to_dict(user)
         user.save()
+
+        log = log_data(self.request)
+        log["email"] = user.email
+        log["user"] = user.pk
+        log["event"] = LoginView.EVENT_NAME
+        log["federation"] = self.name
+        transaction.on_commit(partial(logger.info, log))
+
+        log = log_data(self.request)
+        log["event"] = EditUserInfoView.EVENT_NAME
+        log["user"] = user.pk
+        for key in old_user_data.keys():
+            if old_user_data[key] != new_user_data[key]:
+                log[f"old_{key}"] = old_user_data[key]
+                log[f"new_{key}"] = new_user_data[key]
+        transaction.on_commit(partial(logger.info, log))
+
         return user
 
     def verify_claims(self, claims):
