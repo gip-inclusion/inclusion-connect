@@ -6,12 +6,12 @@
     <div class="col-12 col-lg-6 bg-lg-white">
         <div class="bg-white p-3 py-lg-7 px-lg-8">
             <h1>Mon compte</h1>
-            <ul class="list-unstyled">
-                <li class="sidemenu_item{% if edit_user_info.active %} sidemenu_item_active" aria-current="true{% endif %}">
-                    <a class="stretched-link" href="{{ edit_user_info.url }}">Informations générales</a>
+            <ul class="nav nav-tabs flex-column">
+                <li class="nav-item">
+                    <a class="nav-link{% if edit_user_info.active %}  active{% endif %}" href="{{ edit_user_info.url }}">Informations générales</a>
                 </li>
-                <li class="sidemenu_item{% if edit_password.active %} sidemenu_item_active" aria-current="true{% endif %}">
-                    <a class="stretched-link" href="{{ edit_password.url }}">Changer mon mot de passe</a>
+                <li class="nav-item">
+                    <a class="nav-link{% if edit_password.active %}  active{% endif %}" href="{{ edit_password.url }}">Changer mon mot de passe</a>
                 </li>
             </ul>
         </div>
