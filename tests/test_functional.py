@@ -1109,6 +1109,40 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
 
 
+def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
+    application = ApplicationFactory()
+    user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
+    referrer_uri = "https://go/back/there"
+    params = {"referrer_uri": referrer_uri, "referrer": application.client_id, "login_hint": user.email}
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+
+    # User is redirected to login
+    response = client.get(edit_user_info_url)
+    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}))
+    assertContains(
+        client.get(response.url),
+        # Pre-filled with email address from login_hint.
+        f'<input type="email" name="email" value="{user.email}" placeholder="nom@domaine.fr" '
+        # Disabled, users cannot change data passed by the RP.
+        'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
+        count=1,
+    )
+    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    assertRedirects(response, edit_user_info_url)
+    assertContains(response, "<h1>\n                Informations générales\n            </h1>")
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
+    assertRecords(
+        caplog,
+        "inclusion_connect.auth",
+        [{"user": user.pk, "event": "login"}],
+    )
+
+    # Page contains return to referrer link
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
+
+
 def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
     application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
