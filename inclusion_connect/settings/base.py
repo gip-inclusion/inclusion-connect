@@ -302,6 +302,7 @@ NEW_TERMS_DATE = datetime.datetime.fromisoformat(new_terms_date_str)
 EMAIL_LINKS_VALIDITY_DAYS = 1
 PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
 
+FAQ_URL = "https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08"
 PRIVACY_POLICY_PATH = "terms/Politique de confidentialité_20230512.pdf"
 TERMS_PATH = "terms/CGU_20230302.pdf"
 LEGAL_NOTICES_PATH = "terms/Mentions légales_20230302.pdf"

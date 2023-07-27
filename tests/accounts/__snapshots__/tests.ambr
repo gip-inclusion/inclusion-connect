@@ -37,6 +37,12 @@
           <button class="btn btn-block btn-primary" type="submit">Renvoyer l’e-mail de vérification</button>
       </form>
   
+      <br/>
+  
+      <div class="text-center">
+          <a class="btn btn-link" href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08">J'ai besoin d'aide</a>
+      </div>
+  
           </div>
       </div>
   

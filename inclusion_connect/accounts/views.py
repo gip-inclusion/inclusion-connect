@@ -12,6 +12,7 @@ from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http, timezone
+from django.utils.html import format_html
 from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
 
 from inclusion_connect.accounts import emails, forms
@@ -157,8 +158,12 @@ class PasswordResetView(auth_views.PasswordResetView):
     def get_success_url(self):
         messages.success(
             self.request,
-            "Si un compte existe avec cette adresse e-mail, "
-            "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+            format_html(
+                "Si un compte existe avec cette adresse e-mail, "
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                '<br><a href="{}">J’ai besoin d’aide</a>',
+                settings.FAQ_URL,
+            ),
         )
         return reverse("accounts:login")
 

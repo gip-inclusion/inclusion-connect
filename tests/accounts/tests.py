@@ -3,6 +3,7 @@ import logging
 from urllib.parse import quote
 
 import pytest
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
@@ -796,7 +797,8 @@ class TestPasswordResetView:
                     (
                         messages.SUCCESS,
                         "Si un compte existe avec cette adresse e-mail, "
-                        "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                        "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                        f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
                     ),
                 ],
             )
@@ -854,7 +856,8 @@ class TestPasswordResetView:
                 (
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                    f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
                 ),
             ],
         )
@@ -897,7 +900,8 @@ class TestPasswordResetView:
                 (
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                    f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
                 ),
             ],
         )
