@@ -100,6 +100,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 # Django CSP
                 "csp.context_processors.nonce",
+                # Inclusion connect
+                "inclusion_connect.utils.context_processors.expose_settings",
             ],
         },
     },
@@ -299,6 +301,10 @@ NEW_TERMS_DATE = datetime.datetime.fromisoformat(new_terms_date_str)
 # email link validity
 EMAIL_LINKS_VALIDITY_DAYS = 1
 PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
+
+PRIVACY_POLICY_PATH = "terms/Politique de confidentialité_20230512.pdf"
+TERMS_PATH = "terms/CGU_20230302.pdf"
+LEGAL_NOTICES_PATH = "terms/Mentions légales_20230302.pdf"
 
 # Email
 # -----

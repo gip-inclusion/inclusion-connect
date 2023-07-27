@@ -140,9 +140,7 @@
                   <div class="s-footer-legal__col col-12">
                       <ul>
                           <li>
-                              <a href="/static/terms/Politique%20de%20confidentialite%CC%81_20230512.pdf" target="_blank">
-                                  Politique de confidentialité
-                              </a>
+                              <a href="/static/terms/Politique%20de%20confidentialite%CC%81_20230512.pdf" target="_blank">Politique de confidentialité</a>
                           </li>
                           <li>
                               <a href="/static/terms/CGU_20230302.pdf" target="_blank">CGU</a>
