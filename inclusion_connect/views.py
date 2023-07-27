@@ -1,4 +1,5 @@
 from django.http import HttpResponseForbidden
+from django.shortcuts import render
 from django.template import loader
 from django.urls import reverse
 
@@ -13,3 +14,7 @@ def csrf_failure(request, template_name="403_csrf.html", **kwargs):
         )
     }
     return HttpResponseForbidden(template.render(context))
+
+
+def home(request, template_name="homepage.html", **kwargs):
+    return render(request, template_name)

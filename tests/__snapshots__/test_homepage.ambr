@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_csrf_view
+# name: test_homepage
   '''
   
   
@@ -57,17 +57,15 @@
               </div>
   
               
-      <div class="alert alert-danger">
-          <p>
-              La requête a été interrompue pour votre sécurité (mécanisme <abbr>CSRF</abbr>).
-              Peut-être vous êtes-vous connecté depuis un autre onglet ?
-          </p>
-          <p class="mb-0">
-              
-                  <a href="/">Aller à la page d'accueil</a>
-              
-          </p>
-      </div>
+  
+      <h1 class="h2">Inclusion Connect</h1>
+  
+      <p>
+          Inclusion Connect est une solution de connexion unique à plusieurs services publics pour les professionnels de l'inclusion.
+      </p>
+  
+      <a href="https://inclusion.beta.gouv.fr/nos-services/inclusion-connect/" target="_blank" class="has-external-link" aria-label="En savoir plus sur Inclusion Connect(lien externe)">En savoir plus</a>
+  
   
           </div>
       </div>

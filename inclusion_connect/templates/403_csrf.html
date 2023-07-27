@@ -6,8 +6,12 @@
             Peut-être vous êtes-vous connecté depuis un autre onglet ?
         </p>
         <p class="mb-0">
-            Pour continuer à utiliser Inclusion Connect,
-            <a href="{{ edit_user_info_url }}">retournez sur la page de gestion de votre compte</a>.
+            {% if request.user.is_authenticated %}
+                Pour continuer à utiliser Inclusion Connect,
+                <a href="{{ edit_user_info_url }}">retournez sur la page de gestion de votre compte</a>.
+            {% else %}
+                <a href="{% url "homepage" %}">Aller à la page d'accueil</a>
+            {% endif %}
         </p>
     </div>
 {% endblock %}

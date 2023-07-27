@@ -4,9 +4,12 @@
 ## [2] - 2023-07-17
 
 ### Ajouté
+
 - Prise en compte du login_hint quand l'utilisateur arrive pour changer ses informations personnelles.
+- Landing page
 
 ### Modifié
+
 - Mise à jour du thème
 
 ## [1] - 2023-06-27
