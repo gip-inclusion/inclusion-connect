@@ -4,6 +4,7 @@ import logging
 import re
 
 import pytest
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
@@ -551,7 +552,8 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             (
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
             )
         ],
     )
@@ -624,7 +626,8 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             (
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
+                f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
             )
         ],
     )
