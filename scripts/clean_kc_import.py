@@ -12,7 +12,9 @@ import django
 
 django.setup()
 
+from django.conf import settings
 from django.db import connection
+from elasticsearch import Elasticsearch
 
 
 with connection.cursor() as cursor:
@@ -42,3 +44,9 @@ with connection.cursor() as cursor:
         "oauth2_provider_idtoken_id_seq",
     ]:
         cursor.execute(f"ALTER SEQUENCE {sequence} RESTART WITH 1")
+
+
+# Clean logs
+es_config = settings.LOGGING["handlers"]["elasticsearch"]
+es_client = Elasticsearch(es_config["host"], http_compress=True, request_timeout=5, max_retries=10)
+es_client.delete_by_query(index=es_config["index_name"], body={"query": {"match_all": {}}})

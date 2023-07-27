@@ -12,6 +12,7 @@ import django
 
 django.setup()
 
+
 import datetime
 import json
 from collections import defaultdict
@@ -20,6 +21,8 @@ import psycopg2
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
 
 from inclusion_connect.keycloak_compat.models import JWTHashSecret
 from inclusion_connect.oidc_overrides.models import Application
@@ -278,5 +281,38 @@ print(f"Created {UserApplicationLink.objects.count()} UserApplicationLinks")
 print(f"Created {JWTHashSecret.objects.count()} JWTHashSecrets")
 print(f"Created {Stats.objects.count()} Stats")
 
-# Handle admin users separatly
-# Handle users that have accounts in multiple realms ? (in staging) or anly keep demo accounts and realm ?
+
+print("Sending logs to ES")
+with KeyCloakCursor() as cursor:
+    cursor.execute(
+        """
+        SELECT event_time, ip_address, user_id, client_id, type
+        FROM event_entity
+        WHERE type IN ('LOGIN', 'REGISTER')
+        """
+    )
+    stats = cursor.fetchall()
+
+es_config = settings.LOGGING["handlers"]["elasticsearch"]
+es_client = Elasticsearch(es_config["host"], http_compress=True, request_timeout=5, max_retries=10)
+
+actions = []
+for event_time, ip_address, user_id, client_id, kind in stats:
+    application = applications.get(client_id)
+    user = users.get(user_id)
+    if application and user:
+        actions.append(
+            {
+                "_source": {
+                    "ip_address": ip_address,
+                    "application": client_id,
+                    "event": kind.lower(),
+                    "user": user_id,
+                    "@timestamp": parse_keycloak_dt(event_time),
+                    "name": "inclusion_connect.auth",
+                    "levelname": "INFO",
+                }
+            }
+        )
+bulk(client=es_client, actions=actions, index=es_config["index_name"], stats_only=True)
+print("Done!")
