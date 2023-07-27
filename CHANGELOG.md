@@ -6,6 +6,9 @@
 ### Ajouté
 - Prise en compte du login_hint quand l'utilisateur arrive pour changer ses informations personnelles.
 
+### Modifié
+- Mise à jour du thème
+
 ## [1] - 2023-06-27
 
 ### Ajouté
