@@ -17,10 +17,14 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
+from inclusion_connect import views
+
 
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
+    # landing
+    path("", views.home, name="homepage"),
     # Login and register urls
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
