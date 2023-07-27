@@ -1,5 +1,11 @@
 # Journal des modifications
 
+
+## [2] - 2023-07-17
+
+### Ajouté
+- Prise en compte du login_hint quand l'utilisateur arrive pour changer ses informations personnelles.
+
 ## [1] - 2023-06-27
 
 ### Ajouté
