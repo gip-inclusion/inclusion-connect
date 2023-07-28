@@ -10,9 +10,11 @@
                 <li class="nav-item">
                     <a class="nav-link{% if edit_user_info.active %} active{% endif %}" href="{{ edit_user_info.url }}">Informations générales</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link{% if edit_password.active %} active{% endif %}" href="{{ edit_password.url }}">Mot de passe</a>
-                </li>
+                {% if not request.user.federation %}
+                    <li class="nav-item">
+                        <a class="nav-link{% if edit_password.active %} active{% endif %}" href="{{ edit_password.url }}">Mot de passe</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>

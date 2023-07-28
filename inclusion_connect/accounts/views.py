@@ -6,9 +6,10 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
-from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
+from django.http import Http404, HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http, timezone
@@ -464,11 +465,21 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
             messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
         return response
 
+    def post(self, request, *args, **kwargs):
+        if self.get_object().federation:
+            return HttpResponseForbidden()
+        return super().post(request, *args, **kwargs)
+
 
 class PasswordChangeView(MyAccountMixin, FormView):
     template_name = "change_password.html"
     form_class = forms.PasswordChangeForm
     EVENT_NAME = "change_password"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.federation:
+            raise PermissionDenied("Un compte fédéré ne peut pas modifier son mot de passe.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         return super().get_form_kwargs() | {"user": self.get_object()}

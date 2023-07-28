@@ -1431,6 +1431,31 @@ class TestEditUserInfoView:
             ],
         )
 
+    def test_edit_federated(self, caplog, client):
+        BUTTON_HTML_STR = 'type="submit"'
+        application = ApplicationFactory()
+        user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
+        client.force_login(user, backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend")
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+        response = client.get(edit_user_info_url)
+        assertContains(response, BUTTON_HTML_STR)
+        user.federation = Federation.PEAMA
+        user.save()
+        response = client.get(edit_user_info_url)
+        assertNotContains(response, BUTTON_HTML_STR)
+        response = client.post(
+            edit_user_info_url,
+            data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
+            follow=True,
+        )
+        assert response.status_code == 403
+        user.refresh_from_db()
+        assert user.first_name == "Jean"
+        assert user.last_name == "Dupond"
+        assert user.email == "jean.dupond@email.com"
+        assertRecords(caplog, [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")])
+
 
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
@@ -1526,6 +1551,15 @@ class TestPasswordChangeView:
                 )
             ],
         )
+
+    def test_federated(self, caplog, client):
+        application = ApplicationFactory()
+        user = UserFactory(federation=Federation.PEAMA)
+        client.force_login(user, backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend")
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        change_password_url = add_url_params(reverse("accounts:change_password"), params)
+        response = client.get(change_password_url)
+        assert response.status_code == 403
 
 
 @pytest.mark.parametrize("terms_accepted_at", (None, datetime.datetime(2022, 1, 1, tzinfo=datetime.UTC)))

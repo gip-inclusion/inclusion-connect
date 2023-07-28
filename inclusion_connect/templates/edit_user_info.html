@@ -4,15 +4,37 @@
 {% block section_title %}Informations générales{% endblock %}
 
 {% block content %}
-    <form method="post" class="js-prevent-multiple-submit">
-        {% csrf_token %}
-        <fieldset>
-            <div class="row">
-                <div class="col-12">{% bootstrap_form form %}</div>
-            </div>
-        </fieldset>
-        <div>
-            {% bootstrap_button "Enregistrer les modifications" button_type="submit" button_class="btn btn-block btn-primary" %}
+    {% if user.federation %}
+        <div class="alert alert-warning">
+            {% if user.federation == "peama" %}
+                <p class="mb-0">
+                    <b>Compte agent Pôle emploi</b>
+                </p>
+                <p class="mb-0">Vous nepouvez pas modifier ces informmtions depuis votre espace Inclusion Connect.</p>
+            {% else %}
+                <p class="mb-0">
+                    Votre compte est fédéré via {{ user.get_federation_display }}. Vous devez passer par ce service pour modifier vos informations personnelles.
+                </p>
+            {% endif %}
         </div>
-    </form>
+        <div>
+            Prénom : <strong>{{ user.first_name }}</strong>
+            <br>
+            Nom : <strong>{{ user.last_name }}</strong>
+            <br>
+            Adresse e-mail : <strong>{{ user.email }}</strong>
+        </div>
+    {% else %}
+        <form method="post" class="js-prevent-multiple-submit">
+            {% csrf_token %}
+            <fieldset>
+                <div class="row">
+                    <div class="col-12">{% bootstrap_form form %}</div>
+                </div>
+            </fieldset>
+            <div>
+                {% bootstrap_button "Enregistrer les modifications" button_type="submit" button_class="btn btn-block btn-primary" %}
+            </div>
+        </form>
+    {% endif %}
 {% endblock %}
