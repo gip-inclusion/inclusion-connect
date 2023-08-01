@@ -85,7 +85,7 @@ class EmailAddress(models.Model):
     When the new email is verified, the old email address is deleted, user.email == new_email
     """
 
-    email = CIEmailField("adresse e-mail", db_index=True)
+    email = CIEmailField("adresse e-mail", unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_addresses")
     created_at = models.DateTimeField(editable=False, default=timezone.now, verbose_name="date de création")
     verified_at = models.DateTimeField(null=True, blank=True, verbose_name="date de vérification")
