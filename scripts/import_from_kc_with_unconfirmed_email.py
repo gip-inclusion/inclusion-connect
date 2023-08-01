@@ -31,7 +31,6 @@ from inclusion_connect.users.models import EmailAddress, User, UserApplicationLi
 
 # Don't keep old users that did not validate their email after X days
 REALMS = ["inclusion-connect", "Demo"]
-user_email = "FILL_ME"
 
 KC_DBNAME = os.getenv("KC_DBNAME")
 KC_HOST = os.getenv("KC_HOST")
@@ -75,26 +74,19 @@ class KeyCloakCursor:
 with KeyCloakCursor() as cursor:
     # Users
     cursor.execute(
-        f"""
+        """
         SELECT user_entity.id, username, email, first_name, last_name, email_verified, created_timestamp, realm.name
         FROM user_entity
         INNER JOIN realm ON user_entity.realm_id = realm.id
-        WHERE user_entity.email = '{user_email}'
         """
     )
     users_data = cursor.fetchall()
-    if len(users_data) != 1:
-        print("User not found")
-        sys.exit()
-
-    user_id = users_data[0][0]
 
     # required actions
     cursor.execute(
-        f"""
+        """
         SELECT user_id, required_action
         FROM user_required_action
-        WHERE user_id = '{user_id}'
         """
     )
     actions = cursor.fetchall()
@@ -111,10 +103,9 @@ with KeyCloakCursor() as cursor:
 
     # credentials_data
     cursor.execute(
-        f"""
+        """
         SELECT user_id, secret_data, credential_data, created_date
         FROM credential
-        WHERE user_id = '{user_id}'
         ORDER BY created_date
         """
     )
@@ -131,11 +122,10 @@ with KeyCloakCursor() as cursor:
 
     # application links
     cursor.execute(
-        f"""
+        """
         SELECT user_id, client_id, MAX(event_time)
         FROM event_entity
         WHERE type = 'LOGIN'
-        AND user_id = '{user_id}'
         GROUP BY user_id, client_id
         """
     )
@@ -148,23 +138,16 @@ with KeyCloakCursor() as cursor:
     for user_id, application_last_logins in users_app_links.items():
         users_last_login[user_id] = max([event_time for client_id, event_time in application_last_logins])
 
-    # stats
-    cursor.execute(
-        f"""
-        SELECT user_id, client_id, event_time, type
-        FROM event_entity
-        WHERE type IN ('LOGIN', 'REGISTER')
-        AND user_id = '{user_id}'
-        """
-    )
-    stats_data = cursor.fetchall()
 
 applications = {application.client_id: application for application in Application.objects.all()}
+existing_users_ids = list(str(a) for a in User.objects.all().values_list("pk", flat=True))
 
 users = {}
 email_addresses = []
 app_links = []
 for user_id, username, email, first_name, last_name, email_verified, created_timestamp, realm_name in users_data:
+    if user_id in existing_users_ids:
+        continue
     if realm_name not in REALMS:
         continue
     created_at = parse_keycloak_dt(created_timestamp)
@@ -196,6 +179,19 @@ for user_id, username, email, first_name, last_name, email_verified, created_tim
 
     users[user_id] = user
 
+with KeyCloakCursor() as cursor:
+    # stats
+    cursor.execute(
+        f"""
+        SELECT user_id, client_id, event_time, type
+        FROM event_entity
+        WHERE type IN ('LOGIN', 'REGISTER')
+        AND user_id IN ('{"','".join(users.keys())}')
+        """
+    )
+    stats_data = cursor.fetchall()
+
+users_to_keep = {}
 stats = []
 stats_data_2 = set(
     [
@@ -206,6 +202,12 @@ stats_data_2 = set(
 for user_id, client_id, event_time, action in stats_data_2:
     application = applications.get(client_id)
     user = users.get(user_id)
+    if application and user and action == "LOGIN":
+        users_to_keep[user_id] = user
+
+for user_id, client_id, event_time, action in stats_data_2:
+    application = applications.get(client_id)
+    user = users_to_keep.get(user_id)
     if application and user:
         stats.append(
             Stats(
@@ -216,16 +218,15 @@ for user_id, client_id, event_time, action in stats_data_2:
             )
         )
 
-
 # Write in db
 with transaction.atomic():
-    User.objects.bulk_create(users.values())
+    User.objects.bulk_create(users_to_keep.values())
     EmailAddress.objects.bulk_create(email_addresses)
     UserApplicationLink.objects.bulk_create(app_links)
     Stats.objects.bulk_create(stats, ignore_conflicts=True)
 
 
-print(f"Created {len(users)} Users")
+print(f"Created {len(users_to_keep)} Users")
 print(f"Created {len(email_addresses)} EmailAddresses")
 print(f"Created {len(app_links)} UserApplicationLinks")
 print(f"Created {len(stats)} Stats")
@@ -238,7 +239,7 @@ with KeyCloakCursor() as cursor:
         SELECT event_time, ip_address, user_id, client_id, type
         FROM event_entity
         WHERE type IN ('LOGIN', 'REGISTER')
-        AND user_id = '{user_id}'
+        AND user_id IN ('{"','".join(users_to_keep.keys())}')
         """
     )
     stats = cursor.fetchall()
@@ -249,7 +250,7 @@ es_client = Elasticsearch(es_config["host"], http_compress=True, request_timeout
 actions = []
 for event_time, ip_address, user_id, client_id, kind in stats:
     application = applications.get(client_id)
-    user = users.get(user_id)
+    user = users_to_keep.get(user_id)
     if application and user:
         actions.append(
             {
