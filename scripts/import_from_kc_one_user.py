@@ -31,7 +31,7 @@ from inclusion_connect.users.models import EmailAddress, User, UserApplicationLi
 
 # Don't keep old users that did not validate their email after X days
 REALMS = ["inclusion-connect", "Demo"]
-user_email = "FILL_ME"
+user_id = "FILL_ME"
 
 KC_DBNAME = os.getenv("KC_DBNAME")
 KC_HOST = os.getenv("KC_HOST")
@@ -79,15 +79,13 @@ with KeyCloakCursor() as cursor:
         SELECT user_entity.id, username, email, first_name, last_name, email_verified, created_timestamp, realm.name
         FROM user_entity
         INNER JOIN realm ON user_entity.realm_id = realm.id
-        WHERE user_entity.email = '{user_email}'
+        WHERE user_entity.id = '{user_id}'
         """
     )
     users_data = cursor.fetchall()
     if len(users_data) != 1:
         print("User not found")
         sys.exit()
-
-    user_id = users_data[0][0]
 
     # required actions
     cursor.execute(
