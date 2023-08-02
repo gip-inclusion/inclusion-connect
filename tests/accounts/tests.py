@@ -1092,6 +1092,43 @@ class TestEditUserInfoView:
             ],
         )
 
+    def test_edit_email_case(self, caplog, client):
+        application = ApplicationFactory()
+        verified_email = "ME@Email.com"
+        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
+        client.force_login(user)
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+
+        new_email = "me@email.com"
+        response = client.post(
+            edit_user_info_url,
+            data={"last_name": "Doe", "first_name": "John", "email": new_email},
+        )
+
+        assertRedirects(response, edit_user_info_url)
+        user.refresh_from_db()
+        assert user.first_name == "John"
+        assert user.last_name == "Doe"
+        assert user.email == "me@email.com"
+        email_address = user.email_addresses.get()
+        assert email_address.verified_at is not None
+        assert email_address.email == new_email
+        assert user.next_redirect_uri is None
+        assertRecords(
+            caplog,
+            "inclusion_connect.auth",
+            [
+                {
+                    "event": "edit_user_info",
+                    "user": user.pk,
+                    "application": application.client_id,
+                    "old_email": verified_email,
+                    "new_email": new_email,
+                }
+            ],
+        )
+
     def test_edit_invalid(self, caplog, client):
         application = ApplicationFactory()
         verified_email = "verified@email.com"
