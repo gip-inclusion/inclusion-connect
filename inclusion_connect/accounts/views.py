@@ -446,7 +446,7 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
             log[f"old_{key}"] = form.initial[key]
             log[f"new_{key}"] = form.cleaned_data[key]
         transaction.on_commit(partial(logger.info, log))
-        if user.email != email:
+        if user.email != email and not form.email_case_changed(user):
             # Do not hit the database again, we have all necessary information.
             email_address = EmailAddress(user=user, email=email)
             emails.send_verification_email(self.request, email_address)
