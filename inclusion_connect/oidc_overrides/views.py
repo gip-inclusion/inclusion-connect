@@ -58,7 +58,10 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             self.validate_authorization_request(request)
         except OAuthToolkitError as error:
             # Application is not available at this time.
-            log = log_data(self.request) | {"oidc_params": get_url_params(self.request.get_full_path())}
+            log = log_data(self.request) | {
+                "event": "oidc_params_error",
+                "oidc_params": get_url_params(self.request.get_full_path()),
+            }
             transaction.on_commit(partial(logger.info, log))
             return self.error_response(error, application=None)
 

@@ -295,7 +295,7 @@ class TestAuthorizeView:
         assertRecords(
             caplog,
             "inclusion_connect.oidc",
-            [{"oidc_params": oidc_params}],
+            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
             i=1,
         )
 
@@ -310,7 +310,7 @@ class TestAuthorizeView:
             caplog,
             "inclusion_connect.oidc",
             [
-                {"oidc_params": oidc_params},
+                {"event": "oidc_params_error", "oidc_params": oidc_params},
                 {
                     "application": oidc_params["client_id"],
                     "event": "redirect",
@@ -345,7 +345,7 @@ class TestRegisterView:
         assertRecords(
             caplog,
             "inclusion_connect.oidc",
-            [{"oidc_params": oidc_params}],
+            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
             i=1,
         )
 
@@ -360,7 +360,7 @@ class TestRegisterView:
             caplog,
             "inclusion_connect.oidc",
             [
-                {"oidc_params": oidc_params},
+                {"event": "oidc_params_error", "oidc_params": oidc_params},
                 {
                     "application": oidc_params["client_id"],
                     "event": "redirect",
@@ -394,7 +394,7 @@ class TestActivateView:
         assertRecords(
             caplog,
             "inclusion_connect.oidc",
-            [{"oidc_params": oidc_params}],
+            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
             i=1,
         )
 
@@ -409,7 +409,7 @@ class TestActivateView:
             caplog,
             "inclusion_connect.oidc",
             [
-                {"oidc_params": oidc_params},
+                {"event": "oidc_params_error", "oidc_params": oidc_params},
                 {
                     "application": oidc_params["client_id"],
                     "event": "redirect",
