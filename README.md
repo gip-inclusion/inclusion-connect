@@ -12,6 +12,8 @@
 - [Mon Suivi Social](https://monsuivisocial.incubateur.anct.gouv.fr/)
 - [La communauté de l'inclusion](https://communaute-experimentation.inclusion.beta.gouv.fr/)
 - [Conseillers Numériques France Service](https://www.conseiller-numerique.gouv.fr/)
+- [Immersion facilitée](https://immersion-facile.beta.gouv.fr/)
+- [Rdv Insertion](https://www.rdv-insertion.fr/)
 
 ## Documentation
 
