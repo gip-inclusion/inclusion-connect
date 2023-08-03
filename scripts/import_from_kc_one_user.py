@@ -17,10 +17,9 @@ import datetime
 import json
 from collections import defaultdict
 
-import psycopg2
+import psycopg
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
@@ -50,7 +49,7 @@ class KeyCloakCursor:
         self.connection = None
 
     def __enter__(self):
-        self.connection = psycopg2.connect(
+        self.connection = psycopg.connect(
             host=KC_HOST,
             dbname=KC_DBNAME,
             port=KC_PORT,
