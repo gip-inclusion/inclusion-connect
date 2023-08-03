@@ -138,9 +138,20 @@ with KeyCloakCursor() as cursor:
     for user_id, application_last_logins in users_app_links.items():
         users_last_login[user_id] = max([event_time for client_id, event_time in application_last_logins])
 
+    # stats
+    cursor.execute(
+        """
+        SELECT user_id
+        FROM event_entity
+        WHERE type = 'VERIFY_EMAIL'
+        """
+    )
+    users_with_verified_email_action = [a[0] for a in cursor.fetchall()]
+
 
 applications = {application.client_id: application for application in Application.objects.all()}
 existing_users_ids = list(str(a) for a in User.objects.all().values_list("pk", flat=True))
+existing_users_email = list(str(a) for a in User.objects.all().values_list("email", flat=True))
 
 users = {}
 email_addresses = []
@@ -148,7 +159,12 @@ app_links = []
 for user_id, username, email, first_name, last_name, email_verified, created_timestamp, realm_name in users_data:
     if user_id in existing_users_ids:
         continue
+    if user_id not in users_with_verified_email_action:
+        continue
     if realm_name not in REALMS:
+        continue
+    if email in existing_users_email:
+        print(f"Don't keep {email}")
         continue
     created_at = parse_keycloak_dt(created_timestamp)
     email_verified = email_verified and not user_id in users_must_verify_email
@@ -185,13 +201,12 @@ with KeyCloakCursor() as cursor:
         f"""
         SELECT user_id, client_id, event_time, type
         FROM event_entity
-        WHERE type IN ('LOGIN', 'REGISTER', 'VERIFY_EMAIL)
+        WHERE type IN ('LOGIN', 'REGISTER')
         AND user_id IN ('{"','".join(users.keys())}')
         """
     )
     stats_data = cursor.fetchall()
 
-users_to_keep = {}
 stats = []
 stats_data_2 = set(
     [
@@ -199,16 +214,11 @@ stats_data_2 = set(
         for user_id, client_id, event_time, action in stats_data
     ]
 )
-for user_id, client_id, event_time, action in stats_data_2:
-    application = applications.get(client_id)
-    user = users.get(user_id)
-    if application and user and action == "VERIFY_EMAIL":
-        users_to_keep[user_id] = user
 
 for user_id, client_id, event_time, action in stats_data_2:
     application = applications.get(client_id)
-    user = users_to_keep.get(user_id)
-    if application and user and action != "VERIFY_EMAIL":
+    user = users.get(user_id)
+    if application and user:
         stats.append(
             Stats(
                 user=user,
@@ -218,14 +228,14 @@ for user_id, client_id, event_time, action in stats_data_2:
             )
         )
 
-print(f"Created {len(users_to_keep)} Users")
+print(f"Created {len(users)} Users")
 print(f"Created {len(email_addresses)} EmailAddresses")
 print(f"Created {len(app_links)} UserApplicationLinks")
 print(f"Created {len(stats)} Stats")
 
 # Write in db
 with transaction.atomic():
-    User.objects.bulk_create(users_to_keep.values())
+    User.objects.bulk_create(users.values())
     EmailAddress.objects.bulk_create(email_addresses)
     UserApplicationLink.objects.bulk_create(app_links)
     Stats.objects.bulk_create(stats, ignore_conflicts=True)
@@ -237,7 +247,7 @@ with KeyCloakCursor() as cursor:
         SELECT event_time, ip_address, user_id, client_id, type
         FROM event_entity
         WHERE type IN ('LOGIN', 'REGISTER')
-        AND user_id IN ('{"','".join(users_to_keep.keys())}')
+        AND user_id IN ('{"','".join(users.keys())}')
         """
     )
     stats = cursor.fetchall()
@@ -248,7 +258,7 @@ es_client = Elasticsearch(es_config["host"], http_compress=True, request_timeout
 actions = []
 for event_time, ip_address, user_id, client_id, kind in stats:
     application = applications.get(client_id)
-    user = users_to_keep.get(user_id)
+    user = users.get(user_id)
     if application and user:
         actions.append(
             {
