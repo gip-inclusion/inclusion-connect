@@ -81,6 +81,9 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             application=application,
             defaults={"last_login": timezone.now()},
         )
+
+        self.request.session.pop(OIDC_SESSION_KEY, None)
+
         return response
 
     def redirect(self, redirect_to, application):

@@ -149,7 +149,6 @@ class TestLogoutView:
             "inclusion_connect.oidc",
             [
                 {
-                    "application": "my_application",
                     "event": "logout_error",
                     "id_token_hint": "111",
                     "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.",
@@ -513,6 +512,10 @@ def test_session_duration(client, oidc_params):
             },
         )
         assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
+        # call auth view to clear the session
+        assert OIDC_SESSION_KEY in client.session
+        client.get(response.url)
+        assert OIDC_SESSION_KEY not in client.session
 
     session = Session.objects.get()
     assert session.expire_date == now + datetime.timedelta(minutes=30)
