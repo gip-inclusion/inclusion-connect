@@ -546,9 +546,9 @@ prompt-toolkit==3.0.38 \
     --hash=sha256:23ac5d50538a9a38c8bde05fecb47d0b403ecd0662857a86f886f798563d5b9b \
     --hash=sha256:45ea77a2f7c60418850331366c81cf6b5b9cf4c7fd34616f733c5427e6abbb1f
     # via ipython
-psycopg==3.1.9 \
-    --hash=sha256:ab400f207a8c120bafdd8077916d8f6c0106e809401378708485b016508c30c9 \
-    --hash=sha256:fbbac339274d8733ee70ba9822297af3e8871790a26e967b5ea53e30a4b74dcc
+psycopg==3.1.10 \
+    --hash=sha256:15b25741494344c24066dc2479b0f383dd1b82fa5e75612fa4fa5bb30726e9b6 \
+    --hash=sha256:8bbeddae5075c7890b2fa3e3553440376d3c5e28418335dee3c3656b06fa2b52
     # via -r requirements/base.txt
 ptyprocess==0.7.0 \
     --hash=sha256:4b41f3967fce3af57cc7e94b888626c18bf37a083e3651ca8feeb66d492fef35 \
