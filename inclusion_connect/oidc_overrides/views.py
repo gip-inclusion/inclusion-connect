@@ -10,9 +10,11 @@ from django.utils import timezone
 from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
 from oauth2_provider.settings import oauth2_settings
+from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
+from inclusion_connect.stats.models import Actions, Stats
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
 from inclusion_connect.utils.urls import get_url_params, is_inclusion_connect_url
@@ -111,6 +113,24 @@ class RegistrationView(BaseAuthorizationView):
 
 class ActivationView(BaseAuthorizationView):
     login_url = reverse_lazy("accounts:activate")
+
+
+def handle_app_authorized(sender, request, token, **kwargs):
+    Stats.objects.get_or_create(
+        user_id=token.user_id,
+        application_id=token.application_id,
+        date=timezone.localdate().replace(day=1),
+        action=Actions.LOGIN,
+    )
+    log = log_data(request) | {
+        "application": token.application.client_id,
+        "event": "token",
+        "user": token.user_id,
+    }
+    transaction.on_commit(partial(logger.info, log))
+
+
+app_authorized.connect(handle_app_authorized)
 
 
 original_validate_logout_request = oauth2_views.oidc.validate_logout_request

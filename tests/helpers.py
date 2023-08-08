@@ -24,7 +24,17 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
         "redirect_uri": oidc_params["redirect_uri"],
     }
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
-    assertRecords(caplog, None, [])
+    assertRecords(
+        caplog,
+        "inclusion_connect.oidc",
+        [
+            {
+                "application": oidc_params["client_id"],
+                "event": "token",
+                "user": user.pk,
+            },
+        ],
+    )
 
     token_json = response.json()
     id_token = token_json["id_token"]

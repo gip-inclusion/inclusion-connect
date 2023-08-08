@@ -19,7 +19,7 @@ from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
-from tests.helpers import call_logout, oidc_flow_followup, token_are_revoked
+from tests.helpers import call_logout, oidc_complete_flow, oidc_flow_followup, token_are_revoked
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -1258,3 +1258,22 @@ def test_admin_session_doesnt_give_access_to_non_admin_views(client, oidc_params
     response = client.get(auth_complete_url)
     assertContains(response, "Les comptes administrateurs n'ont pas accès à cette page.", status_code=403)
     assertContains(response, add_url_params(reverse("admin:logout"), {"next": auth_complete_url}), status_code=403)
+
+
+@freeze_time("2023-05-05 11:11:11")
+def test_login_with_multiple_applications(client, oidc_params, caplog):
+    user = UserFactory()
+    application_1 = ApplicationFactory()
+    oidc_params["client_id"] = application_1.client_id
+    oidc_complete_flow(client, user, oidc_params, caplog, application=application_1)
+    application_2 = ApplicationFactory()
+    oidc_params["client_id"] = application_2.client_id
+    oidc_complete_flow(client, user, oidc_params, caplog, application=application_2)
+    assertQuerySetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [
+            (datetime.date(2023, 5, 1), user.pk, application_1.pk, "login"),
+            (datetime.date(2023, 5, 1), user.pk, application_2.pk, "login"),
+        ],
+        ordered=False,
+    )
