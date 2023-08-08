@@ -363,33 +363,15 @@ PASSWORD_HASHERS = [
 # Beware, some browser extensions may prevent the reports to be sent to sentry with CORS errors.
 CSP_DEFAULT_SRC = ["'self'"]
 CSP_FRAME_SRC = []
-CSP_IMG_SRC = [
-    "'self'",
-    "https://www.gstatic.com",  # Used by google translate
-    "https://translate.google.com",  # Used by google translate
-]
-CSP_STYLE_SRC = [
-    "'self'",
-    # It would be better to whilelist styles hashes but it's to much work for now.
-    "'unsafe-inline'",
-    "*.googleapis.com",  # Google translate
-]
-CSP_FONT_SRC = [
-    # There are many users that override the font with extensions or with services such as google translates.
-    # For accessibility reasons we need to allow the user to chose the used font.
-    "*",
-]
-CSP_SCRIPT_SRC = [
-    "'self'",
-    "https://translate.googleapis.com",  # Allow google translate
-]
-CSP_CONNECT_SRC = [
-    "'self'",
-    "https://translate.googleapis.com",  # Allow google translate
-]
-
+CSP_IMG_SRC = ["'self'"]
+CSP_STYLE_SRC = ["'self'"]
+CSP_FONT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'"]
+CSP_CONNECT_SRC = ["'self'"]
+CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
+CSP_REQUIRE_TRUSTED_TYPES_FOR = ["'script'"]
 
 # CORS
 # ----
