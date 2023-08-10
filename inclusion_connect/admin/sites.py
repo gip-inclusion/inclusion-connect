@@ -12,3 +12,7 @@ class AdminAuthenticationForm(admin_forms.AdminAuthenticationForm):
 
 class AdminSite(admin_sites.AdminSite):
     login_form = AdminAuthenticationForm
+
+    site_header = "Administration Inclusion Connect"
+    site_title = "Administration Inclusion Connect"
+    index_title = None
