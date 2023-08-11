@@ -226,3 +226,4 @@ class PasswordChangeForm(auth_forms.PasswordChangeForm):
         super().__init__(*args, **kwargs)
         for key in ["old_password", "new_password1", "new_password2"]:
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
+        self.fields["old_password"].label = "Mot de passe actuel"
