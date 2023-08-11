@@ -1,6 +1,6 @@
 {% extends "layout/base_email_body.txt" %}
 {% block body %}
-Une demande de création de compte a été effectuée avec votre adresse e-mail. Si
+Une demande de {% if registration %}création{% else %}modification{% endif %} de compte a été effectuée avec votre adresse e-mail. Si
 vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous
 afin de vérifier votre adresse e-mail :
 

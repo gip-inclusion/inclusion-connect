@@ -449,7 +449,7 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         if user.email != email and not form.email_case_changed(user):
             # Do not hit the database again, we have all necessary information.
             email_address = EmailAddress(user=user, email=email)
-            emails.send_verification_email(self.request, email_address)
+            emails.send_verification_email(self.request, email_address, registration=False)
             self.request.session[EMAIL_CONFIRM_KEY] = email
             user.save_next_redirect_uri(self.request.get_full_path())
             return HttpResponseRedirect(reverse("accounts:confirm-email") + "?" + self.request.GET.urlencode())

@@ -293,6 +293,16 @@ class TestRegisterView:
             "---\n"
             "L’équipe d’inclusion connect\n"
         )
+        assert email.alternatives[0][0] == (
+            "\n\n    Bonjour,\n    \n    "
+            "<p>\n        Une demande de\n        \n            création\n        \n        "
+            "de compte a été effectuée avec votre adresse\n"
+            "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
+            f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
+            "<p>Ce lien expire dans 1 jour.</p>\n\n    "
+            "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
+            "</p>\n\n    ---\n    L’équipe d’inclusion connect\n\n\n"
+        )
         assertRecords(
             caplog,
             "inclusion_connect.auth",
@@ -1022,7 +1032,7 @@ class TestEditUserInfoView:
             ],
         )
 
-    def test_edit_email(self, caplog, client):
+    def test_edit_email(self, caplog, client, mailoutbox):
         application = ApplicationFactory()
         verified_email = "oldjo@email.com"
         user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
@@ -1062,9 +1072,10 @@ class TestEditUserInfoView:
         )
 
         # Now, fix the typo.
+        user_email = "joe@email.com"
         response = client.post(
             edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": "joe@email.com"},
+            data={"last_name": "Doe", "first_name": "John", "email": user_email},
         )
         assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
         user.refresh_from_db()
@@ -1075,8 +1086,8 @@ class TestEditUserInfoView:
         assert old.verified_at is not None
         assert old.email == verified_email
         assert new.verified_at is None
-        assert new.email == "joe@email.com"
-        assert client.session[EMAIL_CONFIRM_KEY] == "joe@email.com"
+        assert new.email == user_email
+        assert client.session[EMAIL_CONFIRM_KEY] == user_email
         assert user.next_redirect_uri == edit_user_info_url
         assertRecords(
             caplog,
@@ -1087,9 +1098,38 @@ class TestEditUserInfoView:
                     "user": user.pk,
                     "application": application.client_id,
                     "old_email": verified_email,
-                    "new_email": "joe@email.com",
+                    "new_email": user_email,
                 }
             ],
+        )
+
+        email = mailoutbox[1]  # Only check second emial, without the typo
+        assert email.to == [user_email]
+        assert email.subject == "Vérification de l’adresse e-mail"
+        uidb64 = urlsafe_base64_encode(str(user.pk).encode())
+        token = email_verification_token(user_email)
+        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
+        verify_link = f"http://testserver{verify_path}"
+        assert email.body == (
+            "Bonjour,\n\n"
+            "Une demande de modification de compte a été effectuée avec votre adresse e-mail. Si\n"
+            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
+            "afin de vérifier votre adresse e-mail :\n\n"
+            f"{verify_link}\n\n"
+            "Ce lien expire dans 1 jour.\n\n"
+            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
+            "---\n"
+            "L’équipe d’inclusion connect\n"
+        )
+        assert email.alternatives[0][0] == (
+            "\n\n    Bonjour,\n    \n    "
+            "<p>\n        Une demande de\n        \n            modification\n        \n        "
+            "de compte a été effectuée avec votre adresse\n"
+            "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
+            f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
+            "<p>Ce lien expire dans 1 jour.</p>\n\n    "
+            "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
+            "</p>\n\n    ---\n    L’équipe d’inclusion connect\n\n\n"
         )
 
     def test_edit_email_case(self, caplog, client):
