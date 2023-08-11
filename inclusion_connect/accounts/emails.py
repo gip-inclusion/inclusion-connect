@@ -9,7 +9,7 @@ from inclusion_connect.accounts import tokens
 from inclusion_connect.users.models import EmailAddress
 
 
-def send_verification_email(request: HttpRequest, email_address: EmailAddress):
+def send_verification_email(request: HttpRequest, email_address: EmailAddress, registration=True):
     uidb64 = http.urlsafe_base64_encode(str(email_address.user_id).encode())
     context = {
         "token_url": request.build_absolute_uri(
@@ -20,7 +20,8 @@ def send_verification_email(request: HttpRequest, email_address: EmailAddress):
                     "token": tokens.email_verification_token(email_address.email),
                 },
             )
-        )
+        ),
+        "registration": registration,
     }
     subject = loader.render_to_string("registration/email_verification_subject.txt", context).strip()
     html_email = loader.render_to_string("registration/email_verification_body.html", context)

@@ -1,7 +1,13 @@
 {% extends "layout/base_email_body.html" %}
 {% block body %}
     <p>
-        Une demande de création de compte a été effectuée avec votre adresse
+        Une demande de
+        {% if registration %}
+            création
+        {% else %}
+            modification
+        {% endif %}
+        de compte a été effectuée avec votre adresse
         e-mail. Si vous êtes à l’origine de cette requête&nbsp;:
         <br>
     </p>
