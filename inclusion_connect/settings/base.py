@@ -364,15 +364,20 @@ PASSWORD_HASHERS = [
 
 # Beware, some browser extensions may prevent the reports to be sent to sentry with CORS errors.
 CSP_DEFAULT_SRC = ["'self'"]
-CSP_FRAME_SRC = []
 CSP_IMG_SRC = ["'self'"]
-CSP_STYLE_SRC = ["'self'"]
+CSP_STYLE_SRC = [
+    "'self'",
+    "https://fonts.googleapis.com/",  # Used in theme-inclusion
+]
 CSP_FONT_SRC = ["'self'"]
+
 CSP_SCRIPT_SRC = ["'self'"]
 CSP_CONNECT_SRC = ["'self'"]
 CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
+CSP_FRAME_ANCESTORS = ["'none'"]
+CSP_FORM_ACTION = ["'self'"]
 
 # CORS
 # ----
