@@ -281,6 +281,8 @@ BOOTSTRAP4 = {
     "success_css_class": "",
 }
 
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
 # Inclusion Connect settings
 # --------------------------
 
