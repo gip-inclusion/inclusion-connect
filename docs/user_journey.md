@@ -28,6 +28,7 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
     - `**scope**` : La valeur `openid profile email`
     - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
     - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
+    - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail que l'utilisateur doit utiliser pour se connecter ou pour se créer un compte.
 
     </details>
 
@@ -53,6 +54,7 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
     - `**scope**` : La valeur `openid profile email`
     - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
     - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
+    - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail que l'utilisateur doit utiliser pour se connecter ou pour se créer un compte.
 
   </details>
 
@@ -98,6 +100,7 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
     - `**scope**` : La valeur `openid profile email`
     - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
     - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
+    - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail que l'utilisateur doit utiliser pour se connecter ou pour se créer un compte.
 
   </details>
 
@@ -129,6 +132,7 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
     - `**scope**` : La valeur `openid profile email`
     - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
     - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
+    - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail que l'utilisateur doit utiliser pour se connecter ou pour se créer un compte.
 
   </details>
 
@@ -265,6 +269,7 @@ Pour se faire, il faut passer les paramètres (`referrer` et `referrer_uri`, voi
 
   - `**referrer**` : Le `CLIENT_ID` qui vous été fourni
   - `**referrer_uri**` : L’url à laquelle sera redirigée l’utilisateur après avoir modifié ces informations personnelles.
+  - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail utilisé pour se connecter si l'utilisateur n'a plus de session en cours sur Inclusion Connect.
 
   Vous **devez** renseigner ces deux paramètres pour que le bouton de renvoi vers l’application soit affiché.
 
