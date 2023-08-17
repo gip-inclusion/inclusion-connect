@@ -377,7 +377,6 @@ CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
 CSP_FRAME_ANCESTORS = ["'none'"]
-CSP_FORM_ACTION = ["'self'"]
 
 # CORS
 # ----
