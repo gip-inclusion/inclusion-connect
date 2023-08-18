@@ -157,6 +157,33 @@ class TestLogoutView:
             i=1,
         )
 
+    def test_bad_id_token_hint_and_no_post_logout_redirect_uri(self, caplog, client, oidc_params):
+        """This test simulates a call on logout endpoint with id_token_hint params and no redirect uri"""
+        user = UserFactory()
+        ApplicationFactory(post_logout_redirect_uris="https://callback/*")
+
+        response = call_logout(
+            client,
+            "get",
+            {"id_token_hint": 111, "post_logout_redirect_uri": None},
+        )
+        assertRedirects(response, "http://testserver/")
+
+        assert get_user(client).is_authenticated is False
+        assert has_ongoing_sessions(user) is False
+        assert token_are_revoked(user) is True
+        assertRecords(
+            caplog,
+            "inclusion_connect.oidc",
+            [
+                {
+                    "event": "logout",
+                    "id_token_hint": "111",
+                    "user": None,
+                }
+            ],
+        )
+
     def test_bad_id_token_hint_with_no_redirect_uri(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111})

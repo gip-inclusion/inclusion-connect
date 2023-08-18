@@ -149,14 +149,15 @@ def validate_logout_request(request, id_token_hint, client_id, post_logout_redir
         prompt_logout = False
         application = None
         token_user = None
-        for app in Application.objects.all():
-            if app.post_logout_redirect_uri_allowed(post_logout_redirect_uri):
-                application = app
+        if post_logout_redirect_uri:
+            for app in Application.objects.all():
+                if app.post_logout_redirect_uri_allowed(post_logout_redirect_uri):
+                    application = app
 
-        if post_logout_redirect_uri and application is None:
-            # Don't allow logout with bad id_token_hint if there's a redirect url and
-            # we can't find an application matching the url
-            raise e
+            if application is None:
+                # Don't allow logout with bad id_token_hint if there's a redirect url and
+                # we can't find an application matching the url
+                raise e
 
     if (
         token_user  # We found a user with the token
