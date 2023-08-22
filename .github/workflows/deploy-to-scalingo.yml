@@ -32,9 +32,6 @@ jobs:
         echo "$SSH_SECRET_KEY" >~/.ssh/id_ed25519
         echo "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
 
-    - name: Deploy to Scalingo
-      run: git push $SCALINGO_GIT_URL HEAD:main --force
-
     - name: Install Scalingo CLI
       run: curl -O https://cli-dl.scalingo.com/install && bash install
 
@@ -43,6 +40,9 @@ jobs:
 
     - name: Restore latest database backup
       run: scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME run --size S python restore-backup.py
+
+    - name: Deploy to Scalingo
+      run: git push $SCALINGO_GIT_URL HEAD:main --force
 
     - name: Failover
       if: ${{ github.event_name == 'workflow_dispatch' }}
