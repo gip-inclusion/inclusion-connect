@@ -46,6 +46,6 @@ jobs:
 
     - name: Failover
       if: ${{ github.event_name == 'workflow_dispatch' }}
-      run: >-
+      run: |
         scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME addons-upgrade $SCALINGO_POSTGRESQL_ADDON_ID postgresql-starter-1024
         scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME scale web:1:XL
