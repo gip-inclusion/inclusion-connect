@@ -49,7 +49,16 @@ class TestLoginView:
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
-        assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
 
     def test_no_next_url(self, caplog, client):
         user = UserFactory()
@@ -57,7 +66,16 @@ class TestLoginView:
         response = client.post(reverse("accounts:login"), data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assert get_user(client).is_authenticated is True
-        assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
 
     def test_failed_bad_email_or_password(self, caplog, client):
         url = add_url_params(reverse("accounts:login"), {"next": "anything"})
@@ -69,22 +87,25 @@ class TestLoginView:
         assert not get_user(client).is_authenticated
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": user.email,
-                    "event": "login_error",
-                    "errors": {
-                        "__all__": [
-                            {
-                                "message": "Adresse e-mail ou mot de passe invalide.\n"
-                                "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
-                                "rendez-vous en bas de page et cliquez sur créer mon compte.",
-                                "code": "invalid_login",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": user.email,
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Adresse e-mail ou mot de passe invalide.\n"
+                                    "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
+                                    "rendez-vous en bas de page et cliquez sur créer mon compte.",
+                                    "code": "invalid_login",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -94,22 +115,25 @@ class TestLoginView:
         assert not get_user(client).is_authenticated
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "wrong@email.com",
-                    "event": "login_error",
-                    "errors": {
-                        "__all__": [
-                            {
-                                "message": "Adresse e-mail ou mot de passe invalide.\n"
-                                "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
-                                "rendez-vous en bas de page et cliquez sur créer mon compte.",
-                                "code": "invalid_login",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "wrong@email.com",
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Adresse e-mail ou mot de passe invalide.\n"
+                                    "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
+                                    "rendez-vous en bas de page et cliquez sur créer mon compte.",
+                                    "code": "invalid_login",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -123,22 +147,25 @@ class TestLoginView:
         assert client.session["next_url"] == "anything"
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": user.email,
-                    "event": "login_error",
-                    "errors": {
-                        "__all__": [
-                            {
-                                "message": "Adresse e-mail ou mot de passe invalide.\n"
-                                "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
-                                "rendez-vous en bas de page et cliquez sur créer mon compte.",
-                                "code": "invalid_login",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": user.email,
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Adresse e-mail ou mot de passe invalide.\n"
+                                    "Si vous n’avez pas encore créé votre compte Inclusion Connect, "
+                                    "rendez-vous en bas de page et cliquez sur créer mon compte.",
+                                    "code": "invalid_login",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -170,21 +197,24 @@ class TestLoginView:
         assert client.session["next_url"] == redirect_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "me@mailinator.com",
-                    "event": "login_error",
-                    "errors": {
-                        "__all__": [
-                            {
-                                "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                "l’email de vérification vient d’être envoyé à nouveau.",
-                                "code": "unverified_email",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "me@mailinator.com",
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
+                                    "l’email de vérification vient d’être envoyé à nouveau.",
+                                    "code": "unverified_email",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -219,7 +249,16 @@ class TestLoginView:
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
-        assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
 
     def test_empty_login_hint(self, client):
         url = add_url_params(reverse("accounts:login"), {"login_hint": ""})
@@ -305,8 +344,13 @@ class TestRegisterView:
         )
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"email": "user@mailinator.com", "user": user_from_db.pk, "event": "register"}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "user@mailinator.com", "user": user_from_db.pk, "event": "register"},
+                )
+            ],
         )
 
     def test_error_email_exists(self, caplog, client):
@@ -338,21 +382,24 @@ class TestRegisterView:
         )
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "user": user.pk,
-                    "event": "register_error",
-                    "errors": {
-                        "email": [
-                            {
-                                "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                '<a href="/accounts/login/">se connecter</a> ?',
-                                "code": "existing_email",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "event": "register_error",
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
+                                    '<a href="/accounts/login/">se connecter</a> ?',
+                                    "code": "existing_email",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -387,21 +434,24 @@ class TestRegisterView:
         assert email.to == [user_email]
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "user": user.pk,
-                    "event": "register_error",
-                    "errors": {
-                        "email": [
-                            {
-                                "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                "l’email de vérification vient d’être envoyé à nouveau.",
-                                "code": "unverified_email",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "event": "register_error",
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
+                                    "l’email de vérification vient d’être envoyé à nouveau.",
+                                    "code": "unverified_email",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -432,21 +482,24 @@ class TestRegisterView:
         user = User.objects.get()
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "user": user.pk,
-                    "event": "register_error",
-                    "errors": {
-                        "email": [
-                            {
-                                "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                '<a href="/accounts/login/">se connecter</a> ?',
-                                "code": "existing_email",
-                            }
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "event": "register_error",
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
+                                    '<a href="/accounts/login/">se connecter</a> ?',
+                                    "code": "existing_email",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -471,13 +524,16 @@ class TestRegisterView:
         assert mailoutbox == []
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": user.email,
-                    "event": "register_error",
-                    "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": user.email,
+                        "event": "register_error",
+                        "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                    },
+                )
             ],
         )
 
@@ -559,8 +615,7 @@ class TestActivateAccountView:
         # If missing params in oidc session
         response = client.get(url)
         assert response.status_code == 400
-        assert caplog.record_tuples == [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")]
-        caplog.clear()
+        assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
 
         client_session = client.session
         client_session[OIDC_SESSION_KEY] = {
@@ -595,14 +650,17 @@ class TestActivateAccountView:
         assert email_address.verified_at is None
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "application": application.client_id,
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                    "event": "activate",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "application": application.client_id,
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "activate",
+                    },
+                )
             ],
         )
 
@@ -615,8 +673,7 @@ class TestActivateAccountView:
         # If missing params in oidc session
         response = client.get(url)
         assert response.status_code == 400
-        assert caplog.record_tuples == [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")]
-        caplog.clear()
+        assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
 
         client_session = client.session
         client_session[OIDC_SESSION_KEY] = {
@@ -651,29 +708,32 @@ class TestActivateAccountView:
         assert client.session["next_url"] == redirect_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "application": application.client_id,
-                    "user": user.pk,
-                    "event": "activate_error",
-                    "errors": {
-                        "email": [
-                            {
-                                "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                '<a href="/accounts/login/">se connecter</a> ?',
-                                "code": "existing_email",
-                            }
-                        ],
-                        "__all__": [
-                            {
-                                "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                '<a href="/accounts/login/">se connecter</a> ?',
-                                "code": "",
-                            }
-                        ],
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "application": application.client_id,
+                        "user": user.pk,
+                        "event": "activate_error",
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
+                                    '<a href="/accounts/login/">se connecter</a> ?',
+                                    "code": "existing_email",
+                                }
+                            ],
+                            "__all__": [
+                                {
+                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
+                                    '<a href="/accounts/login/">se connecter</a> ?',
+                                    "code": "",
+                                }
+                            ],
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -715,29 +775,32 @@ class TestActivateAccountView:
         assert client.session["next_url"] == redirect_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "application": application.client_id,
-                    "user": user.pk,
-                    "event": "activate_error",
-                    "errors": {
-                        "email": [
-                            {
-                                "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                "l’email de vérification vient d’être envoyé à nouveau.",
-                                "code": "unverified_email",
-                            }
-                        ],
-                        "__all__": [
-                            {
-                                "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                "l’email de vérification vient d’être envoyé à nouveau.",
-                                "code": "",
-                            }
-                        ],
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "application": application.client_id,
+                        "user": user.pk,
+                        "event": "activate_error",
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
+                                    "l’email de vérification vient d’être envoyé à nouveau.",
+                                    "code": "unverified_email",
+                                }
+                            ],
+                            "__all__": [
+                                {
+                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
+                                    "l’email de vérification vient d’être envoyé à nouveau.",
+                                    "code": "",
+                                }
+                            ],
+                        },
                     },
-                },
+                )
             ],
         )
 
@@ -771,14 +834,17 @@ class TestActivateAccountView:
         assert client.session["next_url"] == redirect_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "application": application.client_id,
-                    "email": user.email,
-                    "event": "activate_error",
-                    "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "application": application.client_id,
+                        "email": user.email,
+                        "event": "activate_error",
+                        "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                    },
+                )
             ],
         )
 
@@ -819,7 +885,16 @@ class TestPasswordResetView:
             token = PasswordResetView.token_generator.make_token(user)
             password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
             assert password_reset_url in mail.outbox[0].body
-            assertRecords(caplog, "inclusion_connect.auth", [{"event": "forgot_password", "user": user.pk}])
+            assertRecords(
+                caplog,
+                [
+                    (
+                        "inclusion_connect.auth",
+                        logging.INFO,
+                        {"event": "forgot_password", "user": user.pk},
+                    )
+                ],
+            )
 
         # More than a day after link generation
         with freeze_time("2023-06-09 09:10:04"):
@@ -840,10 +915,17 @@ class TestPasswordResetView:
             assert "next_url" not in client.session
             assertRecords(
                 caplog,
-                "inclusion_connect.auth",
                 [
-                    {"event": "reset_password", "user": user.pk},
-                    {"event": "login", "user": user.pk},
+                    (
+                        "inclusion_connect.auth",
+                        logging.INFO,
+                        {"event": "reset_password", "user": user.pk},
+                    ),
+                    (
+                        "inclusion_connect.auth",
+                        logging.INFO,
+                        {"event": "login", "user": user.pk},
+                    ),
                 ],
             )
 
@@ -873,7 +955,16 @@ class TestPasswordResetView:
         )
         # Check sent email
         assert len(mail.outbox) == 0
-        assertRecords(caplog, "inclusion_connect.auth", [{"event": "forgot_password", "email": "evil@mailinator.com"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "forgot_password", "email": "evil@mailinator.com"},
+                )
+            ],
+        )
 
     @freeze_time("2023-06-08 09:10:03")
     def test_login_hint(self, caplog, client, mailoutbox):
@@ -923,7 +1014,16 @@ class TestPasswordResetView:
         token = PasswordResetView.token_generator.make_token(user)
         password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
         assert password_reset_url in email.body
-        assertRecords(caplog, "inclusion_connect.auth", [{"event": "forgot_password", "user": user.pk}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "forgot_password", "user": user.pk},
+                )
+            ],
+        )
 
         # Change password
         password = "V€r¥--$3©®€7"
@@ -937,10 +1037,17 @@ class TestPasswordResetView:
         assert "next_url" not in client.session
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {"event": "reset_password", "user": user.pk},
-                {"event": "login", "user": user.pk},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "reset_password", "user": user.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "login", "user": user.pk},
+                ),
             ],
         )
 
@@ -957,17 +1064,23 @@ class TestPasswordResetConfirmView:
         assert response.status_code == 200
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "reset_password_error",
-                    "user": None,
-                    "errors": {
-                        "new_password2": [
-                            {"message": "Les deux mots de passe ne correspondent pas.", "code": "password_mismatch"}
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "reset_password_error",
+                        "user": None,
+                        "errors": {
+                            "new_password2": [
+                                {
+                                    "message": "Les deux mots de passe ne correspondent pas.",
+                                    "code": "password_mismatch",
+                                }
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -1018,17 +1131,20 @@ class TestEditUserInfoView:
         assert user.email == verified_email
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_last_name": "Calavera",
-                    "new_last_name": "Doe",
-                    "old_first_name": "Manuel",
-                    "new_first_name": "John",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "application": application.client_id,
+                        "old_last_name": "Calavera",
+                        "new_last_name": "Doe",
+                        "old_first_name": "Manuel",
+                        "new_first_name": "John",
+                    },
+                )
             ],
         )
 
@@ -1059,15 +1175,18 @@ class TestEditUserInfoView:
         assert user.next_redirect_uri == edit_user_info_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_email": verified_email,
-                    "new_email": "jo-with-typo@email.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "application": application.client_id,
+                        "old_email": verified_email,
+                        "new_email": "jo-with-typo@email.com",
+                    },
+                )
             ],
         )
 
@@ -1091,15 +1210,18 @@ class TestEditUserInfoView:
         assert user.next_redirect_uri == edit_user_info_url
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_email": verified_email,
-                    "new_email": user_email,
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "application": application.client_id,
+                        "old_email": verified_email,
+                        "new_email": user_email,
+                    },
+                )
             ],
         )
 
@@ -1157,15 +1279,18 @@ class TestEditUserInfoView:
         assert user.next_redirect_uri is None
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_email": verified_email,
-                    "new_email": new_email,
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "application": application.client_id,
+                        "old_email": verified_email,
+                        "new_email": new_email,
+                    },
+                )
             ],
         )
 
@@ -1186,14 +1311,17 @@ class TestEditUserInfoView:
         assert emailaddress.email == verified_email
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "edit_user_info_error",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "errors": {"email": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info_error",
+                        "user": user.pk,
+                        "application": application.client_id,
+                        "errors": {"email": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                    },
+                )
             ],
         )
 
@@ -1232,8 +1360,13 @@ class TestPasswordChangeView:
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"event": "change_password", "user": user.pk, "application": application.client_id}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "change_password", "user": user.pk, "application": application.client_id},
+                )
+            ],
         )
 
         client.logout()
@@ -1243,7 +1376,16 @@ class TestPasswordChangeView:
             reverse("accounts:login"), data={"email": user.email, "password": "V€r¥--$3©®€7"}, follow=True
         )
         assert get_user(client).is_authenticated is True
-        assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
 
     def test_change_password_failure(self, caplog, client):
         user = UserFactory(first_name="Manuel", last_name="Calavera")
@@ -1256,23 +1398,26 @@ class TestPasswordChangeView:
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "change_password_error",
-                    "user": user.pk,
-                    "errors": {
-                        "new_password2": [
-                            {
-                                "message": "Ce mot de passe est trop court. "
-                                "Il doit contenir au minimum 12 caractères.",
-                                "code": "password_too_short",
-                            },
-                            {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
-                            {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "change_password_error",
+                        "user": user.pk,
+                        "errors": {
+                            "new_password2": [
+                                {
+                                    "message": "Ce mot de passe est trop court. "
+                                    "Il doit contenir au minimum 12 caractères.",
+                                    "code": "password_too_short",
+                                },
+                                {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
+                                {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 
@@ -1288,7 +1433,16 @@ def test_new_terms(caplog, client, terms_accepted_at):
     assertRedirects(response, reverse("accounts:accept_terms"))
     assert get_user(client).is_authenticated is True
     assert client.session["next_url"] == redirect_url
-    assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
+    )
 
     response = client.post(reverse("accounts:accept_terms"))
     assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -1297,7 +1451,16 @@ def test_new_terms(caplog, client, terms_accepted_at):
 
     user.refresh_from_db()
     assert user.terms_accepted_at == timezone.now()
-    assertRecords(caplog, "inclusion_connect.auth", [{"event": "accept_terms", "user": user.pk}])
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"event": "accept_terms", "user": user.pk},
+            )
+        ],
+    )
 
 
 class TestConfirmEmailView:
@@ -1374,10 +1537,17 @@ class TestConfirmEmailTokenView:
         assert EMAIL_CONFIRM_KEY not in client.session
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
-                {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                ),
             ],
         )
 
@@ -1395,14 +1565,17 @@ class TestConfirmEmailTokenView:
         assert "_auth_user_backend" not in client.session
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address_error",
-                    "error": "already verified",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address_error",
+                        "error": "already verified",
+                    },
+                )
             ],
         )
 
@@ -1427,15 +1600,22 @@ class TestConfirmEmailTokenView:
         assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                    "application": "my_application",
-                },
-                {"email": "me@mailinator.com", "user": user.pk, "event": "login", "application": "my_application"},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address",
+                        "application": "my_application",
+                    },
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "login", "application": "my_application"},
+                ),
             ],
         )
 
@@ -1475,14 +1655,17 @@ class TestConfirmEmailTokenView:
         assert "_auth_user_backend" not in client.session
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "confirm_email_address_error",
-                    "error": "link expired",
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "confirm_email_address_error",
+                        "error": "link expired",
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                    },
+                )
             ],
         )
 
@@ -1501,12 +1684,16 @@ class TestConfirmEmailTokenView:
         assert user.email == ""
         assert "_auth_user_id" not in client.session
         assert "_auth_user_backend" not in client.session
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Not Found: {url}")
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"}],
-            i=1,
+            [
+                ("django.request", logging.WARNING, f"Not Found: {url}"),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"},
+                ),
+            ],
         )
 
     def test_forged_token_bad_user_pk(self, caplog, client):
@@ -1588,10 +1775,17 @@ class TestConfirmEmailTokenView:
         assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {"email": "new@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
-                {"email": "new@mailinator.com", "user": user.pk, "event": "login"},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "new@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "new@mailinator.com", "user": user.pk, "event": "login"},
+                ),
             ],
         )
 
@@ -1601,14 +1795,17 @@ class TestConfirmEmailTokenView:
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "new@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address_error",
-                    "error": "already verified",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "new@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address_error",
+                        "error": "already verified",
+                    },
+                )
             ],
         )
 
@@ -1619,14 +1816,17 @@ class TestConfirmEmailTokenView:
         assertRedirects(response, reverse("accounts:login"))
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "new@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address_error",
-                    "error": "already verified",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "new@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address_error",
+                        "error": "already verified",
+                    },
+                )
             ],
         )
 
@@ -1642,12 +1842,16 @@ class TestConfirmEmailTokenView:
         url = self.url(user, token)
         response = client.get(url)
         assert response.status_code == 404
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Not Found: {url}")
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"}],
-            i=1,
+            [
+                ("django.request", logging.WARNING, f"Not Found: {url}"),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"},
+                ),
+            ],
         )
 
 
@@ -1661,7 +1865,16 @@ class TestChangeTemporaryPasswordView:
         assertRedirects(response, reverse("accounts:change_temporary_password"))
         assert get_user(client).is_authenticated is True
         assert client.session["next_url"] == redirect_url
-        assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
 
         response = client.post(
             reverse("accounts:change_temporary_password"),
@@ -1672,7 +1885,16 @@ class TestChangeTemporaryPasswordView:
         assert "next_url" not in client.session
         user.refresh_from_db()
         assert user.must_reset_password is False
-        assertRecords(caplog, "inclusion_connect.auth", [{"event": "change_temporary_password", "user": user.pk}])
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "change_temporary_password", "user": user.pk},
+                )
+            ],
+        )
 
     def test_allow_same_password(self, client):
         user = UserFactory(must_reset_password=True)
@@ -1699,23 +1921,26 @@ class TestChangeTemporaryPasswordView:
         assert user.must_reset_password is True
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "change_temporary_password_error",
-                    "user": user.pk,
-                    "errors": {
-                        "new_password2": [
-                            {
-                                "message": "Ce mot de passe est trop court. "
-                                "Il doit contenir au minimum 12 caractères.",
-                                "code": "password_too_short",
-                            },
-                            {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
-                            {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
-                        ]
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "change_temporary_password_error",
+                        "user": user.pk,
+                        "errors": {
+                            "new_password2": [
+                                {
+                                    "message": "Ce mot de passe est trop court. "
+                                    "Il doit contenir au minimum 12 caractères.",
+                                    "code": "password_too_short",
+                                },
+                                {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
+                                {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
+                            ]
+                        },
                     },
-                }
+                )
             ],
         )
 

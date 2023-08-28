@@ -50,7 +50,7 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     user_email = "email@mailinator.com"
     response = client.post(
@@ -70,14 +70,17 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "application": "my_application",
-                "email": "email@mailinator.com",
-                "user": user.pk,
-                "event": "register",
-            }
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "register",
+                },
+            )
         ],
     )
 
@@ -97,15 +100,27 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "application": "my_application",
-                "email": "email@mailinator.com",
-                "user": user.pk,
-                "event": "confirm_email_address",
-            },
-            {"application": "my_application", "email": "email@mailinator.com", "user": user.pk, "event": "login"},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "confirm_email_address",
+                },
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "login",
+                },
+            ),
         ],
     )
 
@@ -117,14 +132,17 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -146,7 +164,7 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     user_email = "email@mailinator.com"
     response = client.post(
@@ -166,8 +184,13 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "email": user_email, "user": user.pk, "event": "register"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "email": user_email, "user": user.pk, "event": "register"},
+            )
+        ],
     )
 
     [email] = mailoutbox
@@ -187,10 +210,27 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {"email": user_email, "user": user.pk, "event": "confirm_email_address", "application": "my_application"},
-            {"email": user_email, "user": user.pk, "event": "login", "application": "my_application"},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "email": user_email,
+                    "user": user.pk,
+                    "event": "confirm_email_address",
+                    "application": "my_application",
+                },
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "email": user_email,
+                    "user": user.pk,
+                    "event": "login",
+                    "application": "my_application",
+                },
+            ),
         ],
     )
 
@@ -202,14 +242,17 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -232,7 +275,7 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:register"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     user_email = "email@mailinator.com"
     response = client.post(
@@ -252,8 +295,18 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "email": "email@mailinator.com", "user": user.pk, "event": "register"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "register",
+                },
+            )
+        ],
     )
 
     # Support user validates the email in the admin
@@ -294,14 +347,17 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     assert user.email == user_email
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "event": "admin_change",
-                "acting_user": admin_user.pk,
-                "user": user.pk,
-                "email_confirmed": "email@mailinator.com",
-            }
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "event": "admin_change",
+                    "acting_user": admin_user.pk,
+                    "user": user.pk,
+                    "email_confirmed": "email@mailinator.com",
+                },
+            )
         ],
     )
 
@@ -315,13 +371,25 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     if use_other_client:
         assertRecords(
-            caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login", "application": "my_application"}]
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login", "application": "my_application"},
+                )
+            ],
         )
     else:
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"application": "my_application", "user": user.pk, "event": "login"}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"application": "my_application", "user": user.pk, "event": "login"},
+                )
+            ],
         )
 
     response = other_client.get(auth_complete_url)
@@ -332,14 +400,17 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -372,8 +443,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
-    assert caplog.record_tuples == [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")]
-    caplog.clear()
+    assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oauth2_provider:activate")
@@ -402,8 +472,18 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "email": "email@mailinator.com", "user": user.pk, "event": "activate"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "activate",
+                },
+            )
+        ],
     )
 
     [email] = mailoutbox
@@ -422,15 +502,27 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "application": "my_application",
-                "email": "email@mailinator.com",
-                "user": user.pk,
-                "event": "confirm_email_address",
-            },
-            {"application": "my_application", "email": "email@mailinator.com", "user": user.pk, "event": "login"},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "confirm_email_address",
+                },
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "email": "email@mailinator.com",
+                    "user": user.pk,
+                    "event": "login",
+                },
+            ),
         ],
     )
 
@@ -442,14 +534,17 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -479,7 +574,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = client.post(
         response.url,
@@ -494,8 +589,13 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "user": user.pk, "event": "login"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "user": user.pk, "event": "login"},
+            )
+        ],
     )
 
     response = client.get(auth_complete_url)
@@ -506,14 +606,17 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -536,14 +639,19 @@ def test_login_after_password_reset(caplog, client, oidc_params):
 
     response = client.get(response.url)
     assertContains(response, reverse("accounts:password_reset"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = client.post(reverse("accounts:password_reset"), data={"email": user.email})
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "event": "forgot_password", "user": user.pk}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "forgot_password", "user": user.pk},
+            )
+        ],
     )
 
     assertMessages(
@@ -566,10 +674,17 @@ def test_login_after_password_reset(caplog, client, oidc_params):
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {"application": "my_application", "event": "reset_password", "user": user.pk},
-            {"application": "my_application", "event": "login", "user": user.pk},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "reset_password", "user": user.pk},
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "login", "user": user.pk},
+            ),
         ],
     )
 
@@ -580,14 +695,17 @@ def test_login_after_password_reset(caplog, client, oidc_params):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -610,14 +728,19 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
 
     response = client.get(response.url)
     assertContains(response, reverse("accounts:password_reset"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = client.post(reverse("accounts:password_reset"), data={"email": user.email})
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "event": "forgot_password", "user": user.pk}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "forgot_password", "user": user.pk},
+            )
+        ],
     )
 
     assertMessages(
@@ -642,10 +765,17 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     assert get_user(other_client).is_authenticated is True
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {"application": "my_application", "event": "reset_password", "user": user.pk},
-            {"application": "my_application", "event": "login", "user": user.pk},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "reset_password", "user": user.pk},
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "event": "login", "user": user.pk},
+            ),
         ],
     )
 
@@ -656,14 +786,17 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     assertQuerySetEqual(
@@ -712,7 +845,7 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
         count=1,
     )
 
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
 
 def test_logout_no_confirmation(caplog, client, oidc_params):
@@ -723,14 +856,19 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "user": user.pk, "event": "login"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "user": user.pk, "event": "login"},
+            )
+        ],
     )
 
     response = client.get(response.url)
@@ -738,14 +876,17 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
@@ -757,15 +898,18 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     assert token_are_revoked(user)
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "logout",
-                "id_token_hint": id_token,
-                "post_logout_redirect_uri": "http://callback/",
-                "user": user.pk,
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "logout",
+                    "id_token_hint": id_token,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                },
+            )
         ],
     )
 
@@ -784,14 +928,19 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
         response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"application": "my_application", "user": user.pk, "event": "login"}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"application": "my_application", "user": user.pk, "event": "login"},
+                )
+            ],
         )
 
         response = client.get(response.url)
@@ -799,19 +948,22 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         code = auth_response_params["code"]
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "redirect",
+                        "user": user.pk,
+                        "url": f"http://localhost/callback?code={code}&state=state",
+                    },
+                )
             ],
         )
         id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
         assert get_user(client).is_authenticated is True
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
     with freeze_time("2023-05-25 20:05"):
         assert get_user(client).is_authenticated is False
@@ -820,15 +972,18 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         )
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "logout",
-                    "id_token_hint": id_token,
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "logout",
+                        "id_token_hint": id_token,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": user.pk,
+                    },
+                ),
             ],
         )
 
@@ -838,7 +993,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
 
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
 
 def test_logout_with_confirmation(caplog, client, oidc_params):
@@ -849,14 +1004,19 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"application": "my_application", "user": user.pk, "event": "login"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "user": user.pk, "event": "login"},
+            )
+        ],
     )
 
     response = client.get(response.url)
@@ -864,14 +1024,17 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
@@ -885,7 +1048,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
         response,
         '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
     )
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     response = call_logout(
         client,
@@ -897,21 +1060,24 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
     assert token_are_revoked(user)
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": "my_application",
-                "event": "logout",
-                "client_id": "my_application",
-                "post_logout_redirect_uri": "http://callback/",
-                "user": user.pk,
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "logout",
+                    "client_id": "my_application",
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                },
+            ),
         ],
     )
 
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
 
 def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_client_id(caplog, client, oidc_params):
@@ -923,33 +1089,41 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
         response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"application": "my_application", "user": user.pk, "event": "login"}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"application": "my_application", "user": user.pk, "event": "login"},
+                )
+            ],
         )
         response = client.get(response.url)
         auth_response_params = get_url_params(response.url)
         code = auth_response_params["code"]
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "redirect",
+                        "user": user.pk,
+                        "url": f"http://localhost/callback?code={code}&state=state",
+                    },
+                )
             ],
         )
         oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
         assert get_user(client).is_authenticated is True
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
     with freeze_time("2023-05-25 20:05"):
         assert get_user(client).is_authenticated is False
@@ -961,7 +1135,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
             response,
             '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
         )
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
         response = call_logout(
             client,
@@ -970,15 +1144,18 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         )
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "logout",
-                    "client_id": "my_application",
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": None,  # User is anonymous.
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "logout",
+                        "client_id": "my_application",
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": None,  # User is anonymous.
+                    },
+                )
             ],
         )
 
@@ -989,7 +1166,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
 
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
 
 def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
@@ -1011,8 +1188,13 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assert "next_url" not in client.session
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"user": user.pk, "event": "login"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
     )
 
     # Page contains return to referrer link
@@ -1038,19 +1220,22 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "event": "edit_user_info",
-                "user": user.pk,
-                "application": application.client_id,
-                "old_last_name": "Calavera",
-                "new_last_name": "Doe",
-                "old_first_name": "Manuel",
-                "new_first_name": "John",
-                "old_email": "manny.calavera@mailinator.com",
-                "new_email": "my@email.com",
-            }
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "event": "edit_user_info",
+                    "user": user.pk,
+                    "application": application.client_id,
+                    "old_last_name": "Calavera",
+                    "new_last_name": "Doe",
+                    "old_first_name": "Manuel",
+                    "new_first_name": "John",
+                    "old_email": "manny.calavera@mailinator.com",
+                    "new_email": "my@email.com",
+                },
+            )
         ],
     )
 
@@ -1063,8 +1248,13 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assertRedirects(response, confirm_email_url)
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"event": "send_verification_email", "user": user.pk}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"event": "send_verification_email", "user": user.pk},
+            )
+        ],
     )
 
     # Verify email address
@@ -1075,10 +1265,17 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assert user.next_redirect_uri is None
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
-            {"email": "my@email.com", "user": user.pk, "event": "login"},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"email": "my@email.com", "user": user.pk, "event": "login"},
+            ),
         ],
     )
 
@@ -1097,8 +1294,13 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"event": "change_password", "user": user.pk, "application": application.client_id}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"event": "change_password", "user": user.pk, "application": application.client_id},
+            )
+        ],
     )
 
     client.logout()
@@ -1109,7 +1311,16 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
         reverse("accounts:login"), data={"email": "my@email.com", "password": "V€r¥--$3©®€7"}, follow=True
     )
     assert get_user(client).is_authenticated is True
-    assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
+    )
 
 
 def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
@@ -1137,8 +1348,13 @@ def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox)
     assert "next_url" not in client.session
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
-        [{"user": user.pk, "event": "login"}],
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
     )
 
     # Page contains return to referrer link
@@ -1162,7 +1378,16 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
     assertContains(response, "<h1>\n                Informations générales\n            </h1>")
     # The redirect cleans `next_url` from the session.
     assert "next_url" not in client.session
-    assertRecords(caplog, "inclusion_connect.auth", [{"user": user.pk, "event": "login"}])
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
+    )
 
     # Page contains return to referrer link
     assertContains(response, "Retour")
@@ -1187,19 +1412,22 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
     assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {
-                "event": "edit_user_info",
-                "user": user.pk,
-                "application": application.client_id,
-                "old_last_name": "Calavera",
-                "new_last_name": "Doe",
-                "old_first_name": "Manuel",
-                "new_first_name": "John",
-                "old_email": "manny.calavera@mailinator.com",
-                "new_email": "my@email.com",
-            }
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "event": "edit_user_info",
+                    "user": user.pk,
+                    "application": application.client_id,
+                    "old_last_name": "Calavera",
+                    "new_last_name": "Doe",
+                    "old_first_name": "Manuel",
+                    "new_first_name": "John",
+                    "old_email": "manny.calavera@mailinator.com",
+                    "new_email": "my@email.com",
+                },
+            )
         ],
     )
 
@@ -1214,10 +1442,17 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
     assert user.next_redirect_uri is None
     assertRecords(
         caplog,
-        "inclusion_connect.auth",
         [
-            {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
-            {"email": "my@email.com", "user": user.pk, "event": "login"},
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
+            ),
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"email": "my@email.com", "user": user.pk, "event": "login"},
+            ),
         ],
     )
 
