@@ -851,9 +851,9 @@ stack-data==0.6.2 \
     --hash=sha256:32d2dd0376772d01b6cb9fc996f3c8b57a357089dec328ed4b6553d037eaf815 \
     --hash=sha256:cbb2a53eb64e5785878201a97ed7c7b94883f48b87bfb0bbe8b623c74679e4a8
     # via ipython
-syrupy==4.1.1 \
-    --hash=sha256:7d54e391f3d21eccb3b35f5532fdaa05255ec2a28f55b1f01e7662743e7a1ef7 \
-    --hash=sha256:e399c9e550b94d4d4f554331c7a98aa6a7877b73f1e463ef6758e99963e7efc5
+syrupy==4.2.1 \
+    --hash=sha256:4054878270184979a20e78b17a19f5f19eb62c6cbdc3adac6f432a528ddeb099 \
+    --hash=sha256:8c2f4e0c4416780f21f3cd696c64b046d79ddff43522d6a9a4ad7a4f48e9a594
     # via -r requirements/dev.in
 tqdm==4.65.0 \
     --hash=sha256:1871fb68a86b8fb3b59ca4cdd3dcccbc7e6d613eeed31f4c332531977b89beb5 \
