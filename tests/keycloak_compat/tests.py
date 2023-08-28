@@ -1,4 +1,5 @@
 import datetime
+import logging
 import uuid
 
 import jwt
@@ -269,10 +270,17 @@ class TestActionToken:
         assert user.email == email
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
-                {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                ),
             ],
         )
 
@@ -288,14 +296,17 @@ class TestActionToken:
         assert user.email == email
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address_error",
-                    "error": "already verified",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address_error",
+                        "error": "already verified",
+                    },
+                )
             ],
         )
 
@@ -384,14 +395,17 @@ class TestActionToken:
         assert user.email == ""
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "confirm_email_address_error",
-                    "error": "link expired",
-                    "email": "me@mailinator.com",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "confirm_email_address_error",
+                        "error": "link expired",
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                    },
+                )
             ],
         )
 
@@ -446,10 +460,17 @@ class TestActionToken:
         assert user.email == email
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
-                {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
+                ),
             ],
         )
 

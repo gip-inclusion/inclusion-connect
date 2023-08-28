@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
@@ -99,7 +100,14 @@ class TestUserAdmin:
         assert user.email == ""
         assert user.email_addresses.exists() is False
         assertRecords(
-            caplog, "inclusion_connect.auth", [{"event": "admin_add", "acting_user": admin_user.pk, "user": user.pk}]
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "admin_add", "acting_user": admin_user.pk, "user": user.pk},
+                )
+            ],
         )
 
         response = client.post(
@@ -131,18 +139,21 @@ class TestUserAdmin:
         assertQuerySetEqual(user.groups.all(), [])
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "old_first_name": "",
-                    "new_first_name": "Manuel",
-                    "old_last_name": "",
-                    "new_last_name": "Calavera",
-                    "email_changed": "manny.calavera@mailinator.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "old_first_name": "",
+                        "new_first_name": "Manuel",
+                        "old_last_name": "",
+                        "new_last_name": "Calavera",
+                        "email_changed": "manny.calavera@mailinator.com",
+                    },
+                )
             ],
         )
 
@@ -177,14 +188,17 @@ class TestUserAdmin:
         assertQuerySetEqual(user.groups.all(), [staff_group])
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "groups": {"added": {1: "support"}},
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "groups": {"added": {1: "support"}},
+                    },
+                )
             ],
         )
 
@@ -225,14 +239,17 @@ class TestUserAdmin:
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "email_confirmed": "me@mailinator.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "email_confirmed": "me@mailinator.com",
+                    },
+                )
             ],
         )
 
@@ -276,14 +293,17 @@ class TestUserAdmin:
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "email_confirmed": "other@mailinator.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "email_confirmed": "other@mailinator.com",
+                    },
+                )
             ],
         )
 
@@ -323,14 +343,17 @@ class TestUserAdmin:
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "email_changed": "other@mailinator.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "email_changed": "other@mailinator.com",
+                    },
+                )
             ],
         )
 
@@ -380,7 +403,7 @@ class TestUserAdmin:
         assert email_address.email == "other@mailinator.com"
         assert email_address.user_id == user.pk
         assert email_address.verified_at is None
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
     @freeze_time("2023-05-12T14:42:03")
     def test_update_verified_email_and_confirm_the_same_email(self, caplog, client):
@@ -422,14 +445,17 @@ class TestUserAdmin:
         assert email_address.verified_at == datetime.datetime(2023, 5, 12, 14, 42, 3, tzinfo=datetime.timezone.utc)
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
             [
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "email_confirmed": "other@mailinator.com",
-                }
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "admin_change",
+                        "acting_user": admin_user.pk,
+                        "user": user.pk,
+                        "email_confirmed": "other@mailinator.com",
+                    },
+                )
             ],
         )
 
@@ -463,7 +489,7 @@ class TestUserAdmin:
         assert response.context["errors"][0][0] == "Vous ne pouvez pas supprimer l'adresse e-mail de l'utilsateur."
         user.refresh_from_db()
         assert user.email == "me@mailinator.com"
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
     @freeze_time("2023-05-12T14:42:03")
     def test_dont_crash_if_new_email_is_invalid(self, caplog, client):
@@ -494,7 +520,7 @@ class TestUserAdmin:
         assert response.status_code == 200
         assert response.context["errors"][0][0] == "Saisissez une adresse de courriel valide."
         assert user.email == "me@mailinator.com"
-        assertRecords(caplog, None, [])
+        assertRecords(caplog, [])
 
     def test_admin_password_update(self, caplog, client, snapshot):
         staff_user = UserFactory(is_superuser=True, is_staff=True)
@@ -519,8 +545,13 @@ class TestUserAdmin:
         assert user.must_reset_password
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"event": "admin_change_password", "acting_user": staff_user.pk, "user": user.pk}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "admin_change_password", "acting_user": staff_user.pk, "user": user.pk},
+                )
+            ],
         )
 
     def test_any_staff_cannot_access_users_admin(self, client):

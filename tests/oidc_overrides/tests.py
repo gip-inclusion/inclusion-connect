@@ -78,15 +78,18 @@ class TestLogoutView:
         assert token_are_revoked(user) is True
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "logout",
-                    "id_token_hint": id_token,
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "logout",
+                        "id_token_hint": id_token,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": user.pk,
+                    },
+                )
             ],
         )
 
@@ -118,15 +121,18 @@ class TestLogoutView:
             assert token_are_revoked(user) is True
             assertRecords(
                 caplog,
-                "inclusion_connect.oidc",
                 [
-                    {
-                        "application": "my_application",
-                        "event": "logout",
-                        "id_token_hint": id_token,
-                        "post_logout_redirect_uri": "http://callback/",
-                        "user": user.pk,
-                    }
+                    (
+                        "inclusion_connect.oidc",
+                        logging.INFO,
+                        {
+                            "application": "my_application",
+                            "event": "logout",
+                            "id_token_hint": id_token,
+                            "post_logout_redirect_uri": "http://callback/",
+                            "user": user.pk,
+                        },
+                    )
                 ],
             )
 
@@ -143,18 +149,21 @@ class TestLogoutView:
         assert token_are_revoked(user) is False
         assert get_user(client).is_authenticated is True
         assert has_ongoing_sessions(user) is True
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, "Bad Request: /auth/logout/")
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "event": "logout_error",
-                    "id_token_hint": "111",
-                    "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.",
-                }
+                ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "event": "logout_error",
+                        "id_token_hint": "111",
+                        "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise "
+                        "invalid.",
+                    },
+                ),
             ],
-            i=1,
         )
 
     def test_bad_id_token_hint_and_no_post_logout_redirect_uri(self, caplog, client, oidc_params):
@@ -174,13 +183,16 @@ class TestLogoutView:
         assert token_are_revoked(user) is True
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "event": "logout",
-                    "id_token_hint": "111",
-                    "user": None,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "event": "logout",
+                        "id_token_hint": "111",
+                        "user": None,
+                    },
+                )
             ],
         )
 
@@ -190,27 +202,35 @@ class TestLogoutView:
         assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
-            [{"event": "logout", "id_token_hint": "111", "user": None}],
+            [
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "logout", "id_token_hint": "111", "user": None},
+                )
+            ],
         )
 
     def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
         response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
         assert response.status_code == 400
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, "Bad Request: /auth/logout/")
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "event": "logout_error",
-                    "id_token_hint": "111",
-                    "post_logout_redirect_uri": "http://callback/",
-                    "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise invalid.",
-                }
+                ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "event": "logout_error",
+                        "id_token_hint": "111",
+                        "post_logout_redirect_uri": "http://callback/",
+                        "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise "
+                        "invalid.",
+                    },
+                ),
             ],
-            i=1,
         )
 
     def test_logout_clear_all_clients_sessions(self, caplog, client, oidc_params):
@@ -234,15 +254,18 @@ class TestLogoutView:
         assert get_user(other_client).is_authenticated is False
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": "my_application",
-                    "event": "logout",
-                    "id_token_hint": id_token,
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": "my_application",
+                        "event": "logout",
+                        "id_token_hint": id_token,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": user.pk,
+                    },
+                )
             ],
         )
 
@@ -271,15 +294,18 @@ class TestLogoutView:
         assert token_are_revoked(user) is True
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": application_1.client_id,
-                    "event": "logout",
-                    "id_token_hint": id_token_1,
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": application_1.client_id,
+                        "event": "logout",
+                        "id_token_hint": id_token_1,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": user.pk,
+                    },
+                )
             ],
         )
 
@@ -295,15 +321,18 @@ class TestLogoutView:
         assert token_are_revoked(user) is True
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {
-                    "application": application_2.client_id,
-                    "event": "logout",
-                    "id_token_hint": id_token_2,
-                    "post_logout_redirect_uri": "http://callback/",
-                    "user": None,
-                }
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": application_2.client_id,
+                        "event": "logout",
+                        "id_token_hint": id_token_2,
+                        "post_logout_redirect_uri": "http://callback/",
+                        "user": None,
+                    },
+                )
             ],
         )
 
@@ -317,12 +346,16 @@ class TestAuthorizeView:
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
-            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
-            i=1,
+            [
+                ("django.request", logging.WARNING, f"Bad Request: {auth_url}"),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+            ],
         )
 
     def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
@@ -334,17 +367,24 @@ class TestAuthorizeView:
 
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {"event": "oidc_params_error", "oidc_params": oidc_params},
-                {
-                    "application": oidc_params["client_id"],
-                    "event": "redirect",
-                    "user": None,
-                    "url": add_url_params(
-                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
-                    ),
-                },
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": oidc_params["client_id"],
+                        "event": "redirect",
+                        "user": None,
+                        "url": add_url_params(
+                            oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                        ),
+                    },
+                ),
             ],
         )
 
@@ -367,12 +407,16 @@ class TestRegisterView:
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
-            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
-            i=1,
+            [
+                ("django.request", logging.WARNING, f"Bad Request: {auth_url}"),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+            ],
         )
 
     def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
@@ -384,17 +428,24 @@ class TestRegisterView:
 
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {"event": "oidc_params_error", "oidc_params": oidc_params},
-                {
-                    "application": oidc_params["client_id"],
-                    "event": "redirect",
-                    "user": None,
-                    "url": add_url_params(
-                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
-                    ),
-                },
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": oidc_params["client_id"],
+                        "event": "redirect",
+                        "user": None,
+                        "url": add_url_params(
+                            oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                        ),
+                    },
+                ),
             ],
         )
 
@@ -416,12 +467,16 @@ class TestActivateView:
         assert response.status_code == 400
         assert str(parse_response_to_soup(response, selector="main")) == snapshot
 
-        assert caplog.record_tuples[0] == ("django.request", logging.WARNING, f"Bad Request: {auth_url}")
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
-            [{"event": "oidc_params_error", "oidc_params": oidc_params}],
-            i=1,
+            [
+                ("django.request", logging.WARNING, f"Bad Request: {auth_url}"),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+            ],
         )
 
     def test_bad_oidc_params_redirects(self, client, oidc_params, snapshot, caplog):
@@ -433,17 +488,24 @@ class TestActivateView:
 
         assertRecords(
             caplog,
-            "inclusion_connect.oidc",
             [
-                {"event": "oidc_params_error", "oidc_params": oidc_params},
-                {
-                    "application": oidc_params["client_id"],
-                    "event": "redirect",
-                    "user": None,
-                    "url": add_url_params(
-                        oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
-                    ),
-                },
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {"event": "oidc_params_error", "oidc_params": oidc_params},
+                ),
+                (
+                    "inclusion_connect.oidc",
+                    logging.INFO,
+                    {
+                        "application": oidc_params["client_id"],
+                        "event": "redirect",
+                        "user": None,
+                        "url": add_url_params(
+                            oidc_params["redirect_uri"], {"error": "invalid_scope", "state": oidc_params["state"]}
+                        ),
+                    },
+                ),
             ],
         )
 

@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 import jwt
@@ -26,13 +27,16 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": oidc_params["client_id"],
-                "event": "token",
-                "user": user.pk,
-            },
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": oidc_params["client_id"],
+                    "event": "token",
+                    "user": user.pk,
+                },
+            )
         ],
     )
 
@@ -62,7 +66,7 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog):
         "family_name": user.last_name,
         "email": user.email,
     }
-    assertRecords(caplog, None, [])
+    assertRecords(caplog, [])
 
     return token_json["id_token"]
 
@@ -85,22 +89,30 @@ def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
         assert "next_url" not in client.session
         assertRecords(
             caplog,
-            "inclusion_connect.auth",
-            [{"application": application.client_id, "user": user.pk, "event": "login"}],
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"application": application.client_id, "user": user.pk, "event": "login"},
+                )
+            ],
         )
         response = client.get(response.url)
     auth_response_params = get_url_params(response.url)
     code = auth_response_params["code"]
     assertRecords(
         caplog,
-        "inclusion_connect.oidc",
         [
-            {
-                "application": application.client_id,
-                "event": "redirect",
-                "user": user.pk,
-                "url": f"http://localhost/callback?code={code}&state=state",
-            }
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
         ],
     )
 
