@@ -57,3 +57,8 @@ try:
     LOGGING["loggers"]["inclusion_connect"]["handlers"].remove("elasticsearch")  # noqa: F405
 except ValueError:
     pass
+
+# CSP
+# ---
+
+CSP_FORM_ACTION = ["http:"] + [f"{host}:{RUN_SERVER_PORT}" for host in ALLOWED_HOSTS]  # noqa: F405
