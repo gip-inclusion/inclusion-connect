@@ -44,6 +44,7 @@ PIP_COMPILE_FLAGS := --allow-unsafe --generate-hashes
 compile-deps: $(VIRTUAL_ENV)
 	pip-compile $(PIP_COMPILE_FLAGS) -o requirements/base.txt requirements/base.in
 	pip-compile $(PIP_COMPILE_FLAGS) -o requirements/dev.txt requirements/dev.in
+	pip-compile $(PIP_COMPILE_FLAGS) -o requirements/deploy.txt requirements/deploy.in
 
 clean:
 	find . -type d -name "__pycache__" -depth -exec rm -rf '{}' \;
