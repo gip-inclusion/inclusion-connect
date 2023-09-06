@@ -38,12 +38,14 @@ jobs:
     - name: Login to Scalingo
       run: scalingo login --ssh --ssh-identity ~/.ssh/id_ed25519
 
-    # TODO: Protect this step by reading the domain CNAME to make sure it does not point on Scalingo
-    # - name: Restore latest database backup
-    #   run: scalingo --region osc-secnum-fr1 --app $SCALINGO_APP_NAME run --size S python restore-backup.py
-
-    - name: Deploy to Scalingo
-      run: git push $SCALINGO_GIT_URL HEAD:main --force
+    - name: Restore latest database backup
+      run: >-
+        scalingo \
+          --region osc-secnum-fr1 \
+          --app $SCALINGO_APP_NAME \
+          run \
+          --size S \
+          "sh -c 'pip install --user -r requirements/deploy.txt && python restore-backup.py'"
 
     - name: Failover
       if: ${{ github.event_name == 'workflow_dispatch' }}
