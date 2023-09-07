@@ -47,6 +47,9 @@ jobs:
           --size S \
           "sh -c 'pip install --user -r requirements/deploy.txt && python restore-backup.py'"
 
+    - name: Deploy to Scalingo
+      run: git push $SCALINGO_GIT_URL HEAD:main --force
+
     - name: Failover
       if: ${{ github.event_name == 'workflow_dispatch' }}
       run: |
