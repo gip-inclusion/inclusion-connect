@@ -36,16 +36,6 @@ password = $RCLONE_CRYPT_PASSWORD
 password2 = $RCLONE_CRYPT_PASSWORD2
 """
 
-# https://doc.scalingo.com/databases/postgresql/extensions#list-of-available-extensions
-INCLUSION_CONNECT_EXTENSIONS = [
-    "btree_gin",
-    "btree_gist",
-    "citext",
-    "plpgsql",
-    "unaccent",
-    "uuid-ossp",
-]
-
 pg_internal_id_re = r"[0-9]+; [0-9]+ [0-9]+"
 spatial_ref_sys_re = re.compile(rf"{pg_internal_id_re} TABLE DATA public spatial_ref_sys postgres$")
 
