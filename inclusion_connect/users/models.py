@@ -143,6 +143,7 @@ class UserApplicationLink(models.Model):
     class Meta:
         verbose_name = "service utilisé"
         verbose_name_plural = "services utilisés"
+        unique_together = ("user", "application")
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.application}"
