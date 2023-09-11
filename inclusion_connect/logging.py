@@ -50,7 +50,14 @@ class ElasticSearchHandler(logging.handlers.BufferingHandler):
         """
         super().__init__(capacity)
         self.send_after_inactive_for_secs = send_after_inactive_for_secs
-        self.es_client = Elasticsearch(host, http_compress=True, request_timeout=es_timeout_secs, max_retries=10)
+        self.es_client = Elasticsearch(
+            host,
+            http_compress=True,
+            request_timeout=es_timeout_secs,
+            max_retries=10,
+            retry_on_timeout=True,
+            retry_on_status=[429, 500, 502, 503, 504],
+        )
         self.index_name = index_name
 
     def emit(self, record):
