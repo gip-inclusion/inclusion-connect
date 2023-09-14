@@ -8,10 +8,11 @@
 # =============================================================================
 PYTHON_VERSION := python3.11
 PGDATABASE ?= inclusion_connect
+
 ifeq ($(shell uname -s),Linux)
 	REQUIREMENTS_PATH := requirements/dev.txt
 else
-	REQUIREMENTS_PATH := requirements/dev.in
+	REQUIREMENTS_PATH := requirements/dev-mac.txt
 endif
 
 PY_PACKAGES := \
