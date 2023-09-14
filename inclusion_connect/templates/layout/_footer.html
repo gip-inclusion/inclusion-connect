@@ -5,46 +5,31 @@
     <section class="s-footer-gip">
         <div class="s-footer-gip__container container">
             <div class="s-footer-gip__row row">
-                <div class="s-footer-gip__col col-5 col-lg-2 d-flex align-items-center">
-                    <div class="s-footer-gip__logo">
-                        <img src="{% static_theme_images 'logo-republique-francaise.svg' %}" alt="Rébublique Française" class="img-fluid">
-                    </div>
+                <div class="s-footer-gip__col s-footer-gip__col--logo col-12 col-md-auto col-lg-auto">
+                    <img src="{% static_theme_images 'logo-republique-francaise.svg' %}" alt="Rébublique Française" class="img-fluid" width="130">
                 </div>
-                <div class="s-footer-gip__col col-7 col-lg-3 d-flex align-items-center justify-content-end justify-content-lg-start">
-                    <div class="d-inline-block text-center">
-                        <a href="https://inclusion.beta.gouv.fr/" target="_blank" aria-label="Découvrez les services de la plateforme de l'inclusion (lien externe)">
-                            <img src="{% static_theme_images 'logo-plateforme-inclusion.svg' %}" height="80" alt="Logo de la Plateforme de l'inclusion">
-                        </a>
-                    </div>
+                <div class="s-footer-gip__col col-12 col-md col-lg">
+                    <p class="mb-1">
+                        Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
+                    </p>
+                    <p class="m-0">
+                        Vous constatez un problème de sécurité sur le service ?
+                        <br class="d-none d-md-inline">
+                        Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
+                    </p>
                 </div>
-                <div class="s-footer-gip__col col-12 col-lg-7 d-flex align-items-center">
-                    <div>
-                        <p class="mb-3">
-                            Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
-                        </p>
-                        <p class="mb-3">
-                            Vous constatez un problème de sécurité sur le service ?
-                            <br>
-                            Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
-                        </p>
-
-                        <ul>
-
-                            <li>
-                                <a href="https://beta.gouv.fr/" target="_blank" aria-label="Incubateur de services publics numériques — beta.gouv.fr (lien externe)">beta.gouv.fr</a>
-                            </li>
-
-                            <li>
-                                <a href="https://www.data.gouv.fr/fr/" target="_blank" aria-label="Data.gouv.fr (lien externe)">data.gouv.fr</a>
-                            </li>
-
-                            <li>
-                                <a href="https://api.gouv.fr/" target="_blank" aria-label="Simplifiez le partage et la circulation des données administratives grace à api.gouv.fr (lien externe)">api.gouv.fr</a>
-                            </li>
-
-                        </ul>
-
-                    </div>
+                <div class="s-footer-gip__col s-footer-gip__col--links col-12 col-lg-auto">
+                    <ul>
+                        <li>
+                            <a href="https://beta.gouv.fr/" target="_blank" aria-label="Incubateur de services publics numériques — beta.gouv.fr (lien externe)">beta.gouv.fr</a>
+                        </li>
+                        <li>
+                            <a href="https://www.data.gouv.fr/fr/" target="_blank" aria-label="Data.gouv.fr (lien externe)">data.gouv.fr</a>
+                        </li>
+                        <li>
+                            <a href="https://api.gouv.fr/" target="_blank" aria-label="Simplifiez le partage et la circulation des données administratives grace à api.gouv.fr (lien externe)">api.gouv.fr</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
