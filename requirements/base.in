@@ -25,8 +25,8 @@ PyJWT  # https://github.com/jpadilla/pyjwt
 # Front-end
 # ------------------------------------------------------------------------------
 
-# Bootstrap 4 for Django
-django-bootstrap4  # https://github.com/zostera/django-bootstrap4
+# Bootstrap 5 for Django
+django-bootstrap5  # https://github.com/zostera/django-bootstrap5
 
 # Env variables
 # ------------------------------------------------------------------------------

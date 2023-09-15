@@ -688,7 +688,7 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
         # Pre-filled with email address from login_hint.
         '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
         # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        'autocomplete="email" class="form-control" required disabled id="id_email">',
         count=1,
     )
 
@@ -698,7 +698,7 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
         # Pre-filled with email address from login_hint.
         '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
         # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
+        'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
         count=1,
     )
 
@@ -708,7 +708,7 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
         # Pre-filled with email address from login_hint.
         # Disabled, users cannot change data passed by the RP.
         '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        'autocomplete="email" class="form-control" title="" required disabled id="id_email">',
+        'autocomplete="email" class="form-control" required disabled id="id_email">',
         count=1,
     )
 
@@ -1127,7 +1127,7 @@ def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox)
         # Pre-filled with email address from login_hint.
         f'<input type="email" name="email" value="{user.email}" placeholder="nom@domaine.fr" '
         # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" maxlength="320" class="form-control" title="" required disabled id="id_email">',
+        'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
         count=1,
     )
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)

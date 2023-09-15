@@ -1,5 +1,6 @@
-from bootstrap4.templatetags.bootstrap4 import bootstrap_field
 from django import template
+from django.utils.safestring import mark_safe
+from django_bootstrap5.templatetags.django_bootstrap5 import bootstrap_field
 
 
 register = template.Library()
@@ -8,12 +9,14 @@ register = template.Library()
 def make_password_field(form_field, field_class=None):
     return bootstrap_field(
         form_field,
-        addon_after="""
+        addon_after=mark_safe(
+            """
         <button class="btn btn-sm btn-link btn-ico" type="button" data-password="toggle">
             <i class="ri-eye-line"></i>
             <span>Afficher</span>
         </button>
-        """,
+        """
+        ),
         addon_after_class=None,
         field_class=field_class,
         # Otherwise, password validators rules are displayed in a <ul>,
