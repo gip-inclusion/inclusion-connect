@@ -50,7 +50,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    "bootstrap4",
+    "django_bootstrap5",
     "corsheaders",
     "oauth2_provider",
 ]
@@ -273,12 +273,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_URL = "/accounts/login/"
 
-BOOTSTRAP4 = {
+BOOTSTRAP5 = {
     "required_css_class": "form-group-required",
-    # Remove the default `.is-valid` class that Bootstrap will style in green
-    # otherwise empty required fields will be marked as valid. This might be
-    # a bug in django-bootstrap4, it should be investigated.
-    "success_css_class": "",
+    "field_renderers": {"default": "inclusion_connect.utils.custom_renderer.CustomFieldRenderer"},
 }
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
