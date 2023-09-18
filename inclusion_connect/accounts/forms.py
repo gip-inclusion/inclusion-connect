@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.forms import HiddenInput
@@ -90,8 +91,8 @@ class RegisterForm(auth_forms.UserCreationForm):
         label=format_html(
             "J'ai lu et j'accepte les <a href='{}' target='_blank'>conditions générales d’utilisation du service</a> "
             "ainsi que la <a href='{}' target='_blank'>politique de confidentialité</a>.",
-            static("terms/CGU_20230302.pdf"),
-            static("terms/Politique de confidentialité_20230512.pdf"),
+            static(settings.TERMS_PATH),
+            static(settings.PRIVACY_POLICY_PATH),
         )
     )
 
