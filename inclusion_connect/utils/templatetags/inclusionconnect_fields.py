@@ -11,10 +11,12 @@ def make_password_field(form_field, field_class=None):
         form_field,
         addon_after=mark_safe(
             """
-        <button class="btn btn-sm btn-link btn-ico" type="button" data-password="toggle">
-            <i class="ri-eye-line"></i>
-            <span>Afficher</span>
-        </button>
+        <span class="input-group-text p-0">
+            <button class="btn btn-sm btn-link btn-ico" type="button" data-it-password="toggle">
+                <i class="ri-eye-line"></i>
+                <span>Afficher</span>
+            </button>
+        </span>
         """
         ),
         addon_after_class=None,
