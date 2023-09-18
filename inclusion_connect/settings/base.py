@@ -363,6 +363,7 @@ PASSWORD_HASHERS = [
 # -----------------------
 
 # Beware, some browser extensions may prevent the reports to be sent to sentry with CORS errors.
+CSP_BASE_URI = ["'none'"]  # We don't use any <base> element in our code, so let's forbid it
 CSP_DEFAULT_SRC = ["'self'"]
 CSP_IMG_SRC = ["'self'"]
 CSP_STYLE_SRC = [
