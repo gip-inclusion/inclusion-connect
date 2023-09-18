@@ -368,10 +368,12 @@ CSP_IMG_SRC = ["'self'"]
 CSP_STYLE_SRC = [
     "'self'",
     "https://fonts.googleapis.com/",  # Used in theme-inclusion
+    "'unsafe-inline'",
 ]
 CSP_FONT_SRC = ["'self'"]
 
-CSP_SCRIPT_SRC = ["'self'"]
+CSP_FRAME_SRC = ["tally.so"]
+CSP_SCRIPT_SRC = ["'self'", "tally.so"]
 CSP_CONNECT_SRC = ["'self'"]
 CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
