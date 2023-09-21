@@ -368,8 +368,7 @@ CSP_IMG_SRC = [
 ]
 CSP_STYLE_SRC = [
     "'self'",
-    "https://fonts.googleapis.com/",  # Used in theme-inclusion
-    "'unsafe-inline'",
+    "'unsafe-inline'",  # Becaue of tally
 ]
 CSP_FONT_SRC = ["'self'"]
 
