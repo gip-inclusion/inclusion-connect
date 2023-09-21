@@ -155,8 +155,8 @@ class TestLoginView:
         assertContains(
             response,
             """
-            <div class="alert alert-danger alert-dismissible" role="alert">
-                <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="close">&#215;</button>
+            <div class="alert alert-danger alert-dismissible" role="status">
+                <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="close"></button>
                 Un compte inactif avec cette adresse e-mail existe déjà, l’email de vérification vient d’être
                 envoyé à nouveau.
             </div>
