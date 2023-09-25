@@ -13,8 +13,6 @@ from pathlib import Path
 from string import Template
 from tempfile import TemporaryDirectory
 
-import dns.resolver
-
 
 RCLONE_CONFIG = """\
 [scaleway]
@@ -68,14 +66,10 @@ def write_list_without_spatial_sys_ref(backup_file, pg_restore_list):
 
 
 def main(backup_name):
-    [cloud_provider_domain] = dns.resolver.resolve("connect.inclusion.beta.gouv.fr", "CNAME").rrset
-    cloud_provider_domain = str(cloud_provider_domain)
-    clevercloud_domain = "domain.par.clever-cloud.com."
-    scalingo_domain = "c5-inclusion-connect.osc-secnum-fr1.scalingo.io."
-    assert cloud_provider_domain in [clevercloud_domain, scalingo_domain]
-    if cloud_provider_domain == scalingo_domain:
-        print("Scalingo is currently serving traffic. Don’t touch its database.")
-        return
+    with urllib.request.urlopen("https://connect.inclusion.beta.gouv.fr") as response:
+        if response.headers.get("X-Scalingo") == "1":
+            print("Scalingo is currently serving traffic. Don’t touch its database.")
+            return
 
     print("Installing rclone…", file=sys.stderr)
     install_rclone()
