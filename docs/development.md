@@ -29,7 +29,7 @@ python -m venv .venv
 Le projet dispose aussi d'une commande make qui se chargera de le faire pour vous :
 
 ```sh
-make virtualenv
+make venv
 ```
 
 ### Activer l'environnement virtuel
@@ -80,14 +80,6 @@ La première fois que vous lancez le service, il faudra configurer Inclusion Con
 make populate_db
 ```
 
-Il faudra également surcharger les `redirect_uris` par défaut de l'application via l'administration Django.
-
-> [!NOTE]
-> Pour utiliser le service il vous faudra les identifiants suivants :
-> - le `client_id` est `local_inclusion_connect`
-> - le `client_secret` est `password`
-
-
 ## Générer une clé RSA
 
 Cette clé sera utilisée pour signer les jwt renvoyés aux partenaires.
@@ -120,13 +112,16 @@ make test
 
 Si tout va bien (croisons les doigts) vous aurez accès à l'admin : [http://localhost:8080/admin](http://localhost:8080/admin) et aux [autres urls](docs/inclusion_connect.md).
 
+Il faudra également surcharger les `redirect_uris` par défaut de l'application via l'administration Django.
 
 > [!NOTE]
 > Pour accéder à l'admin, les informations de connexion sont les suivantes :
 > - Adresse e-mail : `admin@test.com`
 > - Mot de passe : `password`
-
-Il faudra utiliser le couple `local_inclusion_connect`/`password` pour se connecter avec un client OpenID Connect.
+>
+> Pour utiliser le service et se connecter avec un client OpenID Connect, il vous faudra les identifiants suivants :
+> - le `client_id` est `local_inclusion_connect`
+> - le `client_secret` est `password`
 
 
 # Composants applicatifs
