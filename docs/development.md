@@ -37,7 +37,7 @@ make venv
 Avant chaque commande python/django, il sera primordial d'avoir activé votre environnement virtuel au préalable via la commande suivante (dans le répertoire du projet) :
 
 ```sh
-. ./.venv/bin/activate
+. .venv/bin/activate
 ```
 
 ### Installer les dépendances
