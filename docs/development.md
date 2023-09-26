@@ -61,6 +61,16 @@ Les étapes ci-dessus (sauf le `activate`) peuvent être réalisées automagique
 > [!WARNING]
 > Cette commande n'active pas le virtualenv, pour toute utilisation d'une commande python, il ne faudra donc pas oublier de faire `. ./.venv/bin/activate` au préalable.
 
+
+## Démarrer PostgreSQL et MailHog
+
+Lancer les images dockers depuis la racine du dépôt :
+
+```bash
+docker compose up
+```
+
+
 ## Charger les données par défaut et configurer le service
 
 La première fois que vous lancez le service, il faudra configurer Inclusion Connect en chargeant les données par défaut dans la base (soyez certain que votre virtualenv est bien activé) :
@@ -86,14 +96,6 @@ Cette clé sera utilisée pour signer les jwt renvoyés aux partenaires.
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
 ```
 
-## Démarrer PostgreSQL et MailHog
-
-Lancer les images dockers depuis la racine du dépôt :
-
-```bash
-docker compose up
-```
-
 ## Lancer le serveur de développement
 
 Avec votre environnement virtuel d'activé lancez :
@@ -114,9 +116,15 @@ make runserver
 make test
 ```
 
-## Normalement tout est bon !
+## Normalement tout devrait être bon !
 
-Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://localhost:8080/admin` et aux autres urls.
+Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://localhost:8080/admin` et aux [autres urls](docs/inclusion_connect.md).
+
+
+> [!NOTE]
+> Pour accéder à l'admin, les informations de connexion sont les suivantes :
+> - Adresse e-mail : `admin@test.com`
+> - Mot de passe : `password`
 
 Il faudra utiliser le couple `local_inclusion_connect`/`password` pour se connecter avec un client OpenID Connect
 
