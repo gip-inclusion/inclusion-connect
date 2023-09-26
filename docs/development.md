@@ -118,7 +118,7 @@ make test
 
 ## Normalement tout devrait être bon !
 
-Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://localhost:8080/admin` et aux [autres urls](docs/inclusion_connect.md).
+Si tout va bien (croisons les doigts) vous aurez accès à l'admin : [http://localhost:8080/admin](http://localhost:8080/admin) et aux [autres urls](docs/inclusion_connect.md).
 
 
 > [!NOTE]
