@@ -56,7 +56,7 @@ pip install -r requirements/dev-mac.txt
 
 ### La commande `make venv`
 
-Les étapes ci-dessus (sauf le `activate`) peuvent être réalisées automagiquement par l'utilisation de `make venv`. Cette commande se chargera de créer le `venv`, d'installer les dépendances et de s'assurer qu'elles sont à jour avec votre `venv` via l'utilisation de [`pip-sync`](https://github.com/jazzband/pip-tools).
+Les étapes ci-dessus (sauf le `activate`) peuvent être réalisées automatiquement par l'utilisation de `make venv`. Cette commande se chargera de créer le `venv`, d'installer les dépendances et de s'assurer qu'elles sont à jour avec votre `venv` via l'utilisation de [`pip-sync`](https://github.com/jazzband/pip-tools).
 
 > [!WARNING]
 > Cette commande n'active pas le virtualenv, pour toute utilisation d'une commande python, il ne faudra donc pas oublier de faire `. ./.venv/bin/activate` au préalable.
