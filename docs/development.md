@@ -28,6 +28,10 @@ python -m venv .venv
 
 Le projet dispose aussi d'une commande make qui se chargera de le faire pour vous :
 
+```sh
+make virtualenv
+```
+
 ### Activer l'environnement virtuel
 
 Avant chaque commande python/django, il sera primordial d'avoir activé votre environnement virtuel au préalable via la commande suivante (dans le répertoire du projet) :
@@ -54,7 +58,7 @@ pip install -r requirements/dev-mac.txt
 
 Les étapes ci-dessus (sauf le `activate`) peuvent être réalisées automagiquement par l'utilisation de `make venv`. Cette commande se chargera de créer le `venv`, d'installer les dépendances et de s'assurer qu'elles sont à jour avec votre `venv` via l'utilisation de [`pip-sync`](https://github.com/jazzband/pip-tools).
 
-> [!NOTE]
+> [!WARNING]
 > Cette commande n'active pas le virtualenv, pour toute utilisation d'une commande python, il ne faudra donc pas oublier de faire `. ./.venv/bin/activate` au préalable.
 
 ## Charger les données par défaut et configurer le service
@@ -69,7 +73,7 @@ make populate_db
 Il faudra également surcharger les `redirect_uris` par défaut de l'application via l'administration Django.
 
 > [!NOTE]
-> Pour utiliser le service il faut les identifiants suivants :
+> Pour utiliser le service il vous faudra les identifiants suivants :
 > - le `client_id` est `local_inclusion_connect`
 > - le `client_secret` est `password`
 
@@ -92,13 +96,13 @@ docker compose up
 
 ## Lancer le serveur de développement
 
-Avec votre environnement virtuel d'activé :
+Avec votre environnement virtuel d'activé lancez :
 
 ```sh
 ./manage.py runserver
 ```
 
-En utilisant la commande `make` (qui va en plus s'assurer que le venv existe, le créer sinon, synchroniser les dépendances, etc) :
+Ou si vous préférez la commande `make` (qui va en plus s'assurer que le `venv` existe, le créer sinon, synchroniser les dépendances, etc) :
 
 ```sh
 make runserver
@@ -125,7 +129,7 @@ Inclusion Connect utilise une base de données PostgreSQL.
 
 C'est le fichier ``docker-compose.yml`` qui s'occupe de tout pour créer celle-ci.
 
-NB: le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port
+NB : le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port
 `5432` soit déjà utilisé.
 
 ## Serveur mail de test MailHog
