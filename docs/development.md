@@ -126,7 +126,7 @@ Si tout va bien (croisons les doigts) vous aurez accès à l'admin : `http://loc
 > - Adresse e-mail : `admin@test.com`
 > - Mot de passe : `password`
 
-Il faudra utiliser le couple `local_inclusion_connect`/`password` pour se connecter avec un client OpenID Connect
+Il faudra utiliser le couple `local_inclusion_connect`/`password` pour se connecter avec un client OpenID Connect.
 
 
 # Composants applicatifs
@@ -137,12 +137,11 @@ Inclusion Connect utilise une base de données PostgreSQL.
 
 C'est le fichier ``docker-compose.yml`` qui s'occupe de tout pour créer celle-ci.
 
-NB : le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port
-`5432` soit déjà utilisé.
+NB : le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port `5432` soit déjà utilisé.
 
 ## Serveur mail de test MailHog
 
 Afin d'avoir accès aux mails envoyés par Inclusion Connect en local, notre `docker-compose.yml` lance une image docker de [MailHog](https://github.com/mailhog/MailHog).
 
-MailHog donne accès à un faux webmail à l'addresse http://localhost:8025 qui permet d'afficher tous les emails qui sont envoyés.
+MailHog donne accès à un faux webmail à l'adresse http://localhost:8025 qui permet d'afficher tous les emails qui sont envoyés.
 Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse email.
