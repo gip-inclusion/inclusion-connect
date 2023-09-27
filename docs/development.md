@@ -100,7 +100,11 @@ Inclusion Connect utilise une base de données PostgreSQL.
 
 C'est le fichier ``docker-compose.yml`` qui s'occupe de tout pour créer celle-ci.
 
-NB : le port exposé est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port `5432` soit déjà utilisé.
+Le port exposé par défaut est le `5433` car si vous travaillez déjà avec un PSQL, il est probable que votre port `5432` soit déjà utilisé. Vous pouvez changer le numéro de port par défaut via la variable d'environnement `POSTGRES_PORT_ON_DOCKER_HOST`.
+
+Il vous faudra alors modifier la variable d'environnement `PGPORT` en conséquence pour que votre application Django se connecte sur le bon port.
+
+Pour faciliter la gestion des variables d'environnement, l'utilisation de [`direnv`](https://direnv.net/) est recommandée.
 
 ## Serveur mail de test MailHog
 
