@@ -30,7 +30,7 @@ Cette commande va créer un environnement virtuel dans `.venv`, installer les d�
 
 ### Activer l'environnement virtuel
 
-Avant chaque commande python/django, assurez-vous d'avoir un environnement virtuel d'activé au préalable. Pour activer un environnement virtuel pour le shell courant, lancez la commande suivante :
+Avant de lancer une commande python/django, assurez-vous d'avoir un environnement virtuel d'activé. Pour activer un environnement virtuel pour le shell courant, lancez la commande suivante :
 
 ```sh
 . .venv/bin/activate
