@@ -368,12 +368,9 @@ CSP_IMG_SRC = [
 ]
 CSP_STYLE_SRC = [
     "'self'",
-    "'unsafe-inline'",  # Becaue of tally
 ]
 CSP_FONT_SRC = ["'self'"]
-
-CSP_FRAME_SRC = ["https://tally.so"]
-CSP_SCRIPT_SRC = ["'self'", "https://tally.so/widgets/embed.js"]
+CSP_SCRIPT_SRC = ["'self'"]
 CSP_CONNECT_SRC = ["'self'"]
 CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
