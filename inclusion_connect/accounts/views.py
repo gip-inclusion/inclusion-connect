@@ -152,8 +152,8 @@ class ActivateAccountView(BaseUserCreationView):
 class PasswordResetView(auth_views.PasswordResetView):
     template_name = "password_reset.html"
     subject_template_name = "registration/password_reset_subject.txt"
-    email_template_name = "registration/password_reset_email.txt"
-    html_email_template_name = "registration/password_reset_email.html"
+    email_template_name = "registration/password_reset_body.txt"
+    html_email_template_name = "registration/password_reset_body.html"
     form_class = forms.PasswordResetForm
     EVENT_NAME = "forgot_password"
 
