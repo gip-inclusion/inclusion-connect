@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user
 from django.core import mail
 from django.db.models import F
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -281,7 +282,7 @@ class TestLoginView:
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(
-            email="michel@pole-emploi.fr",
+            email="michel@not-pole-emploi.fr",
             first_name="old_first_name",
             last_name="old_last_name",
             federation=Federation.PEAMA,
@@ -318,6 +319,68 @@ class TestLoginView:
             ],
         )
         assertContains(response, "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.")
+
+    def test_pole_emploi_user_cannot_use_login_password(self, client, caplog):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(
+            email="michel@pole-emploi.fr",
+            first_name="old_first_name",
+            last_name="old_last_name",
+        )
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, reverse("accounts:register"))  # Link to register page
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assert get_user(client).is_authenticated is False
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "event": "login_error",
+                        "errors": {
+                            "__all__": [
+                                {
+                                    "message": "Votre compte est un compte agent Pôle Emploi. "
+                                    "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service.",
+                                    "code": "",
+                                }
+                            ]
+                        },
+                    },
+                )
+            ],
+        )
+        assertContains(
+            response,
+            "Votre compte est un compte agent Pôle Emploi. "
+            "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service",
+        )
+
+    @override_settings(PEAMA_STAGING=True)
+    def test_pole_emploi_user_can_use_login_password_if_staging(self, client, caplog):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(
+            email="michel@pole-emploi.fr",
+            first_name="old_first_name",
+            last_name="old_last_name",
+        )
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, reverse("accounts:register"))  # Link to register page
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assert get_user(client).is_authenticated is True
 
 
 class TestRegisterView:
