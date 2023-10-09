@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from inclusion_connect.accounts.emails import send_verification_email
+from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import EmailAddress, User
 
 
@@ -190,7 +191,11 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
         email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
         email_field.disabled = "email" in initial
 
-    def save(self, *args, request=None, **kwargs):
+    def get_users(self, email, is_federated=False):
+        users = super().get_users(email)
+        return [user for user in users if bool(user.federation) == is_federated]
+
+    def save(self, *args, request=None, from_email=None, **kwargs):
         super().save(*args, request=request, **kwargs)
         email = self.cleaned_data["email"]
         if next_url := request.session.get("next_url"):
@@ -198,6 +203,15 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
             if users:
                 [user] = users
                 user.save_next_redirect_uri(next_url)
+        for user in self.get_users(email, is_federated=True):
+            self.send_mail(
+                "registration/password_reset_subject.txt",
+                "registration/password_reset_body_federation.txt",
+                {"federation": Federation(user.federation).label},
+                from_email,
+                user.email,
+                html_email_template_name="registration/password_reset_body_federation.html",
+            )
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
