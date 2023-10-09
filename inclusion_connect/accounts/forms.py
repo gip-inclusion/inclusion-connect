@@ -39,6 +39,18 @@ class LoginForm(forms.Form):
         if email is not None and password:
             # Don't allow federated users
             user = User.objects.filter(email=email).first()
+            if (
+                user
+                and user.email.endswith("@pole-emploi.fr")
+                and settings.PEAMA_ENABLED
+                and not settings.PEAMA_STAGING
+            ):
+                error_message = (
+                    "Votre compte est un compte agent Pôle Emploi. "
+                    "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service."
+                )
+                self.log["user"] = user.pk
+                raise forms.ValidationError(error_message)
             if user and user.federation:
                 identity_provider = user.get_federation_display()
                 error_message = (
