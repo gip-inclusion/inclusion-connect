@@ -16,9 +16,9 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/auth/authorize?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
+    http://0.0.0.0:8080/auth/authorize/?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
 
-    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize`
+    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize/`
 
     Les paramètres à renseigner sont:
 
@@ -42,9 +42,9 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/auth/register?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W&from=emplois
+    http://0.0.0.0:8080/auth/register/?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W&from=emplois
 
-    L’url est celle de l’endpoint Registration: `https://{hostname}/auth/register`
+    L’url est celle de l’endpoint Registration: `https://{hostname}/auth/register/`
 
     Les paramètres à renseigner sont:
 
@@ -88,9 +88,9 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/auth/authorize?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
+    http://0.0.0.0:8080/auth/authorize/?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
 
-    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize`
+    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize/`
 
     Les paramètres à renseigner sont:
 
@@ -120,9 +120,9 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/auth/authorize?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
+    http://0.0.0.0:8080/auth/authorize/?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
 
-    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize`
+    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize/`
 
     Les paramètres à renseigner sont:
 
@@ -178,9 +178,9 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/auth/activate?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=mJGvp3qwBMkD%3AYedrAibh8pHw0yx3mY8-L2Zp-vhLe8D-rL2aClHm9zQ&nonce=CbBAoMxEUIJR&login_hint=mon%40email.com&lastname=Nom&firstname=Pr%C3%A9nom
+    http://0.0.0.0:8080/auth/activate/?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=mJGvp3qwBMkD%3AYedrAibh8pHw0yx3mY8-L2Zp-vhLe8D-rL2aClHm9zQ&nonce=CbBAoMxEUIJR&login_hint=mon%40email.com&lastname=Nom&firstname=Pr%C3%A9nom
 
-    L’url est celle de l’endpoint Registration: `https://{hostname}/auth/activate`
+    L’url est celle de l’endpoint Registration: `https://{hostname}/auth/activate/`
 
     Les paramètres à renseigner sont:
 
@@ -214,7 +214,7 @@ La déconnexion peut être faite de deux manières:
 
     Pas d’accès direct vu qu’il faut l’`id_token`
 
-    L’url est celle de l’endpoint Logout: `https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout`
+    L’url est celle de l’endpoint Logout: `https://{hostname}/auth/logout/`
 
     Les paramètres à renseigner sont:
 
@@ -233,9 +233,9 @@ La déconnexion peut être faite de deux manières:
   - <details>
     <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-    http://0.0.0.0:8080/realms/local/protocol/openid-connect/logout?client_id=local_inclusion_connect&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A8000
+    http://0.0.0.0:8080/auth/logout/?client_id=local_inclusion_connect&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A8000
 
-    L’url est celle de l’endpoint Logout: `https://{hostname}/realms/{realm-name}/protocol/openid-connect/logout`
+    L’url est celle de l’endpoint Logout: `https://{hostname}/auth/logout/`
 
     Les paramètres à renseigner sont:
 
@@ -261,9 +261,9 @@ Pour se faire, il faut passer les paramètres (`referrer` et `referrer_uri`, voi
 - <details>
   <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
 
-  http://0.0.0.0:8080/accounts/my-account?referrer=local_inclusion_connect&referrer_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fauthorize%3Fnext_url%3Dhttp%253A%252F%252Flocalhost%253A8000%252Fdashboard%252Fedit_user_info%26user_kind%3Dprescriber
+  http://0.0.0.0:8080/accounts/my-account/?referrer=local_inclusion_connect&referrer_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fauthorize%3Fnext_url%3Dhttp%253A%252F%252Flocalhost%253A8000%252Fdashboard%252Fedit_user_info%26user_kind%3Dprescriber
 
-  L’url est : `https://{hostname}/accounts/my-account`
+  L’url est : `https://{hostname}/accounts/my-account/`
 
   Les paramètres à renseigner :
 

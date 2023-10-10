@@ -13,12 +13,12 @@ Le format des urls est le suivant :
 
 |               |                                       |
 |           --- | ---                                   |
-| Authorization | https://{hostname}/auth/authorize     |
-| Registration  | https://{hostname}/auth/register      |
-| Activation    | https://{hostname}/auth/activate      |
-| Token         | https://{hostname}/auth/token         |
-| UserInfo      | https://{hostname}/auth/userinfo      |
-| Logout        | https://{hostname}/auth/logout        |
+| Authorization | https://{hostname}/auth/authorize/    |
+| Registration  | https://{hostname}/auth/register/     |
+| Activation    | https://{hostname}/auth/activate/     |
+| Token         | https://{hostname}/auth/token/        |
+| UserInfo      | https://{hostname}/auth/userinfo/     |
+| Logout        | https://{hostname}/auth/logout/       |
 
 
 D'un point de vue OpenID Connect, les end-points Authorization, Registration et Activation
@@ -31,19 +31,19 @@ le redirige vers une vue différente pour chaque end-point.
 sequenceDiagram
 Note right of Utilisateur: L'utilisateur clique sur le bouton "Inclusion Connect"
 Utilisateur ->> FS: ;
-FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/authorize
-Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/authorize
+FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/authorize/
+Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/authorize.
 Inclusion Connect -->> Utilisateur: Redirect 302 <FS_URL>/<URL_CALLBACK>
 Utilisateur ->> FS: GET <FS_URL>/<URL_CALLBACK>
-FS ->> Inclusion Connect: POST <IC_URL>/auth/token
+FS ->> Inclusion Connect: POST <IC_URL>/auth/token/
 Inclusion Connect -->> FS: HTTP Response 200
-FS ->> Inclusion Connect: POST <IC_URL>/auth/userinfo
+FS ->> Inclusion Connect: POST <IC_URL>/auth/userinfo/
 Inclusion Connect -->> FS: HTTP Response 200
 FS -->> Utilisateur: Redirect 302 <FS_URL>/page_authentifée
 Note right of Utilisateur: Plus tard l'utilisateur se déconnecte du fournisseur de service
 Utilisateur ->> FS: ;
-FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/logout
-Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/logout
+FS -->> Utilisateur: Redirect 302 <IC_URL>/auth/logout/
+Utilisateur ->> Inclusion Connect: GET <IC_URL>/auth/logout/
 Inclusion Connect -->> Utilisateur: Redirect 302 <FS_URL>/<POST_LOGOUT_REDIRECT_URI>
 Utilisateur ->> FS: GET <FS_URL>/<POST_LOGOUT_REDIRECT_URI>
 ```
@@ -65,7 +65,7 @@ Le détail des flux peut être trouvé en anglais ici :
 
 #### Requête (Authentification)
 
-- URL : `https://{hostname}/auth/authorize?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- URL : `https://{hostname}/auth/authorize/?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
 - Méthode : GET
 
 Les paramètres sont les suivants :
@@ -88,7 +88,7 @@ Une fois sur Inclusion Connect, il y a 3 possibilités.
 
 Il est possible d'utiliser l'endpoint _Registration_ pour que l'utilisateur arrive directement sur cette seconde page.
 
-- URL : `https://{hostname}/auth/register?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- URL : `https://{hostname}/auth/register/?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
 - Méthode : GET
 
 Les paramètres sont les mêmes que pour l'Authentification.
@@ -97,7 +97,7 @@ Les paramètres sont les mêmes que pour l'Authentification.
 
 Il est possible d'utiliser l'endpoint _Activation_ pour que l'utilisateur arrive directement sur une page de création de compte pré-remplie.
 
-- URL : `https://{hostname}/auth/activate?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
+- URL : `https://{hostname}/auth/activate/?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
 - Méthode : GET
 
 Les paramètres sont les mêmes que pour l'Authentification, plus :
@@ -139,7 +139,7 @@ Les paramètres sont les suivants :
 
 #### Requête
 
-- URL : `https://{hostname}/auth/token`
+- URL : `https://{hostname}/auth/token/`
 - Méthode : POST
 - Header attendu: `Content-Type: application/x-www-form-urlencoded`
 - Body: au format `key1=value1&key2=value2` (adapté au content-type `application/x-www-form-urlencoded` )
@@ -202,7 +202,7 @@ sont déjà présentent dans l'id_token.
 
 #### Requête
 
-- URL :  `https://{hostname}/auth/userinfo`
+- URL :  `https://{hostname}/auth/userinfo/`
 - Méthode : GET. La transmission du token JWT _access_token_ DOIT se faire dans le header `Authorization : Bearer <Token>`.
 
 #### Réponse
@@ -228,11 +228,11 @@ Cela peut être fait de deux manières :
 
 #### Sans confirmation
 
-On redirige l'utilisateur sur `https://{hostname}/auth/logout?state=<STATE>&id_token_hint=<ID_TOKEN>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`
+On redirige l'utilisateur sur `https://{hostname}/auth/logout/?state=<STATE>&id_token_hint=<ID_TOKEN>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`
 qui sera ensuite redirigé vers l'url passée avec le paramètre **post_logout_redirect_uri**.
 
 
 #### Avec confirmation
 
-Si le `STATE` et/ou l'`ID_TOKEN` ne sont pas disponibles, il est possible de déconnecter l'utilisateur avec une redirection  vers `https://{hostname}/auth/logout?client_id=<CLIENT_ID>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`.
+Si le `STATE` et/ou l'`ID_TOKEN` ne sont pas disponibles, il est possible de déconnecter l'utilisateur avec une redirection  vers `https://{hostname}/auth/logout/?client_id=<CLIENT_ID>&post_logout_redirect_uri=<FS_URL>%2F<POST_LOGOUT_REDIRECT_URI>`.
 Dans ce cas, l'utilisateur devra confirmer sa volonté de se deconnecter d'Inclusion Connect et sera ensuite redirigé vers l'url passée avec le paramètre **post_logout_redirect_uri**.
