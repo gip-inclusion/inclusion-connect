@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from .base import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position # noqa: E402,F403
@@ -31,6 +32,8 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+NEW_TERMS_DATE = datetime.datetime.fromisoformat("2023-01-01T00:00:00+00:00")
 
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
 DEBUG_TOOLBAR_CONFIG = {

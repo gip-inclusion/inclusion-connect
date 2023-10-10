@@ -286,8 +286,8 @@ class TestRegisterView:
         response = client.get(url)
         assertContains(response, "Créer un compte")
         assertContains(response, reverse("accounts:login"))  # Link to login page
-        assertContains(response, "CGU_20230302.pdf")
-        assertContains(response, quote("Politique de confidentialité_20230512.pdf"))
+        assertContains(response, "CGU_v5.pdf")
+        assertContains(response, quote("Politique_de_confidentialite_v5.pdf"))
 
         user_email = "user@mailinator.com"
         response = client.post(
@@ -549,8 +549,8 @@ class TestRegisterView:
         response = client.get(url)
         assertContains(response, "Créer un compte")
         assertContains(response, reverse("accounts:login"))  # Link to login page
-        assertContains(response, "CGU_20230302.pdf")
-        assertContains(response, quote("Politique de confidentialité_20230512.pdf"))
+        assertContains(response, "CGU_v5.pdf")
+        assertContains(response, quote("Politique_de_confidentialite_v5.pdf"))
         assertContains(
             response,
             # Pre-filled with email address from login_hint.
