@@ -203,7 +203,7 @@ sont déjà présentent dans l'id_token.
 #### Requête
 
 - URL :  `https://{hostname}/auth/userinfo/`
-- Méthode : GET. La transmission du token JWT _access_token_ DOIT se faire dans le header `Authorization : Bearer <Token>`.
+- Méthode : GET. La transmission de l'_access_token_ DOIT se faire dans le header `Authorization : Bearer <Token>`.
 
 #### Réponse
 
