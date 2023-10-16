@@ -1,21 +1,17 @@
 # serializer version: 1
 # name: test_homepage
   '''
-  
-  
-  
-  <!DOCTYPE HTML>
-  <html lang="fr">
-      <head>
-          <meta charset="utf-8">
+  <!DOCTYPE html>
+  <html lang="fr"><head>
+          <meta charset="utf-8"/>
           <title>Inclusion Connect</title>
-          <meta name="robots" content="noindex, nofollow">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta content="noindex, nofollow" name="robots"/>
+          <meta content="width=device-width, initial-scale=1" name="viewport"/>
   
-          <link rel="icon" href="/static/img/illustration-bg-ic.svg" type="image/svg+xml">
-          <link rel="icon" href="/static/img/favicon.ico" type="image/ico">
-          <link rel="stylesheet" href="/static/vendor/theme-inclusion/stylesheets/app.css" type="text/css">
-          <link rel="stylesheet" href="/static/css/inclusion_connect.css" type="text/css">
+          <link href="/static/img/illustration-bg-ic.svg" rel="icon" type="image/svg+xml"/>
+          <link href="/static/img/favicon.ico" rel="icon" type="image/ico"/>
+          <link href="/static/vendor/theme-inclusion/stylesheets/app.css" rel="stylesheet" type="text/css"/>
+          <link href="/static/css/inclusion_connect.css" rel="stylesheet" type="text/css"/>
   
           
       </head>
@@ -24,15 +20,15 @@
   
   
   
-  <header role="banner" id="header">
+  <header id="header" role="banner">
       <section class="s-header">
           <div class="s-header__container container">
               <div class="s-header__row row">
                   <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center ps-xl-0 pe-0">
-                      <img src="/static/vendor/theme-inclusion/images/logo-ministere-emploi.svg" alt="Ministère du travail, du plein emploi et de l'insertion" />
+                      <img alt="Ministère du travail, du plein emploi et de l'insertion" src="/static/vendor/theme-inclusion/images/logo-ministere-emploi.svg"/>
                   </div>
                   <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center px-0">
-                      <img src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg" alt="Inclusion Connect" height="90" />
+                      <img alt="Inclusion Connect" height="90" src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg"/>
                   </div>
                   <div class="s-header__col s-header__col--burger col d-flex align-items-center justify-content-end d-xl-none"></div>
               </div>
@@ -41,7 +37,7 @@
   </header>
   
   
-          <main id="main" role="main" class="s-main">
+          <main class="s-main" id="main" role="main">
   
               <section class="s-section pt-lg-3">
                   <div class="container">
@@ -65,7 +61,7 @@
           Inclusion Connect est une solution de connexion unique à plusieurs services publics pour les professionnels de l'inclusion.
       </p>
   
-      <a href="https://inclusion.beta.gouv.fr/nos-services/inclusion-connect/" target="_blank" class="has-external-link" aria-label="En savoir plus sur Inclusion Connect(lien externe)">En savoir plus</a>
+      <a aria-label="En savoir plus sur Inclusion Connect(lien externe)" class="has-external-link" href="https://inclusion.beta.gouv.fr/nos-services/inclusion-connect/" target="_blank">En savoir plus</a>
   
   
           </div>
@@ -73,7 +69,7 @@
   
                           
       <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
-          <img class="img-fluid" src="/static/img/illustration-ic.svg" alt="" loading="lazy">
+          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
       </div>
   
                       </div>
@@ -85,12 +81,12 @@
           
   
   
-  <footer role="contentinfo" id="footer">
+  <footer id="footer" role="contentinfo">
       <section class="s-footer-gip">
           <div class="s-footer-gip__container container">
               <div class="s-footer-gip__row row">
                   <div class="s-footer-gip__col s-footer-gip__col--logo col-12 col-md-auto col-lg-auto">
-                      <img src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg" alt="Rébublique Française" class="img-fluid" width="130">
+                      <img alt="Rébublique Française" class="img-fluid" src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg" width="130"/>
                   </div>
                   <div class="s-footer-gip__col col-12 col-md col-lg">
                       <p class="mb-1">
@@ -98,20 +94,20 @@
                       </p>
                       <p class="m-0">
                           Vous constatez un problème de sécurité sur le service ?
-                          <br class="d-none d-md-inline">
+                          <br class="d-none d-md-inline"/>
                           Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
                       </p>
                   </div>
                   <div class="s-footer-gip__col s-footer-gip__col--links col-12 col-lg-auto">
                       <ul>
                           <li>
-                              <a href="https://beta.gouv.fr/" target="_blank" aria-label="Incubateur de services publics numériques — beta.gouv.fr (lien externe)">beta.gouv.fr</a>
+                              <a aria-label="Incubateur de services publics numériques — beta.gouv.fr (lien externe)" href="https://beta.gouv.fr/" target="_blank">beta.gouv.fr</a>
                           </li>
                           <li>
-                              <a href="https://www.data.gouv.fr/fr/" target="_blank" aria-label="Data.gouv.fr (lien externe)">data.gouv.fr</a>
+                              <a aria-label="Data.gouv.fr (lien externe)" href="https://www.data.gouv.fr/fr/" target="_blank">data.gouv.fr</a>
                           </li>
                           <li>
-                              <a href="https://api.gouv.fr/" target="_blank" aria-label="Simplifiez le partage et la circulation des données administratives grace à api.gouv.fr (lien externe)">api.gouv.fr</a>
+                              <a aria-label="Simplifiez le partage et la circulation des données administratives grace à api.gouv.fr (lien externe)" href="https://api.gouv.fr/" target="_blank">api.gouv.fr</a>
                           </li>
                       </ul>
                   </div>
@@ -125,7 +121,8 @@
                   <div class="s-footer-legal__col col-12">
                       <ul>
                           <li>
-                              <a href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08" target="_blank">Aide</a>
+                              <a class="matomo-event" data-matomo-action="clic" data-matomo-category="aide" data-matomo-name="Aide (footer)" href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08" target="_blank">Aide</a>
+  
                           </li>
                           <li>
                               <a href="/static/terms/Politique_de_confidentialite_v5.pdf" target="_blank">Politique de confidentialité</a>
@@ -144,7 +141,24 @@
   </footer>
   
   
+  
           
+              <!-- Matomo -->
+              <script id="matomo-custom-init" nonce="NORMALIZED_CSP_NONCE">
+                var _paq = window._paq = window._paq || [];
+                _paq.push(['trackPageView']);
+                _paq.push(['enableLinkTracking']);
+                (function() {
+                  var u="https://matomo.example.com";
+                  _paq.push(['setTrackerUrl', u+'matomo.php']);
+                  _paq.push(['setSiteId', 1]);
+                  var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+                  g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+                })();
+              </script>
+              <!-- End Matomo Code -->
+          
+  
           
           
   
@@ -155,8 +169,8 @@
           
               <script src="/static/js/index.js"></script>
           
-      </body>
-  </html>
+      
   
+  </body></html>
   '''
 # ---

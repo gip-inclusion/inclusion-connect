@@ -33,7 +33,9 @@
                 </div>
             </fieldset>
             <div>
-                {% bootstrap_button "Enregistrer les modifications" button_type="submit" button_class="btn btn-block btn-primary" %}
+                <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="compte" data-matomo-action="clic" data-matomo-name="Enregistrer les modifications">
+                    Enregistrer les modifications
+                </button>
             </div>
         </form>
     {% endif %}

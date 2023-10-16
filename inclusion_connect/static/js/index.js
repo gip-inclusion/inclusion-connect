@@ -8,25 +8,39 @@ addEventListener("DOMContentLoaded", () => {
   // state of the button when clicking "Previous" in the browser, eventually
   // disabling moving forward afterwards!
 
-  document.querySelectorAll('form.js-prevent-multiple-submit').forEach((form) => {
-    let submitted = false;
-    function disableSubmit(event) {
-      if (submitted) {
-        event.preventDefault();
+  document
+    .querySelectorAll("form.js-prevent-multiple-submit")
+    .forEach((form) => {
+      let submitted = false;
+      function disableSubmit(event) {
+        if (submitted) {
+          event.preventDefault();
+        }
+        submitted = true;
       }
-      submitted = true;
+      form.addEventListener("submit", disableSubmit);
+    });
+
+  document.querySelectorAll(".matomo-event").forEach((mat) => {
+    if (mat.dataset.size !== 0) {
+      mat.addEventListener("click", () => {
+        var category = mat.dataset.matomoCategory;
+        var action = mat.dataset.matomoAction;
+        var name = mat.dataset.matomoName;
+
+        var _paq = (window._paq = window._paq || []);
+        _paq.push(["trackEvent", category, action, name]);
+      });
     }
-    form.addEventListener("submit", disableSubmit);
   });
 
-
-  const pwInput = document.querySelector('.password-with-instructions input');
+  const pwInput = document.querySelector(".password-with-instructions input");
   if (pwInput) {
     function indicatorStatus(elt, matchesCrit, label) {
-        elt.classList.toggle("ri-close-circle-line", !matchesCrit);
-        elt.classList.toggle("text-warning", !matchesCrit);
-        elt.classList.toggle("ri-checkbox-circle-line", matchesCrit);
-        elt.classList.toggle("text-success", matchesCrit);
+      elt.classList.toggle("ri-close-circle-line", !matchesCrit);
+      elt.classList.toggle("text-warning", !matchesCrit);
+      elt.classList.toggle("ri-checkbox-circle-line", matchesCrit);
+      elt.classList.toggle("text-success", matchesCrit);
     }
 
     const pwLengthIndicator = document.getElementById("pw-length");
@@ -53,9 +67,10 @@ addEventListener("DOMContentLoaded", () => {
       const specialCharOk = /(\W|_)/.test(pw);
       indicatorStatus(specialCharIndicator, specialCharOk);
 
-      const fieldOk = lengthOk && digitOk && lowerOk && upperOk && specialCharOk;
+      const fieldOk =
+        lengthOk && digitOk && lowerOk && upperOk && specialCharOk;
       pwInput.classList.toggle("is-invalid", !fieldOk);
       pwInput.classList.toggle("is-valid", fieldOk);
-    })
+    });
   }
 });

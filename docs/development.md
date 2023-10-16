@@ -75,6 +75,9 @@ make runserver
 make test
 ```
 
+> [!NOTE]
+> Certains tests utilisent des snapshots via [syrupy](https://tophat.github.io/syrupy/). Lors de la modification de ces tests, il ne faudra pas oublier de relancer `pytest --snapshot-update` pour mettre les snapshots à jour.
+
 ## Normalement tout devrait être bon !
 
 Si tout va bien (croisons les doigts) vous aurez accès à l'admin : [http://localhost:8080/admin](http://localhost:8080/admin) et aux [autres urls](docs/inclusion_connect.md).

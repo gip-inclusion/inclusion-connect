@@ -97,7 +97,13 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.email == user_email
     assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
+        [
+            (
+                user.pk,
+                user_email,
+                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
+            )
+        ],
     )
     assert user.linked_applications.count() == 0
     assertRecords(
@@ -190,7 +196,12 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "email": user_email, "user": user.pk, "event": "register"},
+                {
+                    "application": "my_application",
+                    "email": user_email,
+                    "user": user.pk,
+                    "event": "register",
+                },
             )
         ],
     )
@@ -207,7 +218,13 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
     assert user.email == user_email
     assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
+        [
+            (
+                user.pk,
+                user_email,
+                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
+            )
+        ],
     )
     assert user.linked_applications.count() == 0
     assertRecords(
@@ -378,7 +395,11 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login", "application": "my_application"},
+                    {
+                        "user": user.pk,
+                        "event": "login",
+                        "application": "my_application",
+                    },
                 )
             ],
         )
@@ -389,7 +410,11 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"application": "my_application", "user": user.pk, "event": "login"},
+                    {
+                        "application": "my_application",
+                        "user": user.pk,
+                        "event": "login",
+                    },
                 )
             ],
         )
@@ -445,11 +470,18 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url, follow=True)
     assert response.status_code == 400
-    assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
+    assertRecords(
+        caplog,
+        [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
+    )
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oauth2_provider:activate")
-    auth_params = oidc_params | {"login_hint": user_email, "firstname": "firstname", "lastname": "lastname"}
+    auth_params = oidc_params | {
+        "login_hint": user_email,
+        "firstname": "firstname",
+        "lastname": "lastname",
+    }
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:activate"))
@@ -499,7 +531,13 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assert user.email == user_email
     assertQuerySetEqual(
         EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [(user.pk, user_email, datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc))],
+        [
+            (
+                user.pk,
+                user_email,
+                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
+            )
+        ],
     )
     assert user.linked_applications.count() == 0
     assertRecords(
@@ -651,7 +689,11 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "forgot_password", "user": user.pk},
+                {
+                    "application": "my_application",
+                    "event": "forgot_password",
+                    "user": user.pk,
+                },
             )
         ],
     )
@@ -663,7 +705,9 @@ def test_login_after_password_reset(caplog, client, oidc_params):
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
                 "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                "J’ai besoin d’aide</a>",
             )
         ],
     )
@@ -671,7 +715,10 @@ def test_login_after_password_reset(caplog, client, oidc_params):
     reset_url_regex = reverse("accounts:password_reset_confirm", args=("string", "string")).replace("string", "[^/]*")
     reset_url = re.search(reset_url_regex, mail.outbox[0].body)[0]
     response = client.get(reset_url)  # retrieve the modified url
-    response = client.post(response.url, data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"})
+    response = client.post(
+        response.url,
+        data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+    )
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
     assertRecords(
@@ -680,7 +727,11 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "reset_password", "user": user.pk},
+                {
+                    "application": "my_application",
+                    "event": "reset_password",
+                    "user": user.pk,
+                },
             ),
             (
                 "inclusion_connect.auth",
@@ -740,7 +791,11 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "forgot_password", "user": user.pk},
+                {
+                    "application": "my_application",
+                    "event": "forgot_password",
+                    "user": user.pk,
+                },
             )
         ],
     )
@@ -752,7 +807,9 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
                 "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                "J’ai besoin d’aide</a>",
             )
         ],
     )
@@ -762,7 +819,10 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
 
     other_client = Client()
     response = other_client.get(reset_url)  # retrieve the modified url
-    response = other_client.post(response.url, data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"})
+    response = other_client.post(
+        response.url,
+        data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+    )
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(other_client).is_authenticated is True
     assertRecords(
@@ -771,7 +831,11 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "reset_password", "user": user.pk},
+                {
+                    "application": "my_application",
+                    "event": "reset_password",
+                    "user": user.pk,
+                },
             ),
             (
                 "inclusion_connect.auth",
@@ -894,7 +958,11 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
     assert get_user(client).is_authenticated is True
-    response = call_logout(client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"})
+    response = call_logout(
+        client,
+        "get",
+        {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+    )
     assertRedirects(response, "http://callback/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
@@ -940,7 +1008,11 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"application": "my_application", "user": user.pk, "event": "login"},
+                    {
+                        "application": "my_application",
+                        "user": user.pk,
+                        "event": "login",
+                    },
                 )
             ],
         )
@@ -970,7 +1042,9 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
     with freeze_time("2023-05-25 20:05"):
         assert get_user(client).is_authenticated is False
         response = call_logout(
-            client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"}
+            client,
+            "get",
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
         )
         assertRecords(
             caplog,
@@ -1043,7 +1117,12 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
 
     assert get_user(client).is_authenticated is True
     response = call_logout(
-        client, "get", {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/"}
+        client,
+        "get",
+        {
+            "client_id": oidc_params["client_id"],
+            "post_logout_redirect_uri": "http://callback/",
+        },
     )
     assert response.status_code == 200
     assertContains(
@@ -1055,7 +1134,11 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
     response = call_logout(
         client,
         "post",
-        {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+        {
+            "client_id": oidc_params["client_id"],
+            "post_logout_redirect_uri": "http://callback/",
+            "allow": True,
+        },
     )
     assertRedirects(response, "http://callback/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
@@ -1101,7 +1184,11 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"application": "my_application", "user": user.pk, "event": "login"},
+                    {
+                        "application": "my_application",
+                        "user": user.pk,
+                        "event": "login",
+                    },
                 )
             ],
         )
@@ -1130,7 +1217,12 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
     with freeze_time("2023-05-25 20:05"):
         assert get_user(client).is_authenticated is False
         response = call_logout(
-            client, "get", {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/"}
+            client,
+            "get",
+            {
+                "client_id": oidc_params["client_id"],
+                "post_logout_redirect_uri": "http://callback/",
+            },
         )
         assert response.status_code == 200
         assertContains(
@@ -1142,7 +1234,11 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         response = call_logout(
             client,
             "post",
-            {"client_id": oidc_params["client_id"], "post_logout_redirect_uri": "http://callback/", "allow": True},
+            {
+                "client_id": oidc_params["client_id"],
+                "post_logout_redirect_uri": "http://callback/",
+                "allow": True,
+            },
         )
         assertRecords(
             caplog,
@@ -1182,8 +1278,15 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
 
     # User is redirected to login
     response = client.get(edit_user_info_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}))
-    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    assertRedirects(
+        response,
+        add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}),
+    )
+    response = client.post(
+        response.url,
+        data={"email": user.email, "password": DEFAULT_PASSWORD},
+        follow=True,
+    )
     assertRedirects(response, edit_user_info_url)
     assertContains(response, "<h1>\n                Informations générales\n            </h1>")
     # The redirect cleans `next_url` from the session.
@@ -1271,7 +1374,11 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
+                {
+                    "email": "my@email.com",
+                    "user": user.pk,
+                    "event": "confirm_email_address",
+                },
             ),
             (
                 "inclusion_connect.auth",
@@ -1291,7 +1398,11 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
     response = client.post(
         change_password_url,
-        data={"old_password": DEFAULT_PASSWORD, "new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+        data={
+            "old_password": DEFAULT_PASSWORD,
+            "new_password1": "V€r¥--$3©®€7",
+            "new_password2": "V€r¥--$3©®€7",
+        },
     )
     assert get_user(client).is_authenticated is True
     assertRecords(
@@ -1300,7 +1411,11 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"event": "change_password", "user": user.pk, "application": application.client_id},
+                {
+                    "event": "change_password",
+                    "user": user.pk,
+                    "application": application.client_id,
+                },
             )
         ],
     )
@@ -1310,7 +1425,9 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
 
     # User may login with new password
     response = client.post(
-        reverse("accounts:login"), data={"email": "my@email.com", "password": "V€r¥--$3©®€7"}, follow=True
+        reverse("accounts:login"),
+        data={"email": "my@email.com", "password": "V€r¥--$3©®€7"},
+        follow=True,
     )
     assert get_user(client).is_authenticated is True
     assertRecords(
@@ -1329,12 +1446,19 @@ def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox)
     application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
     referrer_uri = "https://go/back/there"
-    params = {"referrer_uri": referrer_uri, "referrer": application.client_id, "login_hint": user.email}
+    params = {
+        "referrer_uri": referrer_uri,
+        "referrer": application.client_id,
+        "login_hint": user.email,
+    }
     edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
 
     # User is redirected to login
     response = client.get(edit_user_info_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}))
+    assertRedirects(
+        response,
+        add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}),
+    )
     assertContains(
         client.get(response.url),
         # Pre-filled with email address from login_hint.
@@ -1343,7 +1467,11 @@ def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox)
         'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
         count=1,
     )
-    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    response = client.post(
+        response.url,
+        data={"email": user.email, "password": DEFAULT_PASSWORD},
+        follow=True,
+    )
     assertRedirects(response, edit_user_info_url)
     assertContains(response, "<h1>\n                Informations générales\n            </h1>")
     # The redirect cleans `next_url` from the session.
@@ -1374,8 +1502,15 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
 
     # User is redirected to login
     response = client.get(edit_user_info_url)
-    assertRedirects(response, add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}))
-    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+    assertRedirects(
+        response,
+        add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}),
+    )
+    response = client.post(
+        response.url,
+        data={"email": user.email, "password": DEFAULT_PASSWORD},
+        follow=True,
+    )
     assertRedirects(response, edit_user_info_url)
     assertContains(response, "<h1>\n                Informations générales\n            </h1>")
     # The redirect cleans `next_url` from the session.
@@ -1448,7 +1583,11 @@ def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"email": "my@email.com", "user": user.pk, "event": "confirm_email_address"},
+                {
+                    "email": "my@email.com",
+                    "user": user.pk,
+                    "event": "confirm_email_address",
+                },
             ),
             (
                 "inclusion_connect.auth",
@@ -1487,14 +1626,30 @@ def test_admin_session_doesnt_give_access_to_non_admin_views(client, oidc_params
     # We don't have access to accounts or oidc views with staff_user
     account_url = reverse("accounts:edit_user_info")
     response = client.get(account_url)
-    assertContains(response, "Les comptes administrateurs n'ont pas accès à cette page.", status_code=403)
-    assertContains(response, add_url_params(reverse("admin:logout"), {"next": account_url}), status_code=403)
+    assertContains(
+        response,
+        "Les comptes administrateurs n'ont pas accès à cette page.",
+        status_code=403,
+    )
+    assertContains(
+        response,
+        add_url_params(reverse("admin:logout"), {"next": account_url}),
+        status_code=403,
+    )
 
     ApplicationFactory(client_id=oidc_params["client_id"])
     auth_complete_url = add_url_params(reverse("oauth2_provider:authorize"), oidc_params)
     response = client.get(auth_complete_url)
-    assertContains(response, "Les comptes administrateurs n'ont pas accès à cette page.", status_code=403)
-    assertContains(response, add_url_params(reverse("admin:logout"), {"next": auth_complete_url}), status_code=403)
+    assertContains(
+        response,
+        "Les comptes administrateurs n'ont pas accès à cette page.",
+        status_code=403,
+    )
+    assertContains(
+        response,
+        add_url_params(reverse("admin:logout"), {"next": auth_complete_url}),
+        status_code=403,
+    )
 
 
 @freeze_time("2023-05-05 11:11:11")
@@ -1556,7 +1711,11 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": application.client_id, "event": "accept_terms", "user": user.pk},
+                {
+                    "application": application.client_id,
+                    "event": "accept_terms",
+                    "user": user.pk,
+                },
             )
         ],
     )
@@ -1590,7 +1749,11 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims)
 
     logout_endpoint = requests_mock.get(settings.PEAMA_LOGOUT_ENDPOINT, status_code=204)
-    response = call_logout(client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"})
+    response = call_logout(
+        client,
+        "get",
+        {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+    )
     assert logout_endpoint.call_count == 1
     assertRedirects(response, "http://callback/", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated

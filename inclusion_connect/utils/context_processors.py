@@ -2,7 +2,7 @@ from django.conf import settings
 
 
 def expose_settings(*args):
-    return {
+    settings_to_expose = {
         key: getattr(settings, key)
         for key in [
             "FAQ_URL",
@@ -13,3 +13,9 @@ def expose_settings(*args):
             "PEAMA_ENABLED",
         ]
     }
+
+    global_constants_settings_to_expose = {
+        "MATOMO_SITE_ID": settings.MATOMO_SITE_ID,
+        "MATOMO_BASE_URL": settings.MATOMO_BASE_URL,
+    }
+    return {**settings_to_expose, **global_constants_settings_to_expose}
