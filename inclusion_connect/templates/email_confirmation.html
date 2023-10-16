@@ -18,12 +18,14 @@
 
     <form method="post" class="js-prevent-multiple-submit">
         {% csrf_token %}
-        {% bootstrap_button "Renvoyer l’e-mail de vérification" button_type="submit" button_class="btn btn-block btn-primary" %}
+        <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="email" data-matomo-action="clic" data-matomo-name="Renvoyer l’e-mail de vérification">
+            Renvoyer l’e-mail de vérification
+        </button>
     </form>
 
     <br>
 
     <div class="text-center">
-        <a href="{{ FAQ_URL }}" class="btn btn-link">J'ai besoin d'aide</a>
+        <a href="{{ FAQ_URL }}" class="btn btn-link matomo-event" data-matomo-category="aide" data-matomo-action="clic" data-matomo-name="J'ai besoin d'aide (email)">J'ai besoin d'aide</a>
     </div>
 {% endblock %}

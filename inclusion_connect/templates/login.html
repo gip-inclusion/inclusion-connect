@@ -31,7 +31,11 @@
                 </div>
             </div>
         </fieldset>
-        <div>{% bootstrap_button "Connexion" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
+        <div>
+            <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="authentification" data-matomo-action="clic" data-matomo-name="Connexion">
+                Connexion
+            </button>
+        </div>
     </form>
 
     {% if PEAMA_ENABLED %}
@@ -42,7 +46,7 @@
     <hr class="my-3 my-lg-4">
     <div class="text-center">
         <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
-        <a href="{% url 'accounts:register' %}" class="btn btn-link">Créer mon compte</a>
+        <a href="{% url 'accounts:register' %}" class="btn btn-link matomo-event" data-matomo-category="authentification" data-matomo-action="clic" data-matomo-name="Créer mon compte">Créer mon compte</a>
     </div>
 
 {% endblock %}

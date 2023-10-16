@@ -65,7 +65,10 @@ class TestLoginView:
     def test_no_next_url(self, caplog, client):
         user = UserFactory()
 
-        response = client.post(reverse("accounts:login"), data={"email": user.email, "password": DEFAULT_PASSWORD})
+        response = client.post(
+            reverse("accounts:login"),
+            data={"email": user.email, "password": DEFAULT_PASSWORD},
+        )
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assert get_user(client).is_authenticated is True
         assertRecords(
@@ -318,7 +321,10 @@ class TestLoginView:
                 )
             ],
         )
-        assertContains(response, "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.")
+        assertContains(
+            response,
+            "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.",
+        )
 
     def test_pole_emploi_user_cannot_use_login_password(self, client, caplog):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
@@ -454,7 +460,11 @@ class TestRegisterView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "user@mailinator.com", "user": user_from_db.pk, "event": "register"},
+                    {
+                        "email": "user@mailinator.com",
+                        "user": user_from_db.pk,
+                        "event": "register",
+                    },
                 )
             ],
         )
@@ -637,7 +647,14 @@ class TestRegisterView:
                     {
                         "email": user.email,
                         "event": "register_error",
-                        "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                        "errors": {
+                            "terms_accepted": [
+                                {
+                                    "message": "Ce champ est obligatoire.",
+                                    "code": "required",
+                                }
+                            ]
+                        },
                     },
                 )
             ],
@@ -721,7 +738,10 @@ class TestActivateAccountView:
         # If missing params in oidc session
         response = client.get(url)
         assert response.status_code == 400
-        assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
+        assertRecords(
+            caplog,
+            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
+        )
 
         client_session = client.session
         client_session[OIDC_SESSION_KEY] = {
@@ -779,7 +799,10 @@ class TestActivateAccountView:
         # If missing params in oidc session
         response = client.get(url)
         assert response.status_code == 400
-        assertRecords(caplog, [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")])
+        assertRecords(
+            caplog,
+            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
+        )
 
         client_session = client.session
         client_session[OIDC_SESSION_KEY] = {
@@ -948,7 +971,14 @@ class TestActivateAccountView:
                         "application": application.client_id,
                         "email": user.email,
                         "event": "activate_error",
-                        "errors": {"terms_accepted": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                        "errors": {
+                            "terms_accepted": [
+                                {
+                                    "message": "Ce champ est obligatoire.",
+                                    "code": "required",
+                                }
+                            ]
+                        },
                     },
                 )
             ],
@@ -980,7 +1010,9 @@ class TestPasswordResetView:
                         messages.SUCCESS,
                         "Si un compte existe avec cette adresse e-mail, "
                         "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                        f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                        f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                        'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                        "J’ai besoin d’aide</a>",
                     ),
                 ],
             )
@@ -1005,14 +1037,20 @@ class TestPasswordResetView:
         # More than a day after link generation
         with freeze_time("2023-06-09 09:10:04"):
             response = client.get(password_reset_url)
-            assertContains(response, "Veuillez renouveler votre demande de mise à jour de mot de passe.")
+            assertContains(
+                response,
+                "Veuillez renouveler votre demande de mise à jour de mot de passe.",
+            )
 
         # Exaclty a day after link generation
         with freeze_time("2023-06-09 09:10:03"):
             # Change password
             password = "V€r¥--$3©®€7"
             response = client.get(password_reset_url)  # retrieve the modified url
-            response = client.post(response.url, data={"new_password1": password, "new_password2": password})
+            response = client.post(
+                response.url,
+                data={"new_password1": password, "new_password2": password},
+            )
 
             # User is now logged in and redirected to next_url
             assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -1057,7 +1095,9 @@ class TestPasswordResetView:
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
                     "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                    "J’ai besoin d’aide</a>",
                 ),
             ],
         )
@@ -1096,7 +1136,9 @@ class TestPasswordResetView:
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
                     "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                    "J’ai besoin d’aide</a>",
                 ),
             ],
         )
@@ -1149,7 +1191,9 @@ class TestPasswordResetView:
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
                     "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}">J’ai besoin d’aide</a>',
+                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
+                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
+                    "J’ai besoin d’aide</a>",
                 ),
             ],
         )
@@ -1207,7 +1251,10 @@ class TestPasswordResetConfirmView:
         response = client.get(reverse("accounts:password_reset_confirm", args=(uid, token)))
         print(response.url)
         assertRedirects(response, response.url, fetch_redirect_response=False)
-        response = client.post(response.url, data={"new_password1": "password", "new_password2": "password-typo"})
+        response = client.post(
+            response.url,
+            data={"new_password1": "password", "new_password2": "password-typo"},
+        )
         assert response.status_code == 200
         assertRecords(
             caplog,
@@ -1306,7 +1353,11 @@ class TestEditUserInfoView:
         # Edit user info
         response = client.post(
             edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": "jo-with-typo@email.com"},
+            data={
+                "last_name": "Doe",
+                "first_name": "John",
+                "email": "jo-with-typo@email.com",
+            },
         )
         assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
         user.refresh_from_db()
@@ -1466,7 +1517,14 @@ class TestEditUserInfoView:
                         "event": "edit_user_info_error",
                         "user": user.pk,
                         "application": application.client_id,
-                        "errors": {"email": [{"message": "Ce champ est obligatoire.", "code": "required"}]},
+                        "errors": {
+                            "email": [
+                                {
+                                    "message": "Ce champ est obligatoire.",
+                                    "code": "required",
+                                }
+                            ]
+                        },
                     },
                 )
             ],
@@ -1476,7 +1534,10 @@ class TestEditUserInfoView:
         BUTTON_HTML_STR = 'type="submit"'
         application = ApplicationFactory()
         user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
-        client.force_login(user, backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend")
+        client.force_login(
+            user,
+            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
+        )
         params = {"referrer_uri": "rp_url", "referrer": application.client_id}
         edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
         response = client.get(edit_user_info_url)
@@ -1495,7 +1556,10 @@ class TestEditUserInfoView:
         assert user.first_name == "Jean"
         assert user.last_name == "Dupond"
         assert user.email == "jean.dupond@email.com"
-        assertRecords(caplog, [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")])
+        assertRecords(
+            caplog,
+            [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")],
+        )
 
 
 class TestPasswordChangeView:
@@ -1515,7 +1579,10 @@ class TestPasswordChangeView:
 
         # with referrer_uri
         response = client.get(change_password_url)
-        assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
+        assertContains(
+            response,
+            "<h1>\n                Changer mon mot de passe\n            </h1>",
+        )
         # Left menu contains both pages
         assertContains(response, escape(edit_user_info_url))
         assertContains(response, escape(change_password_url))
@@ -1526,7 +1593,11 @@ class TestPasswordChangeView:
         # Go change password
         response = client.post(
             change_password_url,
-            data={"old_password": DEFAULT_PASSWORD, "new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+            data={
+                "old_password": DEFAULT_PASSWORD,
+                "new_password1": "V€r¥--$3©®€7",
+                "new_password2": "V€r¥--$3©®€7",
+            },
         )
         assertRedirects(response, change_password_url)
         assert get_user(client).is_authenticated is True
@@ -1536,7 +1607,11 @@ class TestPasswordChangeView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "change_password", "user": user.pk, "application": application.client_id},
+                    {
+                        "event": "change_password",
+                        "user": user.pk,
+                        "application": application.client_id,
+                    },
                 )
             ],
         )
@@ -1545,7 +1620,9 @@ class TestPasswordChangeView:
         assert get_user(client).is_authenticated is False
 
         response = client.post(
-            reverse("accounts:login"), data={"email": user.email, "password": "V€r¥--$3©®€7"}, follow=True
+            reverse("accounts:login"),
+            data={"email": user.email, "password": "V€r¥--$3©®€7"},
+            follow=True,
         )
         assert get_user(client).is_authenticated is True
         assertRecords(
@@ -1564,7 +1641,11 @@ class TestPasswordChangeView:
         client.force_login(user)
         response = client.post(
             reverse("accounts:change_password"),
-            data={"old_password": DEFAULT_PASSWORD, "new_password1": "password", "new_password2": "password"},
+            data={
+                "old_password": DEFAULT_PASSWORD,
+                "new_password1": "password",
+                "new_password2": "password",
+            },
         )
         assert response.status_code == 200
         assert get_user(client).is_authenticated is True
@@ -1584,8 +1665,14 @@ class TestPasswordChangeView:
                                     "Il doit contenir au minimum 12 caractères.",
                                     "code": "password_too_short",
                                 },
-                                {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
-                                {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
+                                {
+                                    "message": "Ce mot de passe est trop courant.",
+                                    "code": "password_too_common",
+                                },
+                                {
+                                    "message": "Le mot de passe ne contient pas assez de caractères.",
+                                    "code": "",
+                                },
                             ]
                         },
                     },
@@ -1596,7 +1683,10 @@ class TestPasswordChangeView:
     def test_federated(self, caplog, client):
         application = ApplicationFactory()
         user = UserFactory(federation=Federation.PEAMA)
-        client.force_login(user, backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend")
+        client.force_login(
+            user,
+            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
+        )
         params = {"referrer_uri": "rp_url", "referrer": application.client_id}
         change_password_url = add_url_params(reverse("accounts:change_password"), params)
         response = client.get(change_password_url)
@@ -1648,7 +1738,8 @@ class TestConfirmEmailView:
     def test_get_anonymous(self, client):
         response = client.get(reverse("accounts:confirm-email"), follow=True)
         assertRedirects(
-            response, add_url_params(reverse("accounts:login"), {"next": reverse("accounts:edit_user_info")})
+            response,
+            add_url_params(reverse("accounts:login"), {"next": reverse("accounts:edit_user_info")}),
         )
 
     def test_get_with_confirmed_email(self, client):
@@ -1722,7 +1813,11 @@ class TestConfirmEmailTokenView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                    {
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address",
+                    },
                 ),
                 (
                     "inclusion_connect.auth",
@@ -1795,7 +1890,12 @@ class TestConfirmEmailTokenView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "me@mailinator.com", "user": user.pk, "event": "login", "application": "my_application"},
+                    {
+                        "email": "me@mailinator.com",
+                        "user": user.pk,
+                        "event": "login",
+                        "application": "my_application",
+                    },
                 ),
             ],
         )
@@ -1825,7 +1925,10 @@ class TestConfirmEmailTokenView:
         with freeze_time(timezone.now() - datetime.timedelta(days=1)):
             token = email_verification_token(email)
         response = client.get(self.url(user, token))
-        assertMessages(response, [(messages.ERROR, "Le lien de vérification d’adresse e-mail a expiré.")])
+        assertMessages(
+            response,
+            [(messages.ERROR, "Le lien de vérification d’adresse e-mail a expiré.")],
+        )
         assert client.session[EMAIL_CONFIRM_KEY] == "me@mailinator.com"
         assertRedirects(response, reverse("accounts:confirm-email"))
         email_address.refresh_from_db()
@@ -1872,7 +1975,11 @@ class TestConfirmEmailTokenView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"},
+                    {
+                        "email": "me@mailinator.com",
+                        "event": "confirm_email_address_error",
+                        "error": "email not found",
+                    },
                 ),
             ],
         )
@@ -1960,7 +2067,11 @@ class TestConfirmEmailTokenView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "new@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
+                    {
+                        "email": "new@mailinator.com",
+                        "user": user.pk,
+                        "event": "confirm_email_address",
+                    },
                 ),
                 (
                     "inclusion_connect.auth",
@@ -2030,7 +2141,11 @@ class TestConfirmEmailTokenView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"email": "me@mailinator.com", "event": "confirm_email_address_error", "error": "email not found"},
+                    {
+                        "email": "me@mailinator.com",
+                        "event": "confirm_email_address_error",
+                        "error": "email not found",
+                    },
                 ),
             ],
         )
@@ -2116,8 +2231,14 @@ class TestChangeTemporaryPasswordView:
                                     "Il doit contenir au minimum 12 caractères.",
                                     "code": "password_too_short",
                                 },
-                                {"message": "Ce mot de passe est trop courant.", "code": "password_too_common"},
-                                {"message": "Le mot de passe ne contient pas assez de caractères.", "code": ""},
+                                {
+                                    "message": "Ce mot de passe est trop courant.",
+                                    "code": "password_too_common",
+                                },
+                                {
+                                    "message": "Le mot de passe ne contient pas assez de caractères.",
+                                    "code": "",
+                                },
                             ]
                         },
                     },
@@ -2164,6 +2285,9 @@ class TestMiddleware:
         )
         client.force_login(user)
         response = client.get(
-            add_url_params(reverse("oauth2_provider:rp-initiated-logout"), {"state": "random_string"})
+            add_url_params(
+                reverse("oauth2_provider:rp-initiated-logout"),
+                {"state": "random_string"},
+            )
         )
         assert response.status_code == 200

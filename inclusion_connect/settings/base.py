@@ -143,7 +143,10 @@ if os.getenv("DATABASE_PERSISTENT_CONNECTIONS") == "True":
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
     {"NAME": "inclusion_connect.utils.password_validation.CnilCompositionPasswordValidator"},
@@ -363,6 +366,13 @@ PASSWORD_HASHERS = [
     "inclusion_connect.keycloak_compat.hashers.KeycloakPasswordHasher",
 ]
 
+
+# MATOMO
+# ------
+
+MATOMO_BASE_URL = os.getenv("MATOMO_BASE_URL")
+MATOMO_SITE_ID = os.getenv("MATOMO_SITE_ID")
+
 # Content Security Policy
 # -----------------------
 
@@ -385,6 +395,10 @@ CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
 CSP_FRAME_ANCESTORS = ["'none'"]
 
 # CORS
+if MATOMO_BASE_URL:
+    CSP_IMG_SRC.append(MATOMO_BASE_URL)
+    CSP_SCRIPT_SRC.append(MATOMO_BASE_URL)
+    CSP_CONNECT_SRC.append(MATOMO_BASE_URL)
 # ----
 
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"

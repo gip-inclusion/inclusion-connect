@@ -23,7 +23,9 @@
 
     <form method="post" class="js-prevent-multiple-submit">
         {% csrf_token %}
-        <div>{% bootstrap_button "Accepter" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
+        <div>
+            <button class="btn btn-block btn-primary" type="submit">Accepter</button>
+        </div>
     </form>
 
 
