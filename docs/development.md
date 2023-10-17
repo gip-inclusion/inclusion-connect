@@ -44,6 +44,13 @@ Lancer les images dockers depuis la racine du dépôt :
 docker compose up
 ```
 
+## Générer une clé RSA
+
+Cette clé sera utilisée pour signer les jwt renvoyés aux partenaires.
+
+```bash
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
+```
 
 ## Charger les données par défaut et configurer le service
 
@@ -52,14 +59,6 @@ La première fois que vous lancez le service, il faudra configurer Inclusion Con
 ```
 ./manage.py migrate
 make populate_db
-```
-
-## Générer une clé RSA
-
-Cette clé sera utilisée pour signer les jwt renvoyés aux partenaires.
-
-```bash
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
 ```
 
 ## Lancer le serveur de développement
