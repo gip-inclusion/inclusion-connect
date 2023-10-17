@@ -25,6 +25,11 @@ D'un point de vue OpenID Connect, les end-points Authorization, Registration et 
 sont identiques. La seule chose qui change est si l'utilisateur n'est pas connecté, dans ce cas on
 le redirige vers une vue différente pour chaque end-point.
 
+Le hostname dépend de l'instance utilisée :
+- https://connect.inclusion.beta.gouv.fr/ pour la production
+- https://recette.connect.inclusion.beta.gouv.fr/ pour la recette
+- http://127.0.0.1:8080 pour l'environnement local
+
 ## Détail du fonctionnement
 
 ```mermaid
