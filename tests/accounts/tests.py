@@ -6,6 +6,7 @@ import pytest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
+from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.db.models import F
 from django.test import override_settings
@@ -2296,11 +2297,107 @@ class TestChangeTemporaryPasswordView:
         )
 
 
+class TestChangeWeakPasswordView:
+    def test_feature_is_disabled(self, client):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(password=make_password("weak_password"))
+        response = client.post(url, data={"email": user.email, "password": "weak_password"})
+        user.refresh_from_db()
+        assert user.password_is_too_weak is False
+        assertRedirects(response, redirect_url)
+
+    @override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
+    def test_view(self, caplog, client):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory(password=make_password("weak_password"))
+
+        response = client.post(url, data={"email": user.email, "password": "weak_password"})
+        assertRedirects(response, reverse("accounts:change_weak_password"))
+        assert get_user(client).is_authenticated is True
+        assert client.session["next_url"] == redirect_url
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
+
+        response = client.post(
+            reverse("accounts:change_weak_password"),
+            data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
+        )
+        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
+        user.refresh_from_db()
+        assert user.must_reset_password is False
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "change_weak_password", "user": user.pk},
+                )
+            ],
+        )
+
+    @override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
+    def test_invalid_password(self, caplog, client):
+        user = UserFactory(first_name="Manuel", last_name="Calavera", password=make_password("weak_password"))
+
+        client.force_login(user)
+        response = client.post(
+            reverse("accounts:change_weak_password"),
+            data={"new_password1": "password", "new_password2": "password"},
+        )
+        assert response.status_code == 200
+        user.refresh_from_db()
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "change_weak_password_error",
+                        "user": user.pk,
+                        "errors": {
+                            "new_password2": [
+                                {
+                                    "message": "Ce mot de passe est trop court. "
+                                    "Il doit contenir au minimum 12 caractères.",
+                                    "code": "password_too_short",
+                                },
+                                {
+                                    "message": "Ce mot de passe est trop courant.",
+                                    "code": "password_too_common",
+                                },
+                                {
+                                    "message": "Le mot de passe ne contient pas assez de caractères.",
+                                    "code": "",
+                                },
+                            ]
+                        },
+                    },
+                )
+            ],
+        )
+
+
 class TestMiddleware:
     def test_post_login_actions(self, client):
         user = UserFactory(
             terms_accepted_at=None,
             must_reset_password=True,
+            password_is_too_weak=True,
         )
         client.force_login(user)
         response = client.get(reverse("accounts:edit_user_info"))
@@ -2312,6 +2409,12 @@ class TestMiddleware:
 
         client.post(
             reverse("accounts:change_temporary_password"),
+            data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+        )
+        response = client.get(reverse("accounts:change_weak_password"))
+
+        client.post(
+            reverse("accounts:change_weak_password"),
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
         response = client.get(reverse("accounts:edit_user_info"))

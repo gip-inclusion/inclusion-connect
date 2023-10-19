@@ -519,3 +519,14 @@ class NewEmailAlreadyUsed(LoginRequiredMixin, TemplateView):
         request.user.new_email_already_used = None
         request.user.save()
         return HttpResponseRedirect(get_next_url(request))
+
+
+class ChangeWeakPassword(ChangeTemporaryPassword):
+    EVENT_NAME = "change_weak_password"
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs) | {"weak_password": True}
+
+    def form_valid(self, form):
+        form.user.password_is_too_weak = False
+        return super().form_valid(form)

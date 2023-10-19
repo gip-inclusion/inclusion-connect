@@ -20,4 +20,5 @@ urlpatterns = [
     path("confirm-email/", views.ConfirmEmailView.as_view(), name="confirm-email"),
     path("confirm/<uidb64>/<token>/", views.ConfirmEmailTokenView.as_view(), name="confirm-email-token"),
     re_path(r"^email-already-used/$", views.NewEmailAlreadyUsed.as_view(), name="warn_new_email_already_used"),
+    re_path(r"^change-weak-password/$", views.ChangeWeakPassword.as_view(), name="change_weak_password"),
 ]
