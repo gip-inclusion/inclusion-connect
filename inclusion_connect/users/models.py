@@ -32,6 +32,7 @@ class User(AbstractUser):
     must_reset_password = models.BooleanField("mot de passe temporaire", default=False)
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
     new_email_already_used = models.TextField(null=True)
+    password_is_too_weak = models.BooleanField("mot de passe trop faible", default=False)
 
     # Allow to redirect user correctly even when using a link from another browser (without session data)
     next_redirect_uri = models.TextField(blank=True, null=True)

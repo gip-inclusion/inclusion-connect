@@ -7,8 +7,10 @@ import pytest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
+from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.db.models import F
+from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
@@ -1788,3 +1790,90 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
 
     response = client.get(auth_complete_url)
     assertRedirects(response, reverse("accounts:login"))
+
+
+@override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
+@freeze_time("2023-05-05 11:11:11")
+def test_login_weak_password(caplog, client, oidc_params):
+    auth_url = reverse("oauth2_provider:authorize")
+    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    user = UserFactory(password=make_password("weak_password"))
+
+    auth_complete_url = add_url_params(auth_url, oidc_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:login"))
+    assertRecords(caplog, [])
+
+    response = client.post(
+        response.url,
+        data={
+            "email": user.email,
+            "password": "weak_password",
+        },
+    )
+    # assert redirects to update weak password page
+    assertRedirects(response, reverse("accounts:change_weak_password"))
+    assert get_user(client).is_authenticated is True
+    user = User.objects.get(email=user.email)
+    assert user.linked_applications.count() == 0
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "user": user.pk, "event": "login"},
+            )
+        ],
+    )
+
+    # User can't bypass password update
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:change_weak_password"))
+
+    response = client.post(
+        reverse("accounts:change_weak_password"),
+        data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
+    )
+    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "event": "change_weak_password",
+                    "user": user.pk,
+                },
+            )
+        ],
+    )
+
+    response = client.get(auth_complete_url)
+    assert response.status_code == 302
+    assert response.url.startswith(oidc_params["redirect_uri"])
+    auth_response_params = get_url_params(response.url)
+    assert user.linked_applications.count() == 1
+    code = auth_response_params["code"]
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.pk,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
+        ],
+    )
+    assertQuerySetEqual(
+        Stats.objects.values_list("date", "user", "application", "action"),
+        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
+    )
+
+    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)

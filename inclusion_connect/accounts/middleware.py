@@ -9,6 +9,8 @@ def required_action_url(user):
         return reverse("accounts:change_temporary_password")
     if user.new_email_already_used:
         return reverse("accounts:warn_new_email_already_used")
+    if user.password_is_too_weak:
+        return reverse("accounts:change_weak_password")
     return None
 
 
