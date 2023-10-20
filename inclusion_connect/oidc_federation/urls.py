@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import include, re_path
 
 from . import peama
@@ -5,12 +6,12 @@ from . import peama
 
 app_name = "oidc_federation"
 
-peama_urlpatterns = [
-    re_path(r"^callback/", peama.OIDCAuthenticationCallbackView.as_view(), name="callback"),
-    re_path(r"^authenticate/", peama.OIDCAuthenticationRequestView.as_view(), name="init"),
-    # There's no logout available on PEAMA
-]
+urlpatterns = []
 
-urlpatterns = [
-    re_path(r"^peama/", include((peama_urlpatterns, "peama"))),
-]
+if settings.PEAMA_ENABLED:
+    peama_urlpatterns = [
+        re_path(r"^callback/", peama.OIDCAuthenticationCallbackView.as_view(), name="callback"),
+        re_path(r"^authenticate/", peama.OIDCAuthenticationRequestView.as_view(), name="init"),
+        # There's no logout available on PEAMA
+    ]
+    urlpatterns.append(re_path(r"^peama/", include((peama_urlpatterns, "peama"))))
