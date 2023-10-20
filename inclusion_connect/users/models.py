@@ -43,6 +43,9 @@ class User(AbstractUser):
         null=True,
         encoder=DjangoJSONEncoder,
     )
+    federation_id_token_hint = models.TextField(
+        verbose_name="IdToken", null=True
+    )  # Used to logout from federation even is session expired
 
     class Meta:
         verbose_name = "utilisateur"
