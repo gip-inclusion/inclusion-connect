@@ -1,8 +1,18 @@
-from django.conf import settings
+import logging
+from functools import partial
 
+import requests
+from django.conf import settings
+from django.db import transaction
+
+from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_federation.enums import Federation
+from inclusion_connect.utils.urls import add_url_params
 
 from . import base
+
+
+logger = logging.getLogger("inclusion_connect.auth.oidc_federation")
 
 
 CONFIG = {
@@ -37,3 +47,21 @@ class OIDCAuthenticationBackend(base.OIDCAuthenticationBackend):
             "structure_pe": payload["structureTravail"],
             "site_pe": payload["siteTravail"],
         }
+
+
+def logout(request, user, application):
+    url = add_url_params(settings.PEAMA_LOGOUT_ENDPOINT, {"id_token_hint": user.federation_id_token_hint})
+    response = requests.get(url)
+
+    log = log_data(request)
+    log["user"] = user.pk
+    log["federation"] = Federation.PEAMA
+    if application:
+        log["application"] = application.client_id
+    if response.status_code == 204:
+        log["event"] = "logout_peama"
+    else:
+        log["event"] = "logout_peama_error"
+        log["error"] = {"status_code": response.status_code, "msg": response.content.decode()}
+    log["id_token_hint"] = user.federation_id_token_hint
+    transaction.on_commit(partial(logger.info, log))

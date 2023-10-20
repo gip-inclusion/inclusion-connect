@@ -13,6 +13,7 @@ from oauth2_provider.settings import oauth2_settings
 from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.logging import log_data
+from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.stats.models import Actions, Stats
 from inclusion_connect.users.models import UserApplicationLink
@@ -225,6 +226,16 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
             if s.get_decoded().get("_auth_user_id") == str(user.pk)
         ]
         self.log(self.EVENT_NAME, application, user)
+
+        # Handle PEAMA logout
+        if getattr(user, "federation", None) == Federation.PEAMA:
+            if user.federation_id_token_hint:
+                from inclusion_connect.oidc_federation.peama import logout as peama_logout
+
+                peama_logout(self.request, user, application)
+                user.federation_id_token_hint = None
+                user.save()
+
         return response
 
     def form_invalid(self, form):
