@@ -10,5 +10,6 @@ def expose_settings(*args):
             "TERMS_PATH",
             "LEGAL_NOTICES_PATH",
             "PEAMA_STAGING",
+            "PEAMA_ENABLED",
         ]
     }
