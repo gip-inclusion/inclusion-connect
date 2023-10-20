@@ -13,7 +13,7 @@ CONFIG = {
     "OIDC_OP_USER_ENDPOINT": settings.PEAMA_USER_ENDPOINT,
     "OIDC_AUTHENTICATION_CALLBACK_URL": "oidc_federation:peama:callback",
     "OIDC_RP_SCOPES": settings.PEAMA_SCOPES,
-    "OIDC_RP_SIGN_ALGO": "RS256",
+    "OIDC_RP_SIGN_ALGO": "RS256" if settings.PEAMA_ENABLED else "",  # Don't crash if not configured
     "OIDC_OP_JWKS_ENDPOINT": settings.PEAMA_JWKS_ENDPOINT,
 }
 

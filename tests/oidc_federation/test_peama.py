@@ -4,15 +4,16 @@ from types import SimpleNamespace
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user
+from django.test import override_settings
 from django.urls import reverse
 from jwcrypto import jwk
-from pytest_django.asserts import assertRedirects
+from pytest_django.asserts import assertContains, assertRedirects
 
 from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
-from tests.users.factories import UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 PEAMA_SUB = "RANDOM_STRING"
@@ -287,3 +288,16 @@ class TestFederation:
                 ),
             ],
         )
+
+
+@override_settings(PEAMA_ENABLED=None, PEAMA_CLIENT_ID=None, PEAMA_JWKS_ENDPOINT=None)
+def test_dont_crash_if_not_configured(client):
+    user = UserFactory()
+    url = reverse("accounts:login")
+    response = client.get(url)
+    assertContains(response, "Connexion")
+    assertContains(response, "Adresse e-mail")  # Ask for email, not username
+    assertContains(response, reverse("accounts:register"))  # Link to register page
+
+    response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+    assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
