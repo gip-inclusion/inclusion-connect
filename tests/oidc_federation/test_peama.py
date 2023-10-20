@@ -2,6 +2,7 @@ import logging
 from types import SimpleNamespace
 
 import jwt
+import pytest
 from django.conf import settings
 from django.contrib.auth import get_user
 from django.test import override_settings
@@ -10,6 +11,7 @@ from jwcrypto import jwk
 from pytest_django.asserts import assertContains, assertRedirects
 
 from inclusion_connect.oidc_federation.enums import Federation
+from inclusion_connect.oidc_federation.peama import logout
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
@@ -289,6 +291,59 @@ class TestFederation:
                     "inclusion_connect.auth.oidc_federation",
                     logging.INFO,
                     {"email": user.email, "user": user.pk, "event": "login_error", "federation": Federation.PEAMA},
+                ),
+            ],
+        )
+
+    @pytest.mark.django_db(transaction=True)
+    def test_logout(self, client, requests_mock, caplog):
+        logout_endpoint = requests_mock.get(settings.PEAMA_LOGOUT_ENDPOINT, status_code=204)
+        id_token = "MyToken"
+        user = UserFactory(federation_id_token_hint=id_token)
+        client.force_login(user)
+        response = client.get(reverse("accounts:edit_user_info"))
+        logout(response.wsgi_request, user, None)
+        assert logout_endpoint.call_count == 1
+        # check logs ?
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "federation": Federation.PEAMA,
+                        "event": "logout_peama",
+                        "id_token_hint": id_token,
+                    },
+                ),
+            ],
+        )
+
+    @pytest.mark.django_db(transaction=True)
+    def test_logout_fails(self, client, requests_mock, caplog):
+        logout_endpoint = requests_mock.get(settings.PEAMA_LOGOUT_ENDPOINT, status_code=400, content=b"bad token")
+        id_token = "MyToken"
+        user = UserFactory(federation_id_token_hint=id_token)
+        client.force_login(user)
+        response = client.get(reverse("accounts:edit_user_info"))
+        logout(response.wsgi_request, user, None)
+        assert logout_endpoint.call_count == 1
+        # check logs ?
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {
+                        "user": user.pk,
+                        "federation": Federation.PEAMA,
+                        "event": "logout_peama_error",
+                        "error": {"status_code": 400, "msg": "bad token"},
+                        "id_token_hint": id_token,
+                    },
                 ),
             ],
         )

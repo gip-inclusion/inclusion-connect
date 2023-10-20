@@ -1528,7 +1528,7 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     assertContains(response, "Connexion agents Pôle emploi")
 
     response = client.get(reverse("oidc_federation:peama:init"))
-    response, _peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
     assertRedirects(response, reverse("accounts:accept_terms"))
     user = User.objects.get()
     assertRecords(
@@ -1587,4 +1587,41 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
         "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
     }
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims)
+    id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims)
+
+    logout_endpoint = requests_mock.get(settings.PEAMA_LOGOUT_ENDPOINT, status_code=204)
+    response = call_logout(client, "get", {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"})
+    assert logout_endpoint.call_count == 1
+    assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+    assert not get_user(client).is_authenticated
+    assert token_are_revoked(user)
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "logout",
+                    "id_token_hint": id_token,
+                    "post_logout_redirect_uri": "http://callback/",
+                    "user": user.pk,
+                },
+            ),
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {
+                    "user": user.pk,
+                    "federation": Federation.PEAMA,
+                    "application": "my_application",
+                    "event": "logout_peama",
+                    "id_token_hint": peama_data.access_token["id_token"],
+                },
+            ),
+        ],
+    )
+
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:login"))
