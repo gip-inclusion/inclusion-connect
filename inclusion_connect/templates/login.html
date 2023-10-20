@@ -24,7 +24,7 @@
         <div>{% bootstrap_button "Connexion" button_type="submit" button_class="btn btn-block btn-primary" %}</div>
     </form>
 
-    {% if peama_enabled %}
+    {% if PEAMA_ENABLED %}
         <hr class="my-3 my-lg-4">
         {% include "includes/pe_connect.html" %}
     {% endif %}

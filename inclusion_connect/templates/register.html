@@ -10,7 +10,7 @@
         Inclusion Connect vous permettra d’utiliser le même identifiant et mot de passe pour plusieurs services, en toute sécurité.
     </p>
 
-    {% if peama_enabled %}
+    {% if PEAMA_ENABLED %}
         {% include "includes/pe_connect.html" %}
         <hr class="my-5" data-it-text="ou">
     {% endif %}

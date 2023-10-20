@@ -61,9 +61,6 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         stats_helpers.account_action(form.get_user(), Actions.LOGIN, self.request, self.get_success_url())
         return response
 
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs) | {"peama_enabled": settings.PEAMA_ENABLED}
-
 
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegisterForm
@@ -97,9 +94,6 @@ class BaseUserCreationView(OIDCSessionMixin, CreateView):
         transaction.on_commit(partial(logger.info, form.log))
         stats_helpers.account_action(form.instance, Actions.REGISTER, self.request)
         return response
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs) | {"peama_enabled": settings.PEAMA_ENABLED}
 
 
 class RegisterView(BaseUserCreationView):
