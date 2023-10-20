@@ -79,6 +79,9 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
 
         return email_users
 
+    def get_userinfo(self, access_token, id_token, payload):
+        return super().get_userinfo(access_token, id_token, payload) | {"id_token": id_token}
+
     def create_user(self, claims):
         user = self.UserModel.objects.create(
             email=claims["email"],
@@ -87,6 +90,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             federation_sub=claims["sub"],
             federation=self.name,
             federation_data=self.get_additional_data(claims),
+            federation_id_token_hint=claims["id_token"],
         )
         log = log_data(self.request)
         log["email"] = user.email
@@ -105,6 +109,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         user.federation_sub = claims["sub"]
         user.federation = self.name
         user.federation_data = self.get_additional_data(claims)
+        user.federation_id_token_hint = claims["id_token"]
         new_user_data = model_to_dict(user)
         user.save()
 
