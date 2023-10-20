@@ -4,6 +4,16 @@
 
 {% block content %}
 
+    {% if not PEAMA_ENABLED and not PEAMA_STAGING %}
+        <div class="alert alert-info">
+            Vous êtes un agent Pôle emploi ? Très bientôt vous pourrez utiliser votre identifiant NEPTUNE Pôle emploi
+            pour vous connecter via Inclusion Connect aux outils dont vous avez besoin (Emplois de l’inclusion, Immersion facilitée, Dora …).
+            Un seul mot de passe pour tous vos outils !
+            <br>
+            <a href="https://plateforme-inclusion.notion.site/33fb65f244ea48598cfe541294ffb828" target="blank">En savoir plus</a>
+        </div>
+    {% endif %}
+
     <h1 class="h2">Connexion</h1>
 
     <form method="post" class="js-prevent-multiple-submit">
