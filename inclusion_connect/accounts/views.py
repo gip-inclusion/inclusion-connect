@@ -471,7 +471,7 @@ class PasswordChangeView(MyAccountMixin, FormView):
     EVENT_NAME = "change_password"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.federation:
+        if getattr(request.user, "federation", None):
             raise PermissionDenied("Un compte fédéré ne peut pas modifier son mot de passe.")
         return super().dispatch(request, *args, **kwargs)
 
