@@ -535,6 +535,12 @@ class TestActivateView:
         assert client.session[OIDC_SESSION_KEY] == auth_params
 
 
+def test_pkce_flow(client, oidc_params, caplog):
+    user = UserFactory()
+    client.force_login(user)
+    oidc_complete_flow(client, user, oidc_params, caplog, use_pkce=True)
+
+
 def test_user_application_link(client, oidc_params):
     application_1 = ApplicationFactory(client_id="ca713487-f4ac-4283-8429-cab7f0386a00")
     application_2 = ApplicationFactory(client_id="05fb7023-ef66-4b24-896e-35f54a6c637f")

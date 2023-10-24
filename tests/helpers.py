@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import logging
 import uuid
 
@@ -7,6 +9,7 @@ from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.crypto import get_random_string
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
 
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -15,7 +18,15 @@ from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFac
 from tests.users.factories import DEFAULT_PASSWORD
 
 
-def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims=None):
+def oidc_flow_followup(
+    client,
+    auth_response_params,
+    user,
+    oidc_params,
+    caplog,
+    additional_claims=None,
+    code_verifier=None,
+):
     # Call TOKEN endpoint
     token_data = {
         "client_id": oidc_params["client_id"],
@@ -24,6 +35,8 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, 
         "grant_type": "authorization_code",
         "redirect_uri": oidc_params["redirect_uri"],
     }
+    if code_verifier:
+        token_data["code_verifier"] = code_verifier
     response = client.post(reverse("oauth2_provider:token"), data=token_data)
     assertRecords(
         caplog,
@@ -73,10 +86,25 @@ def oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, 
     return token_json["id_token"]
 
 
-def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
+def oidc_complete_flow(
+    client,
+    user,
+    oidc_params,
+    caplog,
+    application=None,
+    use_pkce=False,
+):
     application = application or ApplicationFactory(client_id=oidc_params["client_id"])
     auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, oidc_params)
+
+    auth_params = oidc_params
+    code_verifier = None
+    if use_pkce:
+        code_verifier = get_random_string(42)  # arbitrary value
+        code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().rstrip("=")
+        auth_params = auth_params | {"code_challenge_method": "S256", "code_challenge": code_challenge}
+
+    auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url)
     if not get_user(client).is_authenticated:
         assert client.session["next_url"] == auth_complete_url
@@ -118,7 +146,14 @@ def oidc_complete_flow(client, user, oidc_params, caplog, application=None):
         ],
     )
 
-    return oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
+    return oidc_flow_followup(
+        client,
+        auth_response_params,
+        user,
+        oidc_params,
+        caplog,
+        code_verifier=code_verifier,
+    )
 
 
 def has_ongoing_sessions(user):
