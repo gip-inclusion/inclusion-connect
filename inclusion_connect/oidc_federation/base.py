@@ -40,9 +40,6 @@ class OIDCAuthenticationCallbackView(ConfigMixin, views.OIDCAuthenticationCallba
 class OIDCAuthenticationRequestView(ConfigMixin, views.OIDCAuthenticationRequestView):
     config = CONFIG
 
-    def get_extra_params(self, request):
-        return {"realm": "/agent"}
-
 
 class OIDCLogoutView(ConfigMixin, views.OIDCLogoutView):
     config = CONFIG
