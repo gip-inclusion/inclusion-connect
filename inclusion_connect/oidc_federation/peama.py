@@ -35,6 +35,9 @@ class OIDCAuthenticationCallbackView(base.OIDCAuthenticationCallbackView):
 class OIDCAuthenticationRequestView(base.OIDCAuthenticationRequestView):
     config = CONFIG
 
+    def get_extra_params(self, request):
+        return {"realm": "/agent"}
+
 
 class OIDCAuthenticationBackend(base.OIDCAuthenticationBackend):
     config = CONFIG
