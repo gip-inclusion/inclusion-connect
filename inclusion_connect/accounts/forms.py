@@ -136,6 +136,13 @@ class RegisterForm(auth_forms.UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"]
+        if email.endswith("@pole-emploi.fr") and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
+            error_message = (
+                "Vous utilisez une adresse e-mail en @pole-emploi.fr. "
+                "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service."
+            )
+            self.log["email"] = email
+            raise forms.ValidationError(error_message)
         try:
             email_address = EmailAddress.objects.get(email=email)
         except EmailAddress.DoesNotExist:
