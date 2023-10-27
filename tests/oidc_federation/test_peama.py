@@ -173,11 +173,12 @@ class TestFederation:
         )
 
     def test_convert_existing_ic_user(self, client, requests_mock, caplog):
-        UserFactory(
+        user = UserFactory(
             email="michel@pole-emploi.fr",
             first_name="old_first_name",
             last_name="old_last_name",
         )
+        assert user.email_addresses.count() == 1
         response = client.get(reverse("oidc_federation:peama:init"))
         response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
         user = User.objects.get()
@@ -190,6 +191,7 @@ class TestFederation:
             "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         }
+        assert user.email_addresses.count() == 0
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assertRecords(
             caplog,
