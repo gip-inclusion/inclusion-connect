@@ -126,6 +126,9 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
                 log[f"new_{key}"] = new_user_data[key]
         transaction.on_commit(partial(logger.info, log))
 
+        # Remove all associated email_addresses
+        user.email_addresses.all().delete()
+
         return user
 
     def verify_claims(self, claims):
