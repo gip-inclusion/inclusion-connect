@@ -100,7 +100,6 @@ class TestFederation:
         response = client.get(reverse("oidc_federation:peama:init"))
         response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
         user = User.objects.get()
-        assert not user.email_addresses.exists()
         assert user.email == peama_data.user_info["email"]
         assert user.first_name == peama_data.user_info["given_name"]
         assert user.last_name == peama_data.user_info["family_name"]
@@ -110,6 +109,7 @@ class TestFederation:
             "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         }
+        assert user.email_addresses.get().email == peama_data.user_info["email"]
         assertRedirects(response, reverse("accounts:accept_terms"))
         assertRecords(
             caplog,
@@ -130,6 +130,7 @@ class TestFederation:
             federation_sub=PEAMA_SUB,
             federation=Federation.PEAMA,
         )
+        assert user.email_addresses.get().email == "old_email"
         response = client.get(reverse("oidc_federation:peama:init"))
         response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
         user = User.objects.get()
@@ -142,6 +143,7 @@ class TestFederation:
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
             "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
         }
+        assert user.email_addresses.get().email == peama_data.user_info["email"]
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assertRecords(
             caplog,
@@ -178,7 +180,7 @@ class TestFederation:
             first_name="old_first_name",
             last_name="old_last_name",
         )
-        assert user.email_addresses.count() == 1
+        email_address = user.email_addresses.get()
         response = client.get(reverse("oidc_federation:peama:init"))
         response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
         user = User.objects.get()
@@ -191,7 +193,7 @@ class TestFederation:
             "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
             "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
         }
-        assert user.email_addresses.count() == 0
+        assert user.email_addresses.get().verified_at == email_address.verified_at
         assertRedirects(response, reverse("accounts:edit_user_info"))
         assertRecords(
             caplog,

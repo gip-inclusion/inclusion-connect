@@ -11,6 +11,7 @@ from mozilla_django_oidc import auth, views
 
 from inclusion_connect.accounts.views import EditUserInfoView, LoginView, RegisterView
 from inclusion_connect.logging import log_data
+from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.oidc import get_next_url
 
 
@@ -89,6 +90,8 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             federation_data=self.get_additional_data(claims),
             federation_id_token_hint=claims["id_token"],
         )
+        email_address = EmailAddress(user=user, email=user.email)
+        email_address.verify()
         log = log_data(self.request)
         log["email"] = user.email
         log["user"] = user.pk
@@ -110,6 +113,10 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         new_user_data = model_to_dict(user)
         user.save()
 
+        if old_user_data["email"] != new_user_data["email"]:
+            email_address = EmailAddress(user=user, email=user.email)
+            email_address.verify()
+
         log = log_data(self.request)
         log["email"] = user.email
         log["user"] = user.pk
@@ -125,9 +132,6 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
                 log[f"old_{key}"] = old_user_data[key]
                 log[f"new_{key}"] = new_user_data[key]
         transaction.on_commit(partial(logger.info, log))
-
-        # Remove all associated email_addresses
-        user.email_addresses.all().delete()
 
         return user
 
