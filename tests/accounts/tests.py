@@ -445,14 +445,14 @@ class TestRegisterView:
             "L’équipe d’inclusion connect\n"
         )
         assert email.alternatives[0][0] == (
-            "\n\n    <p>Bonjour,</p>\n    \n    "
+            "<p>Bonjour,</p>\n\n    "
             "<p>\n        Une demande de\n        \n            création\n        \n        "
             "de compte a été effectuée avec votre adresse\n"
             "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
             f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
             "<p>Ce lien expire dans 1 jour.</p>\n\n    "
             "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
-            "</p>\n\n    <p>\n        ---\n        <br>\n        L’équipe d’inclusion connect\n    </p>\n\n\n"
+            "</p>\n\n<p>\n    ---\n    <br>\n    L’équipe d’inclusion connect\n</p>\n"
         )
         assertRecords(
             caplog,
@@ -1491,14 +1491,14 @@ class TestEditUserInfoView:
             "L’équipe d’inclusion connect\n"
         )
         assert email.alternatives[0][0] == (
-            "\n\n    <p>Bonjour,</p>\n    \n    "
+            "<p>Bonjour,</p>\n\n    "
             "<p>\n        Une demande de\n        \n            modification\n        \n        "
             "de compte a été effectuée avec votre adresse\n"
             "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
             f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
             "<p>Ce lien expire dans 1 jour.</p>\n\n    "
             "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
-            "</p>\n\n    <p>\n        ---\n        <br>\n        L’équipe d’inclusion connect\n    </p>\n\n\n"
+            "</p>\n\n<p>\n    ---\n    <br>\n    L’équipe d’inclusion connect\n</p>\n"
         )
 
     def test_edit_email_case(self, caplog, client):
