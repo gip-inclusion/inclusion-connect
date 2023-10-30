@@ -579,7 +579,7 @@ class TestUserAdmin:
         password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:auth_user_password_change", args=(user.pk,)),
-            data={"password1": password, "password2": password},
+            data={"password": password},
         )
         assert response.status_code == 403
 
@@ -614,6 +614,29 @@ class TestUserAdmin:
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
         user.refresh_from_db()
         assert user.must_reset_password is True
+
+    def test_support_staff_cannot_edit_superusers(self, client):
+        staff_user = UserFactory(is_staff=True, email_address=False)
+        staff_group = Group.objects.get(name="support")
+        staff_user.groups.set([staff_group])
+        client.force_login(staff_user)
+        superuser = UserFactory(is_staff=True, is_superuser=True, email_address=False)
+
+        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": superuser.pk}))
+        assertNotContains(response, "field-must_reset_password")
+        input_counts = 1  # logout csrf
+        input_counts += 1  # user form csrf
+        input_counts += 1  # left menu filter
+        input_counts += 4  # email_addresses inline hidden inputs
+        input_counts += 4  # linked applications inline hidden inputs
+        assertContains(response, "<input", input_counts)
+
+        password = "V€r¥--$3©®€7"
+        response = client.post(
+            reverse("admin:auth_user_password_change", args=(superuser.pk,)),
+            data={"password": password},
+        )
+        assert response.status_code == 403
 
     def test_support_staff_cannot_elevate_privileges(self, client):
         staff_user = UserFactory(is_staff=True, email_address=False)
