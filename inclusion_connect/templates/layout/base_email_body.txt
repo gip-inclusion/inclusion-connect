@@ -1,4 +1,4 @@
-{% autoescape off %}Bonjour,
+Bonjour,
 {% block body %}{% endblock %}
 ---
-L’équipe d’inclusion connect{% endautoescape %}
+L’équipe d’inclusion connect

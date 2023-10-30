@@ -1,3 +1,1 @@
-{% autoescape off %}
 Vérification de l’adresse e-mail
-{% endautoescape %}
