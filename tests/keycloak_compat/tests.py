@@ -24,7 +24,7 @@ from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 @pytest.mark.parametrize("realm", ["local", "Review_apps", "Demo", "inclusion-connect"])
-def test_login(client, realm):
+def test_login(client, realm, caplog):
     application = ApplicationFactory()
     user = UserFactory()
 
@@ -43,6 +43,17 @@ def test_login(client, realm):
     assertRedirects(response, reverse("accounts:login"))
     assert client.session["next_url"] == auth_complete_url
 
+    assertRecords(
+        caplog,
+        [
+            (
+                "keycloak_compat",
+                logging.WARNING,
+                {"application": application.client_id, "url": f"/realms/{realm}/protocol/openid-connect/auth"},
+            ),
+        ],
+    )
+
     # Test AUTH endpoint when not authenticated and with bad params
     bad_auth_params = auth_params.copy()
     bad_auth_params["client_id"] = "toto"
@@ -50,12 +61,61 @@ def test_login(client, realm):
     response = client.get(bad_auth_complete_url)
     assert response.status_code == 400
 
+    assertRecords(
+        caplog,
+        [
+            (
+                "keycloak_compat",
+                logging.WARNING,
+                {"application": application.client_id, "url": f"/realms/{realm}/protocol/openid-connect/auth"},
+            ),
+            ("django.request", logging.WARNING, f"Bad Request: /realms/{realm}/protocol/openid-connect/auth"),
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "event": "oidc_params_error",
+                    "oidc_params": {
+                        "response_type": "code",
+                        "client_id": "toto",
+                        "redirect_uri": "http://localhost/callback",
+                        "scope": "openid profile email",
+                        "state": "state",
+                        "nonce": "nonce",
+                    },
+                },
+            ),
+        ],
+    )
+
     # Test AUTH endpoint when authenticated
     client.force_login(user)
     response = client.get(auth_complete_url)
     assert response.status_code == 302
     assert response.url.startswith(auth_params["redirect_uri"])
     auth_response_params = get_url_params(response.url)
+
+    assertRecords(
+        caplog,
+        [
+            (
+                "keycloak_compat",
+                logging.WARNING,
+                {"application": application.client_id, "url": f"/realms/{realm}/protocol/openid-connect/auth"},
+            ),
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "event": "redirect",
+                    "user": user.username,
+                    "url": f"http://localhost/callback?code={auth_response_params['code']}&state=state",
+                },
+            ),
+        ],
+    )
 
     # Test TOKEN endpoint
     token_data = {
@@ -272,6 +332,11 @@ class TestActionToken:
             caplog,
             [
                 (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                (
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"email": "me@mailinator.com", "user": user.pk, "event": "confirm_email_address"},
@@ -298,6 +363,11 @@ class TestActionToken:
             caplog,
             [
                 (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                (
                     "inclusion_connect.auth",
                     logging.INFO,
                     {
@@ -306,7 +376,7 @@ class TestActionToken:
                         "event": "confirm_email_address_error",
                         "error": "already verified",
                     },
-                )
+                ),
             ],
         )
 
@@ -335,7 +405,17 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
+        assertRecords(
+            caplog,
+            [
+                (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                ("django.request", logging.WARNING, "Not Found: /realms/local/login-actions/action-token"),
+            ],
+        )
 
     def test_verify_invalid_audience(self, caplog, client):
         secret = "secret"
@@ -362,7 +442,17 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
+        assertRecords(
+            caplog,
+            [
+                (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                ("django.request", logging.WARNING, "Not Found: /realms/local/login-actions/action-token"),
+            ],
+        )
 
     def test_verify_email_token_too_old(self, caplog, client):
         secret = "secret"
@@ -397,6 +487,11 @@ class TestActionToken:
             caplog,
             [
                 (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                (
                     "inclusion_connect.auth",
                     logging.INFO,
                     {
@@ -405,7 +500,7 @@ class TestActionToken:
                         "email": "me@mailinator.com",
                         "user": user.pk,
                     },
-                )
+                ),
             ],
         )
 
@@ -434,12 +529,32 @@ class TestActionToken:
         assert address.verified_at is None
         user.refresh_from_db()
         assert user.email == ""
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
+        assertRecords(
+            caplog,
+            [
+                (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                ("django.request", logging.WARNING, "Not Found: /realms/local/login-actions/action-token"),
+            ],
+        )
 
     def test_no_jwt(self, caplog, client):
         response = client.get(reverse("keycloak_compat_local:action-token"))
         assert response.status_code == 404
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
+        assertRecords(
+            caplog,
+            [
+                (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"url": "/realms/local/login-actions/action-token"},
+                ),
+                ("django.request", logging.WARNING, "Not Found: /realms/local/login-actions/action-token"),
+            ],
+        )
 
     @freeze_time("2023-05-05 17:17:17")
     def test_token_from_keycloak(self, caplog, client):
@@ -461,6 +576,11 @@ class TestActionToken:
         assertRecords(
             caplog,
             [
+                (
+                    "keycloak_compat",
+                    logging.WARNING,
+                    {"application": "local_inclusion_connect", "url": "/realms/local/login-actions/action-token"},
+                ),
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
