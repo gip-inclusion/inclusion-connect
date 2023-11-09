@@ -15,7 +15,7 @@ from inclusion_connect.oidc_federation.peama import logout
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
-from tests.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
 PEAMA_SUB = "RANDOM_STRING"
@@ -213,6 +213,62 @@ class TestFederation:
                         "new_first_name": peama_data.user_info["given_name"],
                         "old_last_name": "old_last_name",
                         "new_last_name": peama_data.user_info["family_name"],
+                        "old_federation_sub": None,
+                        "new_federation_sub": peama_data.user_info["sub"],
+                        "old_federation": None,
+                        "new_federation": Federation.PEAMA,
+                        "old_federation_data": None,
+                        "new_federation_data": user.federation_data,
+                        "old_federation_id_token_hint": None,
+                        "new_federation_id_token_hint": peama_data.access_token["id_token"],
+                    },
+                ),
+            ],
+        )
+
+    def test_convert_existing_ic_user_with_unconfirmed_email(self, client, requests_mock, caplog):
+        user = UserFactory(
+            email="",
+            first_name="old_first_name",
+            last_name="old_last_name",
+            email_address=False,
+        )
+        EmailAddressFactory(email="michel@pole-emploi.fr", user=user)
+
+        response = client.get(reverse("oidc_federation:peama:init"))
+        response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+        user = User.objects.get()
+        assert user.email == peama_data.user_info["email"]
+        assert user.first_name == peama_data.user_info["given_name"]
+        assert user.last_name == peama_data.user_info["family_name"]
+        assert user.federation_sub == peama_data.user_info["sub"]
+        assert user.federation == Federation.PEAMA
+        assert user.federation_data == {
+            "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
+            "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+        }
+        assert user.email_addresses.get().verified_at
+        assertRedirects(response, reverse("accounts:edit_user_info"))
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+                ),
+                (
+                    "inclusion_connect.auth.oidc_federation",
+                    logging.INFO,
+                    {
+                        "event": "edit_user_info",
+                        "user": user.pk,
+                        "old_first_name": "old_first_name",
+                        "new_first_name": peama_data.user_info["given_name"],
+                        "old_last_name": "old_last_name",
+                        "new_last_name": peama_data.user_info["family_name"],
+                        "old_email": "",
+                        "new_email": "michel@pole-emploi.fr",
                         "old_federation_sub": None,
                         "new_federation_sub": peama_data.user_info["sub"],
                         "old_federation": None,
