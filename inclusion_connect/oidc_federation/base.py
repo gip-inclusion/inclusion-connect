@@ -60,22 +60,24 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         if sub_users:
             return sub_users
 
-        email_users = super().filter_users_by_claims(claims)
+        try:
+            email_address = EmailAddress.objects.filter(email__iexact=claims["email"]).select_related("user").get()
+        except EmailAddress.DoesNotExist:
+            return []
 
-        if email_users:
-            user = email_users.exclude(federation=None).first()
-            if user:
-                log = log_data(self.request)
-                log["email"] = user.email
-                log["user"] = user.pk
-                log["event"] = f"{LoginView.EVENT_NAME}_error"
-                log["federation"] = self.name
-                transaction.on_commit(partial(logger.info, log))
-                raise SuspiciousOperation(
-                    f"email={claims['email']} from federation={self.name} is already used by {user.federation}"
-                )
+        user = email_address.user
+        if user.federation is not None:
+            log = log_data(self.request)
+            log["email"] = user.email
+            log["user"] = user.pk
+            log["event"] = f"{LoginView.EVENT_NAME}_error"
+            log["federation"] = self.name
+            transaction.on_commit(partial(logger.info, log))
+            raise SuspiciousOperation(
+                f"email={claims['email']} from federation={self.name} is already used by {user.federation}"
+            )
 
-        return email_users
+        return [email_address.user]
 
     def get_userinfo(self, access_token, id_token, payload):
         return super().get_userinfo(access_token, id_token, payload) | {"id_token": id_token}
@@ -113,7 +115,9 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         new_user_data = model_to_dict(user)
         user.save()
 
-        if old_user_data["email"] != new_user_data["email"]:
+        if old_user_data["email"] == "":
+            user.email_addresses.filter(email=claims["email"]).get().verify()
+        elif old_user_data["email"] != new_user_data["email"]:
             email_address = EmailAddress(user=user, email=user.email)
             email_address.verify()
 
