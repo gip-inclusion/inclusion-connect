@@ -104,22 +104,31 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         return user
 
     def update_user(self, user, claims):
-        old_user_data = model_to_dict(user)
-        user.email = claims["email"]
-        user.first_name = claims["given_name"]
-        user.last_name = claims["family_name"]
-        user.federation_sub = claims["sub"]
-        user.federation = self.name
-        user.federation_data = self.get_additional_data(claims)
-        user.federation_id_token_hint = claims["id_token"]
-        new_user_data = model_to_dict(user)
-        user.save()
+        if (
+            user.federation
+            and user.email != claims["email"]
+            and EmailAddress.objects.filter(email=claims["email"]).exists()
+        ):
+            # Updating the email will crash because it"s already used. Don't update for now
+            user.new_email_already_used = claims["email"]
+            user.save()
+        else:
+            old_user_data = model_to_dict(user)
+            user.email = claims["email"]
+            user.first_name = claims["given_name"]
+            user.last_name = claims["family_name"]
+            user.federation_sub = claims["sub"]
+            user.federation = self.name
+            user.federation_data = self.get_additional_data(claims)
+            user.federation_id_token_hint = claims["id_token"]
+            user.save()
+            new_user_data = model_to_dict(user)
 
-        if old_user_data["email"] == "":
-            user.email_addresses.filter(email=claims["email"]).get().verify()
-        elif old_user_data["email"] != new_user_data["email"]:
-            email_address = EmailAddress(user=user, email=user.email)
-            email_address.verify()
+            if old_user_data["email"] == "":
+                user.email_addresses.filter(email=claims["email"]).get().verify()
+            elif old_user_data["email"] != new_user_data["email"]:
+                email_address = EmailAddress(user=user, email=user.email)
+                email_address.verify()
 
         log = log_data(self.request)
         log["email"] = user.email
@@ -128,14 +137,21 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         log["federation"] = self.name
         transaction.on_commit(partial(logger.info, log))
 
-        log = log_data(self.request)
-        log["event"] = EditUserInfoView.EVENT_NAME
-        log["user"] = user.pk
-        for key in old_user_data.keys():
-            if old_user_data[key] != new_user_data[key]:
-                log[f"old_{key}"] = old_user_data[key]
-                log[f"new_{key}"] = new_user_data[key]
-        transaction.on_commit(partial(logger.info, log))
+        if user.new_email_already_used:
+            log = log_data(self.request)
+            log["event"] = f"{EditUserInfoView.EVENT_NAME}_error"
+            log["user"] = user.pk
+            log["errors"] = {"already_used_email": user.new_email_already_used}
+            transaction.on_commit(partial(logger.info, log))
+        else:
+            log = log_data(self.request)
+            log["event"] = EditUserInfoView.EVENT_NAME
+            log["user"] = user.pk
+            for key in old_user_data.keys():
+                if old_user_data[key] != new_user_data[key]:
+                    log[f"old_{key}"] = old_user_data[key]
+                    log[f"new_{key}"] = new_user_data[key]
+            transaction.on_commit(partial(logger.info, log))
 
         return user
 
