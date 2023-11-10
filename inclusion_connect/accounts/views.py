@@ -510,3 +510,12 @@ class PasswordChangeView(MyAccountMixin, FormView):
         self.log(self.EVENT_NAME, form)
         messages.success(self.request, "Votre mot de passe a été mis à jour.")
         return super().form_valid(form)
+
+
+class NewEmailAlreadyUsed(LoginRequiredMixin, TemplateView):
+    template_name = "new_email_already_used.html"
+
+    def post(self, request, *args, **kwargs):
+        request.user.new_email_already_used = None
+        request.user.save()
+        return HttpResponseRedirect(get_next_url(request))

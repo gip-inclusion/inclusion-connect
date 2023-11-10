@@ -15,6 +15,7 @@ from inclusion_connect.oidc_federation.peama import logout
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
+from tests.helpers import parse_response_to_soup
 from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
 
 
@@ -427,3 +428,53 @@ def test_dont_crash_if_not_configured(client):
 
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
+
+
+def test_updated_email_already_exists(client, requests_mock, caplog, snapshot):
+    UserFactory(
+        email="michel@pole-emploi.fr",  # new email from PEAMA
+    )
+    user = UserFactory(
+        email="old_email",
+        first_name="old_first_name",
+        last_name="old_last_name",
+        federation_sub=PEAMA_SUB,
+        federation=Federation.PEAMA,
+    )
+    assert user.email_addresses.get().email == "old_email"
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    assert User.objects.count() == 2
+    user.refresh_from_db()
+    assert user.email == "old_email"  # Email was not updated
+    assert user.first_name == "old_first_name"
+    assert user.last_name == "old_last_name"
+    assert user.federation_sub == peama_data.user_info["sub"]
+    assert user.federation == Federation.PEAMA
+    assert user.federation_data is None
+    assert user.email_addresses.get().email == "old_email"
+    assertRedirects(response, reverse("accounts:warn_new_email_already_used"))
+    response = client.get(response.url)
+    assert str(parse_response_to_soup(response, selector="main")) == snapshot
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+            ),
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {
+                    "event": "edit_user_info_error",
+                    "user": user.pk,
+                    "errors": {"already_used_email": "michel@pole-emploi.fr"},
+                },
+            ),
+        ],
+    )
+    response = client.post(reverse("accounts:warn_new_email_already_used"))
+    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assertRecords(caplog, [])  # No new logs here

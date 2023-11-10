@@ -8,6 +8,8 @@ def required_action_url(user):
         return reverse("accounts:accept_terms")
     if user.must_reset_password:
         return reverse("accounts:change_temporary_password")
+    if user.new_email_already_used:
+        return reverse("accounts:warn_new_email_already_used")
     return None
 
 
