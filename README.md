@@ -14,6 +14,8 @@
 - [Conseillers Numériques France Service](https://www.conseiller-numerique.gouv.fr/)
 - [Immersion facilitée](https://immersion-facile.beta.gouv.fr/)
 - [Rdv Insertion](https://www.rdv-insertion.fr/)
+- [eva](https://eva.beta.gouv.fr/)
+- [Portail Emploi de la métropole de Lyon](https://metemploi.grandlyon.com/accueil)
 
 ## Documentation
 
