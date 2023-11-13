@@ -7,7 +7,6 @@ import jwt
 from bs4 import BeautifulSoup
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
@@ -26,6 +25,7 @@ def oidc_flow_followup(
     caplog,
     additional_claims=None,
     code_verifier=None,
+    with_trailing_slash=False,
 ):
     # Call TOKEN endpoint
     token_data = {
@@ -37,7 +37,8 @@ def oidc_flow_followup(
     }
     if code_verifier:
         token_data["code_verifier"] = code_verifier
-    response = client.post(reverse("oauth2_provider:token"), data=token_data)
+    url = "/auth/token" + ("/" if with_trailing_slash else "")
+    response = client.post(url, data=token_data)
     assertRecords(
         caplog,
         [
@@ -72,7 +73,7 @@ def oidc_flow_followup(
 
     # Call USER INFO endpoint
     response = client.get(
-        reverse("oauth2_provider:user-info"),
+        "/auth/userinfo" + ("/" if with_trailing_slash else ""),
         headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
     assert response.json() == {
@@ -93,9 +94,10 @@ def oidc_complete_flow(
     caplog,
     application=None,
     use_pkce=False,
+    with_trailing_slash=False,
 ):
     application = application or ApplicationFactory(client_id=oidc_params["client_id"])
-    auth_url = reverse("oauth2_provider:authorize")
+    auth_url = "/auth/authorize" + ("/" if with_trailing_slash else "")
 
     auth_params = oidc_params
     code_verifier = None
@@ -153,6 +155,7 @@ def oidc_complete_flow(
         oidc_params,
         caplog,
         code_verifier=code_verifier,
+        with_trailing_slash=with_trailing_slash,
     )
 
 
@@ -191,8 +194,8 @@ def parse_response_to_soup(response, selector=None, no_html_body=False, status_c
     return soup
 
 
-def call_logout(client, method, params):
-    url = reverse("oauth2_provider:rp-initiated-logout")
+def call_logout(client, method, params, with_trailing_slash=False):
+    url = "/auth/logout" + ("/" if with_trailing_slash else "")
     if method == "get":
         return client.get(add_url_params(url, params))
     elif method == "post":
