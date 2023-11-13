@@ -152,7 +152,7 @@ class TestLogoutView:
         assertRecords(
             caplog,
             [
-                ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+                ("django.request", logging.WARNING, "Bad Request: /auth/logout"),
                 (
                     "inclusion_connect.oidc",
                     logging.INFO,
@@ -218,7 +218,7 @@ class TestLogoutView:
         assertRecords(
             caplog,
             [
-                ("django.request", logging.WARNING, "Bad Request: /auth/logout/"),
+                ("django.request", logging.WARNING, "Bad Request: /auth/logout"),
                 (
                     "inclusion_connect.oidc",
                     logging.INFO,
@@ -539,6 +539,12 @@ def test_pkce_flow(client, oidc_params, caplog):
     user = UserFactory()
     client.force_login(user)
     oidc_complete_flow(client, user, oidc_params, caplog, use_pkce=True)
+
+
+def test_with_trailing_slash(client, oidc_params, caplog):
+    user = UserFactory()
+    client.force_login(user)
+    oidc_complete_flow(client, user, oidc_params, caplog, use_pkce=True, with_trailing_slash=True)
 
 
 def test_user_application_link(client, oidc_params):
