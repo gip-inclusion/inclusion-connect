@@ -1,6 +1,7 @@
 import datetime
 import logging
 
+import jwt
 import pytest
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
@@ -674,3 +675,11 @@ def test_access_token_lifespan(client, oidc_params):
 def test_discovery_view(client):
     response = client.get(reverse("oauth2_provider:oidc-connect-discovery-info"))
     assert response.status_code == 200
+
+
+def test_idtoken(client, oidc_params, caplog):
+    user = UserFactory()
+    id_token = oidc_complete_flow(client, user, oidc_params, caplog)
+    decoded_id_token = jwt.decode(id_token, options={"verify_signature": False})
+    assert decoded_id_token["iss"] == "http://testserver/auth"
+    assert decoded_id_token["aud"] == oidc_params["client_id"]
