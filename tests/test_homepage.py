@@ -1,7 +1,7 @@
 from django.test import override_settings
 from django.urls import reverse
 
-from tests.conftest import parse_response_to_soup
+from tests.helpers import parse_response_to_soup
 
 
 def test_homepage(client, snapshot):

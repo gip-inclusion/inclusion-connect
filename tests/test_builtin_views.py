@@ -2,7 +2,8 @@ from django.test import override_settings
 from django.urls import reverse
 
 from inclusion_connect.utils.urls import add_url_params
-from tests.conftest import Client, parse_response_to_soup
+from tests.conftest import Client
+from tests.helpers import parse_response_to_soup
 
 
 def test_csrf_view(snapshot):
