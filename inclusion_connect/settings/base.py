@@ -358,9 +358,6 @@ ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
 # Keycloak Compatibility
 # ----------------------
 
-# Allow relms from every keycloak instance (easier that loading from variables)
-KEYCLOAK_REALMS = ["local", "Review_apps", "Demo", "inclusion-connect"]
-
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
     "inclusion_connect.keycloak_compat.hashers.KeycloakPasswordHasher",
