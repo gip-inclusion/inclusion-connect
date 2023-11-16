@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
@@ -17,9 +16,7 @@ def post_login_actions(get_response):
     def middleware(request):
         user = request.user
 
-        whitelisted_urls = [reverse("homepage"), reverse("oauth2_provider:rp-initiated-logout")] + [
-            reverse(f"keycloak_compat_{realm}:logout") for realm in settings.KEYCLOAK_REALMS
-        ]
+        whitelisted_urls = [reverse("homepage"), reverse("oauth2_provider:rp-initiated-logout")]
 
         path_is_whitelisted = request.path in whitelisted_urls
 

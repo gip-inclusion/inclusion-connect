@@ -34,14 +34,6 @@ urlpatterns = [
     path("federation/", include("inclusion_connect.oidc_federation.urls", "oidc_federation")),
 ]
 
-for realm in settings.KEYCLOAK_REALMS:
-    urlpatterns.append(
-        re_path(
-            rf"^realms/{realm}/",
-            include("inclusion_connect.keycloak_compat.urls", namespace=f"keycloak_compat_{realm}"),
-        )
-    )
-
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
     import debug_toolbar
 
