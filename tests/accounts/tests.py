@@ -2205,7 +2205,7 @@ class TestChangeTemporaryPasswordView:
     def test_view(self, caplog, client):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(must_reset_password=True)
+        user = UserFactory(password_is_temporary=True)
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, reverse("accounts:change_temporary_password"))
@@ -2230,7 +2230,7 @@ class TestChangeTemporaryPasswordView:
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
         user.refresh_from_db()
-        assert user.must_reset_password is False
+        assert user.password_is_temporary is False
         assertRecords(
             caplog,
             [
@@ -2243,7 +2243,7 @@ class TestChangeTemporaryPasswordView:
         )
 
     def test_allow_same_password(self, client):
-        user = UserFactory(must_reset_password=True)
+        user = UserFactory(password_is_temporary=True)
         client.force_login(user)
 
         response = client.post(
@@ -2253,10 +2253,10 @@ class TestChangeTemporaryPasswordView:
         assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
 
         user.refresh_from_db()
-        assert user.must_reset_password is False
+        assert user.password_is_temporary is False
 
     def test_invalid_password(self, caplog, client):
-        user = UserFactory(must_reset_password=True, first_name="Manuel", last_name="Calavera")
+        user = UserFactory(password_is_temporary=True, first_name="Manuel", last_name="Calavera")
         client.force_login(user)
         response = client.post(
             reverse("accounts:change_temporary_password"),
@@ -2264,7 +2264,7 @@ class TestChangeTemporaryPasswordView:
         )
         assert response.status_code == 200
         user.refresh_from_db()
-        assert user.must_reset_password is True
+        assert user.password_is_temporary is True
         assertRecords(
             caplog,
             [
@@ -2337,7 +2337,7 @@ class TestChangeWeakPasswordView:
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
         user.refresh_from_db()
-        assert user.must_reset_password is False
+        assert user.password_is_temporary is False
         assertRecords(
             caplog,
             [
@@ -2396,7 +2396,7 @@ class TestMiddleware:
     def test_post_login_actions(self, client):
         user = UserFactory(
             terms_accepted_at=None,
-            must_reset_password=True,
+            password_is_temporary=True,
             password_is_too_weak=True,
         )
         client.force_login(user)
@@ -2423,7 +2423,7 @@ class TestMiddleware:
     def test_staff_users_are_not_concerned(self, client):
         user = UserFactory(
             terms_accepted_at=None,
-            must_reset_password=True,
+            password_is_temporary=True,
             is_staff=True,
         )
         client.force_login(user)
@@ -2433,7 +2433,7 @@ class TestMiddleware:
     def test_logout_is_whitelisted(self, client):
         user = UserFactory(
             terms_accepted_at=None,
-            must_reset_password=True,
+            password_is_temporary=True,
         )
         client.force_login(user)
         response = client.get(

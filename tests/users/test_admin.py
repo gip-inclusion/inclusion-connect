@@ -114,7 +114,7 @@ class TestUserAdmin:
         response = client.post(
             reverse("admin:users_user_change", args=(user.pk,)),
             data={
-                "must_reset_password": "off",
+                "password_is_temporary": "off",
                 "first_name": "Manuel",
                 "last_name": "Calavera",
                 "email": "manny.calavera@mailinator.com",
@@ -162,7 +162,7 @@ class TestUserAdmin:
         response = client.post(
             reverse("admin:users_user_change", args=(user.pk,)),
             data={
-                "must_reset_password": "off",
+                "password_is_temporary": "off",
                 "first_name": "Manuel",
                 "last_name": "Calavera",
                 "email": "manny.calavera@mailinator.com",
@@ -543,7 +543,7 @@ class TestUserAdmin:
         )
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
         user.refresh_from_db()
-        assert user.must_reset_password
+        assert user.password_is_temporary
         assertRecords(
             caplog,
             [
@@ -613,7 +613,7 @@ class TestUserAdmin:
         )
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
         user.refresh_from_db()
-        assert user.must_reset_password is True
+        assert user.password_is_temporary is True
 
     def test_support_staff_cannot_edit_superusers(self, client):
         staff_user = UserFactory(is_staff=True, email_address=False)
@@ -623,7 +623,7 @@ class TestUserAdmin:
         superuser = UserFactory(is_staff=True, is_superuser=True, email_address=False)
 
         response = client.get(reverse("admin:users_user_change", kwargs={"object_id": superuser.pk}))
-        assertNotContains(response, "field-must_reset_password")
+        assertNotContains(response, "field-password_is_temporary")
         input_counts = 1  # logout csrf
         input_counts += 1  # user form csrf
         input_counts += 1  # left menu filter
@@ -649,7 +649,7 @@ class TestUserAdmin:
         response = client.post(
             reverse("admin:users_user_change", args=(staff_user.pk,)),
             data={
-                "must_reset_password": "off",
+                "password_is_temporary": "off",
                 "first_name": "Kiddy",
                 "last_name": "Script",
                 "email": staff_user.email,
@@ -688,7 +688,7 @@ class TestUserAdmin:
         response = client.post(
             reverse("admin:users_user_change", args=(user.pk,)),
             data={
-                "must_reset_password": "off",
+                "password_is_temporary": "off",
                 "first_name": "Kiddy",
                 "last_name": "Script",
                 "email": user.email,
@@ -726,7 +726,7 @@ class TestUserAdmin:
         response = client.post(
             reverse("admin:users_user_change", args=(user.pk,)),
             data={
-                "must_reset_password": "off",
+                "password_is_temporary": "off",
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
@@ -777,7 +777,7 @@ class TestUserAdmin:
             username="11111111-1111-1111-1111-111111111111",
         )
 
-        result_id = '[class*="field-must_reset_password"]'
+        result_id = '[class*="field-password_is_temporary"]'
 
         def get_password_form_field():
             response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
@@ -787,7 +787,7 @@ class TestUserAdmin:
         client.force_login(user)
         assert get_password_form_field() == snapshot(name="normal password")
 
-        user.must_reset_password = True
+        user.password_is_temporary = True
         user.save()
         assert get_password_form_field() == snapshot(name="temporary password")
 
@@ -804,7 +804,7 @@ class TestUserAdmin:
             federation_data={"site_pe": "aaa", "structure_pe": 111},
         )
         response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
-        assertNotContains(response, "field-must_reset_password")
+        assertNotContains(response, "field-password_is_temporary")
         assert str(parse_response_to_soup(response, selector='[class="form-row field-federation"]')) == snapshot(
             name="federation"
         )
