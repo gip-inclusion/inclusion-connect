@@ -228,7 +228,7 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
             self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
 
     def save(self, commit=True):
-        self.user.must_reset_password = False
+        self.user.password_is_temporary = False
         return super().save(commit)
 
 

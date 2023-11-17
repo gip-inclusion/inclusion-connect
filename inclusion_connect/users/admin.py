@@ -61,7 +61,7 @@ class AdminPasswordChangeForm(forms.Form):
     def save(self, commit=True):
         password = self.cleaned_data["password"]
         self.user.set_password(password)
-        self.user.must_reset_password = True
+        self.user.password_is_temporary = True
         if commit:
             self.user.save()
         return self.user
@@ -105,7 +105,7 @@ class ConfirmEmailWidget(forms.TextInput):
 
 class UserChangeForm(auth_forms.UserChangeForm):
     password = None
-    must_reset_password = forms.Field(
+    password_is_temporary = forms.Field(
         label="Mot de passe",
         disabled=True,
         required=False,
@@ -205,7 +205,7 @@ class UserAdmin(auth_admin.UserAdmin):
         "federation",
         "federation_data",
     ]
-    list_filter = auth_admin.UserAdmin.list_filter + ("must_reset_password", "federation")
+    list_filter = auth_admin.UserAdmin.list_filter + ("password_is_temporary", "federation")
     inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChangeForm
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
@@ -260,7 +260,7 @@ class UserAdmin(auth_admin.UserAdmin):
             if obj.federation or not self.has_change_permission(request, obj):
                 fieldsets[0][1]["fields"] = ("username",)
             else:
-                fieldsets[0][1]["fields"] = ("username", "must_reset_password")
+                fieldsets[0][1]["fields"] = ("username", "password_is_temporary")
 
             assert fieldsets[1] == ("Informations personnelles", {"fields": ("first_name", "last_name", "email")})
             fieldsets[1][1]["fields"] += ("confirm_email",)

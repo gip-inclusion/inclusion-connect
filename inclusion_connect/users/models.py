@@ -29,7 +29,7 @@ class User(AbstractUser):
     password = models.CharField("mot de passe", max_length=256)  # allow compat with old keycloak passwords
 
     # Triggers for required actions
-    must_reset_password = models.BooleanField("mot de passe temporaire", default=False)
+    password_is_temporary = models.BooleanField("mot de passe temporaire", default=False)
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
     new_email_already_used = models.TextField(null=True)
     password_is_too_weak = models.BooleanField("mot de passe trop faible", default=False)

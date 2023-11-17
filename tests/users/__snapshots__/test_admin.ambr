@@ -1,14 +1,14 @@
 # serializer version: 1
 # name: TestUserAdmin.test_admin_detail_password_field[normal password]
   '''
-  <div class="form-row field-must_reset_password">
+  <div class="form-row field-password_is_temporary">
               
               
                   <div>
                       
                           <div class="flex-container">
                               
-                                  <label for="id_must_reset_password">Mot de passe :</label>
+                                  <label for="id_password_is_temporary">Mot de passe :</label>
                                   
                                       <div>
       
@@ -29,14 +29,14 @@
 # ---
 # name: TestUserAdmin.test_admin_detail_password_field[temporary password]
   '''
-  <div class="form-row field-must_reset_password">
+  <div class="form-row field-password_is_temporary">
               
               
                   <div>
                       
                           <div class="flex-container">
                               
-                                  <label for="id_must_reset_password">Mot de passe :</label>
+                                  <label for="id_password_is_temporary">Mot de passe :</label>
                                   
                                       <div>
       
