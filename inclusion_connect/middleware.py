@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils.cache import add_never_cache_headers
 from django.utils.html import format_html
 
-from inclusion_connect.logging import log_data
 from inclusion_connect.utils.urls import add_url_params
 
 
@@ -35,19 +34,5 @@ def limit_staff_users_to_admin(get_response):
             raise PermissionDenied(exception)
 
         return get_response(request)
-
-    return middleware
-
-
-def log_keycloak_compat(get_response):
-    def middleware(request):
-        response = get_response(request)
-        if request.path.startswith("/realms"):
-            log = log_data(request)
-            if "application" not in log and request.GET.get("client_id"):
-                log["application"] = request.GET.get("client_id")
-            log["url"] = request.path
-            logger.warning(log)
-        return response
 
     return middleware

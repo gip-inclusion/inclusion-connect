@@ -81,7 +81,6 @@ MIDDLEWARE = [
     "inclusion_connect.middleware.never_cache",
     "inclusion_connect.middleware.limit_staff_users_to_admin",
     "inclusion_connect.accounts.middleware.post_login_actions",
-    "inclusion_connect.middleware.log_keycloak_compat",
 ]
 
 ROOT_URLCONF = "inclusion_connect.urls"
