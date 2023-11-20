@@ -232,9 +232,9 @@ elastic-transport==8.4.0 \
     --hash=sha256:19db271ab79c9f70f8c43f8f5b5111408781a6176b54ab2e54d713b6d9ceb815 \
     --hash=sha256:b9ad708ceb7fcdbc6b30a96f886609a109f042c0b9d9f2e44403b3133ba7ff10
     # via elasticsearch
-elasticsearch==8.10.1 \
-    --hash=sha256:2cb56b433daa2d3ef1aaa2e5a5eacd36ba1d66884722f3d7759a4f9d16190059 \
-    --hash=sha256:68141d42d10c7f67ac466ca00496830d3b81a7e9476c3baa5585060832c60c69
+elasticsearch==8.11.0 \
+    --hash=sha256:26b72957ee617c9f0b23ac872e1c133cf9d7f5d439c615daaa11016265da36ab \
+    --hash=sha256:9e08413beaff3a46bc10c6c57069a84704df6aaa93085c737df07f58a2811b78
     # via -r requirements/base.in
 idna==3.4 \
     --hash=sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4 \
