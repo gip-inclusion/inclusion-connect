@@ -338,6 +338,7 @@ oidc_rsa_private_key = Path("oidc.pem").read_text()
 
 OAUTH2_PROVIDER = {
     "OIDC_ENABLED": True,
+    "OIDC_ISS_ENDPOINT": os.getenv("OIDC_ISS_ENDPOINT"),
     "OIDC_RSA_PRIVATE_KEY": oidc_rsa_private_key,
     "SCOPES": {
         "openid": "OpenID Connect scope",

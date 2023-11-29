@@ -21,8 +21,3 @@ class CustomOAuth2Validator(OAuth2Validator):
             "family_name": request.user.last_name,
             "email": request.user.email,
         } | (request.user.federation_data or {})
-
-    def get_oidc_issuer_endpoint(self, request):
-        oidc_issuer_endpoint = super().get_oidc_issuer_endpoint(request)
-        # since we made the trailing slash optionnal, this function does not work correctly anymore.
-        return oidc_issuer_endpoint + "h"
