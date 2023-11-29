@@ -2,6 +2,7 @@ import datetime
 import os
 
 from .base import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position # noqa: E402,F403
+from .base import OAUTH2_PROVIDER  # Avoid flake8 error
 
 
 # Django settings
@@ -73,3 +74,7 @@ PEAMA_USER_ENDPOINT = "https://peama/user?realm=/agent"
 PEAMA_SCOPES = "openid email profile siteAgent"
 PEAMA_JWKS_ENDPOINT = "https://peama/jwks"
 PEAMA_LOGOUT_ENDPOINT = "https://peama/logout?realm=/agent"
+
+# OIDC Config
+# -----------
+OAUTH2_PROVIDER["OIDC_ISS_ENDPOINT"] = "http://testserver/auth"
