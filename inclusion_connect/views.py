@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.http import require_safe
 
 from inclusion_connect.utils.urls import add_url_params
 
@@ -19,3 +20,14 @@ def home(request, template_name="homepage.html", **kwargs):
 
 def accessibility(request, template_name="accessibility.html", **kwargs):
     return render(request, template_name)
+
+
+@require_safe
+def security_txt(request, template_name="security.txt", **kwargs):
+    # https://www.rfc-editor.org/rfc/rfc9116
+    # https://securitytxt.org/ can be helpful in generating the document.
+    return render(
+        request,
+        template_name,
+        content_type="text/plain; charset=utf-8",
+    )

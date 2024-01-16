@@ -34,6 +34,8 @@ urlpatterns = [
     path("federation/", include("inclusion_connect.oidc_federation.urls", "oidc_federation")),
     # Mandatory accesibilty page
     path("accessibility/", views.accessibility, name="accessibility"),
+    # security.txt page
+    path(".well-known/security.txt", views.security_txt, name="security-txt"),
 ]
 
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:
