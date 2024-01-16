@@ -32,6 +32,8 @@ urlpatterns = [
     re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls", namespace="oauth2_provider")),
     # OIDC Client urls
     path("federation/", include("inclusion_connect.oidc_federation.urls", "oidc_federation")),
+    # Mandatory accesibilty page
+    path("accessibility/", views.accessibility, name="accessibility"),
 ]
 
 if settings.DEBUG and "debug_toolbar" in settings.INSTALLED_APPS:

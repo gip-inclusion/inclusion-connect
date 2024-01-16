@@ -7,6 +7,7 @@
                   <div class="container">
                       <div class="row g-0 bg-white">
                           
+                              
       <div class="col-12 col-lg-6 bg-lg-white">
           <div class="bg-white p-3 py-lg-7 px-lg-8">
               <div class="container container-messages">
@@ -48,11 +49,12 @@
           </div>
       </div>
   
-                          
+                              
       <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
           <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
       </div>
   
+                          
                       </div>
                   </div>
               </section>

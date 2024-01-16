@@ -15,3 +15,7 @@ def csrf_failure(request, template_name="403_csrf.html", **kwargs):
 
 def home(request, template_name="homepage.html", **kwargs):
     return render(request, template_name)
+
+
+def accessibility(request, template_name="accessibility.html", **kwargs):
+    return render(request, template_name)

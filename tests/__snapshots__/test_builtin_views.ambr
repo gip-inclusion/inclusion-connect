@@ -24,13 +24,16 @@
       <section class="s-header">
           <div class="s-header__container container">
               <div class="s-header__row row">
-                  <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center ps-xl-0 pe-0">
-                      <img alt="Ministère du travail, du plein emploi et de l'insertion" src="/static/vendor/theme-inclusion/images/logo-ministere-emploi.svg"/>
+                  <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center pe-0">
+                      <img alt="République Française" src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg"/>
                   </div>
-                  <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center px-0">
-                      <img alt="Inclusion Connect" height="90" src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg"/>
+                  <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center">
+                      <a href="/">
+                          <img alt="Inclusion Connect" height="90" src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg"/>
+                      </a>
                   </div>
-                  <div class="s-header__col s-header__col--burger col d-flex align-items-center justify-content-end d-xl-none"></div>
+                  <div class="s-header__col s-header__col--nav col d-none d-xl-inline-flex d-xl-flex align-items-center justify-content-end">
+                  </div>
               </div>
           </div>
       </section>
@@ -43,6 +46,7 @@
                   <div class="container">
                       <div class="row g-0 bg-white">
                           
+                              
       <div class="col-12 col-lg-6 bg-lg-white">
           <div class="bg-white p-3 py-lg-7 px-lg-8">
               <div class="container container-messages">
@@ -69,11 +73,12 @@
           </div>
       </div>
   
-                          
+                              
       <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
           <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
       </div>
   
+                          
                       </div>
                   </div>
               </section>
@@ -82,22 +87,55 @@
   
           
   
-  
   <footer id="footer" role="contentinfo">
+      <section class="s-footer-quick">
+          <div class="s-footer-quick__container container">
+              <div class="s-footer-quick__row row">
+                  <div class="s-footer-quick__col col-12 col-md-6 col-lg-auto">
+                      <strong>Accès rapides</strong>
+                      <div class="s-footer-quick__gridlist">
+                          <ul>
+                              <li>
+                                  <a aria-label="FAQ sur Notion (lien externe)" href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08" target="_blank">Aide</a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                  <div class="s-footer-quick__col col-12 col-md-6 col-lg-auto">
+                      <strong>Documentation</strong>
+                      <div class="s-footer-quick__gridlist">
+                          <ul>
+                              <li>
+                                  <a aria-label="Statistiques (lien externe)" href="https://stats.inclusion.beta.gouv.fr/public/dashboard/8895a813-68d0-4d3a-a7e3-f71ef0615a52" target="_blank">Statistiques</a>
+                              </li>
+                              <li>
+                                  <a aria-label="Github (lien externe)" href="https://github.com/gip-inclusion/inclusion-connect/blob/main/docs/index.md" target="_blank">Github</a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+  
       <section class="s-footer-gip">
           <div class="s-footer-gip__container container">
               <div class="s-footer-gip__row row">
-                  <div class="s-footer-gip__col s-footer-gip__col--logo col-12 col-md-auto col-lg-auto">
-                      <img alt="Rébublique Française" class="img-fluid" src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg" width="130"/>
+                  <div class="s-footer-gip__col s-footer-gip__col--logo col-12 col-md-6 col-lg-auto">
+                      <a aria-label="Découvrez les services de la plateforme de l'inclusion (lien externe)" href="https://inclusion.beta.gouv.fr/" target="_blank">
+                          <img alt="Logo de la plateforme de l'inclusion" src="/static/vendor/theme-inclusion/images/logo-plateforme-inclusion.svg"/>
+                      </a>
                   </div>
-                  <div class="s-footer-gip__col col-12 col-md col-lg">
+                  <div class="s-footer-gip__col col-12 col-md-6 col-lg">
                       <p class="mb-1">
-                          Inclusion Connect est un Single Sign-On (SSO). Autrement dit c'est un service d'authentification qui permet à un utilisateur d'utiliser les mêmes informations d'identification (email et mot de passe) pour accéder à plusieurs applications.
+                          <strong>Ce service fait partie de la Plateforme de l’inclusion</strong>
                       </p>
                       <p class="m-0">
-                          Vous constatez un problème de sécurité sur le service ?
+                          Découvrez les outils qui portent l'inclusion au
                           <br class="d-none d-md-inline"/>
-                          Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
+                          cœur de leur service. A chaque service, son objectif.
+                          <br/>
+                          <a aria-label="Découvrez les services de la plateforme de l'inclusion (lien externe)" class="has-external-link" href="https://inclusion.beta.gouv.fr/" target="_blank">Découvrez nos services</a>
                       </p>
                   </div>
                   <div class="s-footer-gip__col s-footer-gip__col--links col-12 col-lg-auto">
@@ -133,9 +171,15 @@
                               <a href="/static/terms/CGU_v5.pdf" target="_blank">CGU</a>
                           </li>
                           <li>
+                              <a href="/accessibility/">Accessibilité : non conforme</a>
+                          </li>
+                          <li>
                               <a href="/static/terms/Mentions%20l%C3%A9gales_20230302.pdf" target="_blank">Mentions légales</a>
                           </li>
                       </ul>
+                      <p>
+                          Vous constatez un problème de sécurité sur le service ? Signalez-le nous à cette adresse <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.
+                      </p>
                   </div>
               </div>
           </div>
