@@ -6,13 +6,16 @@
     <section class="s-header">
         <div class="s-header__container container">
             <div class="s-header__row row">
-                <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center ps-xl-0 pe-0">
-                    <img src="{% static_theme_images 'logo-ministere-emploi.svg' %}" alt="Ministère du travail, du plein emploi et de l'insertion" />
+                <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center pe-0">
+                    <img src="{% static_theme_images 'logo-republique-francaise.svg' %}" alt="République Française" />
                 </div>
-                <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center px-0">
-                    <img src="{% static_theme_images 'logo-inclusion-connect.svg' %}" alt="Inclusion Connect" height="90" />
+                <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center">
+                    <a href="{% url 'homepage' %}">
+                        <img src="{% static_theme_images 'logo-inclusion-connect.svg' %}" alt="Inclusion Connect" height="90" />
+                    </a>
                 </div>
-                <div class="s-header__col s-header__col--burger col d-flex align-items-center justify-content-end d-xl-none"></div>
+                <div class="s-header__col s-header__col--nav col d-none d-xl-inline-flex d-xl-flex align-items-center justify-content-end">
+                </div>
             </div>
         </div>
     </section>
