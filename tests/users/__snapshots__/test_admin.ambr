@@ -144,7 +144,7 @@
                   <fieldset class="module aligned">
                       
   
-  <div class="mb-3 required"><label class="form-label" for="id_password">Mot de passe</label><div class="password-with-instructions"><input autocomplete="new-password" autofocus="" class="form-control" id="id_password" name="password" placeholder="Mot de passe" required="" type="text"/></div></div>
+  <div class="mb-3 required"><label class="form-label" for="id_password">Mot de passe</label><input autocomplete="new-password" autofocus="" class="form-control password-with-instructions" id="id_password" name="password" placeholder="Mot de passe" required="" type="text"/></div>
   <small class="form-text text-muted">
       <ul class="list-unstyled">
           <li>

@@ -34,7 +34,7 @@ addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  const pwInput = document.querySelector(".password-with-instructions input");
+  const pwInput = document.querySelector("input.password-with-instructions");
   if (pwInput) {
     function indicatorStatus(elt, matchesCrit, label) {
       elt.classList.toggle("ri-close-circle-line", !matchesCrit);
