@@ -286,7 +286,6 @@ LOGIN_URL = "/accounts/login/"
 
 BOOTSTRAP5 = {
     "required_css_class": "form-group-required",
-    "field_renderers": {"default": "inclusion_connect.utils.custom_renderer.CustomFieldRenderer"},
 }
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
