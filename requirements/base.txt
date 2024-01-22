@@ -249,9 +249,9 @@ josepy==1.13.0 \
 jwcrypto==1.5.1 \
     --hash=sha256:48bb9bf433777136253579e52b75ffe0f9a4a721d133d01f45a0b91ed5f4f1ae
     # via django-oauth-toolkit
-mozilla-django-oidc==3.0.0 \
-    --hash=sha256:a7d447af83cb5aa1671a24009b0ce6b2f0d259e9c58d8c88c7a8d0c27c05c04d \
-    --hash=sha256:f535eeddf03698ad9fd89dd87037828e9c7d503771acef21f0509f6cc42fc875
+mozilla-django-oidc==4.0.0 \
+    --hash=sha256:01a4ab19341503ec06fcbe6ea12329ed709d4226bf1d2c7541b0b1c4c4e8a738 \
+    --hash=sha256:7eb9d05a033ac61a74ea3be33d3f822818bc8dcab81c471fef94c0d65c7cbe1c
     # via -r requirements/base.in
 oauthlib==3.2.2 \
     --hash=sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca \
