@@ -14,6 +14,10 @@
         <link rel="stylesheet" href="{% static "vendor/theme-inclusion/stylesheets/app.css" %}" type="text/css">
         <link rel="stylesheet" href="{% static "css/inclusion_connect.css" %}" type="text/css">
 
+        {% if not debug %}
+            <script src="https://js.sentry-cdn.com/d9163858ff954fc9a789fcb17662e1d2.min.js" crossorigin="anonymous"></script>
+        {% endif %}
+
         {% block extra_head %}{% endblock %}
     </head>
     <body>
