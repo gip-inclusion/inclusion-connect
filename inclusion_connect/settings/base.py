@@ -385,8 +385,13 @@ CSP_STYLE_SRC = [
     "'self'",
 ]
 CSP_FONT_SRC = ["'self'"]
-CSP_SCRIPT_SRC = ["'self'"]
-CSP_CONNECT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = [
+    "'self'",
+    # https://docs.sentry.io/platforms/javascript/install/loader/#content-security-policy
+    "https://browser.sentry-cdn.com",
+    "https://js.sentry-cdn.com",
+]
+CSP_CONNECT_SRC = ["'self'", "*.sentry.io"]
 CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
