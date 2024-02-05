@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DJANGO_SETTINGS_MODULE: inclusion_connect.settings.dev
+      DJANGO_SETTINGS_MODULE: inclusion_connect.settings.test
       PYTHONPATH: .
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
