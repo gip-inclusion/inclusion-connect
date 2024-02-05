@@ -1,3 +1,4 @@
+import io
 import logging
 from unittest import mock
 
@@ -10,10 +11,10 @@ from inclusion_connect.logging import ElasticSearchHandler
 def test_log_formatting(snapshot):
     logger = logging.getLogger("inclusion_connect")  # Root logger for IC.
     [handler] = logger.handlers
-    logger.info({"key": "value", "other_key": "value"})
-    stream = handler.stream
-    stream.seek(0)
-    assert stream.read() == snapshot(name="log serialized as JSON with metadata")
+    with io.StringIO() as capture_stream:
+        handler.setStream(capture_stream)
+        logger.info({"key": "value", "other_key": "value"})
+        assert capture_stream.getvalue() == snapshot(name="log serialized as JSON with metadata")
 
 
 @mock.patch("inclusion_connect.logging.bulk")
