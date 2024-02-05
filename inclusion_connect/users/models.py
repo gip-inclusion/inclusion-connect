@@ -60,6 +60,12 @@ class User(AbstractUser):
                 condition=~models.Q(email=""),
                 violation_error_message="Cet email est déjà associé à un autre utilisateur.",
             ),
+            models.UniqueConstraint(
+                fields=["federation", "federation_sub"],
+                name="unique_sub_per_federation",
+                condition=~models.Q(federation=None),
+                violation_error_message="L’identifiant de fédération (sub) est associé à un autre utilisateur.",
+            ),
         ]
 
     def __str__(self):
