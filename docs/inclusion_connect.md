@@ -173,7 +173,7 @@ L'_access token_ sera ensuite utilisé pour accéder à l'endpoint _UserInfo_.
 
 L'_id token_ est un objet JWT signé qui contient notamment :
 - **nonce** : la valeur transmise lors de la requête initiale qu'il faut vérifier.
-- **sub** : l'identifiant unique de l'utilisateur que le FS doit conserver au cas où l'utilisateur change son adresse e-mail un jour (ce qui n'est pas encore possible pour le moment).
+- **sub** : l'identifiant unique de l'utilisateur que le FS doit conserver au cas où l'utilisateur change son adresse e-mail un jour.
 - **given_name** : le prénom de l'utilisateur.
 - **family_name** : son nom de famille.
 - **email** : son adresse e-mail.
@@ -223,7 +223,7 @@ Corps HTTP:
 ```
 
 Note : il faut que le FS conserve la valeur de sub en base de donnée car c'est celle-ci qui permettra d'identifier l'utilisateur s'il choisit de changer
-son adresse email dans Inclusion Connect (ce qui n'est pas encore possible pour le moment).
+son adresse email dans Inclusion Connect.
 
 ### 5) Déconnexion
 
