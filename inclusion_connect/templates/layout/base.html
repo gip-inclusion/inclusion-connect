@@ -39,7 +39,7 @@
 
         {% if MATOMO_BASE_URL %}
             <!-- Matomo -->
-            <script id="matomo-custom-init" nonce="{{ CSP_NONCE }}">
+            <script nonce="{{ CSP_NONCE }}">
               var _paq = window._paq = window._paq || [];
               _paq.push(['trackPageView']);
               _paq.push(['enableLinkTracking']);

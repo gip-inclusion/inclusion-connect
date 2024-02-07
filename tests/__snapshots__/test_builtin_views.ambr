@@ -190,7 +190,7 @@
   
           
               <!-- Matomo -->
-              <script id="matomo-custom-init" nonce="NORMALIZED_CSP_NONCE">
+              <script nonce="NORMALIZED_CSP_NONCE">
                 var _paq = window._paq = window._paq || [];
                 _paq.push(['trackPageView']);
                 _paq.push(['enableLinkTracking']);
