@@ -5,6 +5,9 @@ requires-python = ">=3.11"
 line_length = 119
 
 [tool.ruff]
+line-length = 119
+
+[tool.ruff.lint]
 ignore = [
     # Checks for comparisons to empty strings.
     # Being falsey is not as precise as == "".
@@ -13,7 +16,6 @@ ignore = [
     # Too much of a hassle for HTTP status code.
     "PLR2004",
 ]
-line-length = 119
 # see prefixes in https://beta.ruff.rs/docs/rules/
 select = [
     "F",  # pyflakes
@@ -24,7 +26,7 @@ select = [
     "PL",  # pylint
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 combine-as-imports = true
 known-first-party = ["inclusion_connect"]
 lines-after-imports = 2
@@ -36,7 +38,7 @@ custom_blocks="buttons,endbuttons"
 max_attribute_length=200
 preserve_blank_lines=true
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "tests/*" = [
   "PLR0915", # pylint too-many-statements
   "PLR0913" # pylint too-many-arguments
