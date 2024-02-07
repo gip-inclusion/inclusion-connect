@@ -42,23 +42,29 @@
 
 
         {% if MATOMO_BASE_URL %}
-            <!-- Matomo -->
-            <script id="matomo-custom-init" nonce="{{ CSP_NONCE }}">
-              var _paq = window._paq = window._paq || [];
-              _paq.push(['trackPageView']);
-              _paq.push(['enableLinkTracking']);
-              (function() {
-                var u="{{MATOMO_BASE_URL}}";
-                _paq.push(['setTrackerUrl', u+'matomo.php']);
-                _paq.push(['setSiteId', {{ MATOMO_SITE_ID }}]);
-                var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-                g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-              })();
+            <script src="static/vendor/tarteaucitron.js-1.16.1/tarteaucitron.min.js"></script>
+            <script nonce="{{ CSP_NONCE }}">
+                // Tarteaucitron's language is set according to the browser configuration
+                // but a lot of users don't know how to change it.
+                // This can be forced only by using a global `var` statement.
+                // https://github.com/AmauriC/tarteaucitron.js/blob/92352be63744a0a949e55b83d0f89324ce82b45f/tarteaucitron.js#L10C5-L10C31
+                var tarteaucitronForceLanguage = "fr";
+
+                tarteaucitron.init({
+                    "privacyUrl": "{% static PRIVACY_POLICY_PATH %}",
+                    "orientation": "bottom",
+                    "handleBrowserDNTRequest": true,
+                    "removeCredit": true,
+                    "useExternalCss": true,
+                    "readmoreLink": "{% static PRIVACY_POLICY_PATH %}",
+                    "mandatory": false,
+                });
+                tarteaucitron.user.matomoHost = "{{ MATOMO_BASE_URL }}";
+                tarteaucitron.user.matomoId = {{ MATOMO_SITE_ID }};
+                (tarteaucitron.job = tarteaucitron.job || []).push('matomo');
             </script>
-            <!-- End Matomo Code -->
         {% endif %}
 
-        {# Add tarteaucitron #}
         {# Add Je donne mon avis or NPS #}
 
         <script src="{% static "vendor/bootstrap-5.3.1/popper.min.js" %}"></script>
