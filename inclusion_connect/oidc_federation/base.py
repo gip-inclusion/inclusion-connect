@@ -55,17 +55,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
     def get_additional_data(self, claims):
         return {k: v for k, v in sorted(claims.items()) if k in self.additionnal_claims}
 
-    def filter_users_by_claims(self, claims):
-        sub_users = self.UserModel.objects.filter(federation_sub=claims["sub"], federation=self.name)
-        if sub_users:
-            return sub_users
-
-        try:
-            email_address = EmailAddress.objects.filter(email__iexact=claims["email"]).select_related("user").get()
-        except EmailAddress.DoesNotExist:
-            return []
-
-        user = email_address.user
+    def check_federation(self, user, email):
         if user.federation is not None:
             log = log_data(self.request)
             log["email"] = user.email
@@ -74,8 +64,21 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             log["federation"] = self.name
             transaction.on_commit(partial(logger.info, log))
             raise SuspiciousOperation(
-                f"email={claims['email']} from federation={self.name} is already used by {user.federation}"
+                f"email={email} from federation={self.name} is already used by {user.federation}"
             )
+
+    def filter_users_by_claims(self, claims):
+        sub_users = self.UserModel.objects.filter(federation_sub=claims["sub"], federation=self.name)
+        if sub_users:
+            return sub_users
+
+        try:
+            email_address = EmailAddress.objects.select_related("user").get(email__iexact=claims["email"])
+        except EmailAddress.DoesNotExist:
+            return []
+
+        # Check if this email is not already used by another federation
+        self.check_federation(email_address.user, claims["email"])
 
         return [email_address.user]
 

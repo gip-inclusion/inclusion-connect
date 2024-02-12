@@ -7,6 +7,7 @@ from django.db import transaction
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_federation.enums import Federation
+from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.urls import add_url_params
 
 from . import base
@@ -43,6 +44,27 @@ class OIDCAuthenticationBackend(base.OIDCAuthenticationBackend):
     config = CONFIG
     name = Federation.PEAMA
     additionnal_claims = ["structure_pe", "site_pe"]
+
+    def filter_users_by_claims(self, claims):
+        users = super().filter_users_by_claims(claims)
+
+        if not users and claims["email"].endswith("@francetravail.fr"):
+            try:
+                # If we find an existing @pole-emploi.fr address, it's the same user who migrated to
+                # @francetravail.fr email, return it
+                email_address = EmailAddress.objects.select_related("user").get(
+                    email__iexact=claims["email"][: -len("francetravail.fr")] + "pole-emploi.fr"
+                )
+
+                # Check if this email is not already used by another federation
+                self.check_federation(email_address.user, claims["email"])
+
+                return [email_address.user]
+
+            except EmailAddress.DoesNotExist:
+                pass
+
+        return users
 
     def get_userinfo(self, access_token, id_token, payload):
         user_info = super().get_userinfo(access_token, id_token, payload)
