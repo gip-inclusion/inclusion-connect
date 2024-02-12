@@ -4,6 +4,7 @@ from functools import partial
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_federation.enums import Federation
@@ -43,6 +44,14 @@ class OIDCAuthenticationBackend(base.OIDCAuthenticationBackend):
     config = CONFIG
     name = Federation.PEAMA
     additionnal_claims = ["structure_pe", "site_pe"]
+
+    def email_lookup_q(self, email):
+        email_q = super().email_lookup_q(email)
+        if email.endswith("@francetravail.fr"):
+            # If we find an existing @pole-emploi.fr address, it's the same user who migrated to
+            # @francetravail.fr email, return it
+            email_q |= Q(email__iexact=email[: -len("francetravail.fr")] + "pole-emploi.fr")
+        return email_q
 
     def get_userinfo(self, access_token, id_token, payload):
         user_info = super().get_userinfo(access_token, id_token, payload)

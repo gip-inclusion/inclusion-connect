@@ -4,6 +4,7 @@ from functools import partial
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
+from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -55,17 +56,19 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
     def get_additional_data(self, claims):
         return {k: v for k, v in sorted(claims.items()) if k in self.additionnal_claims}
 
+    def email_lookup_q(self, email):
+        return Q(email__iexact=email)
+
     def filter_users_by_claims(self, claims):
         sub_users = self.UserModel.objects.filter(federation_sub=claims["sub"], federation=self.name)
         if sub_users:
             return sub_users
 
+        email_q = self.email_lookup_q(claims["email"])
         try:
-            email_address = EmailAddress.objects.filter(email__iexact=claims["email"]).select_related("user").get()
+            user = EmailAddress.objects.select_related("user").get(email_q).user
         except EmailAddress.DoesNotExist:
             return []
-
-        user = email_address.user
         if user.federation is not None:
             log = log_data(self.request)
             log["email"] = user.email
@@ -76,8 +79,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             raise SuspiciousOperation(
                 f"email={claims['email']} from federation={self.name} is already used by {user.federation}"
             )
-
-        return [email_address.user]
+        return [user]
 
     def get_userinfo(self, access_token, id_token, payload):
         return super().get_userinfo(access_token, id_token, payload) | {"id_token": id_token}

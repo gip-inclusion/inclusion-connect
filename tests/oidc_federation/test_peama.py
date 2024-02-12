@@ -26,7 +26,7 @@ PEAMA_ADDITIONAL_DATA = {
 }
 
 
-def generate_peama_data(nonce):
+def generate_peama_data(nonce, ft=False):
     key_kid = "random_kid"
 
     key = jwk.JWK.generate(kty="RSA", size=2048, alg="RS256", use="sig", kid=key_kid)
@@ -36,7 +36,7 @@ def generate_peama_data(nonce):
     user_info = {
         "given_name": "Michel",
         "family_name": "AUDIARD",
-        "email": "michel@pole-emploi.fr",
+        "email": "michel@" + ("francetravail.fr" if ft else "pole-emploi.fr"),
         "sub": PEAMA_SUB,
     }
 
@@ -61,13 +61,13 @@ def generate_peama_data(nonce):
     )
 
 
-def mock_peama_oauth_dance(client, requests_mock, auth_complete_url):
+def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False):
     assert auth_complete_url.startswith(settings.PEAMA_AUTH_ENDPOINT)
     state = get_url_params(auth_complete_url)["state"]
     nonce = get_url_params(auth_complete_url)["nonce"]
     callback_url = reverse("oidc_federation:peama:callback")
 
-    peama_data = generate_peama_data(nonce)
+    peama_data = generate_peama_data(nonce, ft)
     requests_mock.post(settings.PEAMA_TOKEN_ENDPOINT, json=peama_data.access_token)
     requests_mock.get(settings.PEAMA_USER_ENDPOINT, json=peama_data.user_info)
     requests_mock.get(settings.PEAMA_JWKS_ENDPOINT, json=peama_data.jwks)
@@ -216,6 +216,71 @@ def test_convert_existing_ic_user(client, requests_mock, caplog):
                     "new_first_name": peama_data.user_info["given_name"],
                     "old_last_name": "old_last_name",
                     "new_last_name": peama_data.user_info["family_name"],
+                    "old_federation_sub": None,
+                    "new_federation_sub": peama_data.user_info["sub"],
+                    "old_federation": None,
+                    "new_federation": Federation.PEAMA,
+                    "old_federation_data": None,
+                    "new_federation_data": user.federation_data,
+                    "old_federation_id_token_hint": None,
+                    "new_federation_id_token_hint": peama_data.access_token["id_token"],
+                },
+            ),
+        ],
+    )
+
+
+def test_convert_existing_ic_user_to_ft(client, requests_mock, caplog):
+    pe_email = "michel@pole-emploi.fr"
+
+    user = UserFactory(
+        email=pe_email,
+        first_name="old_first_name",
+        last_name="old_last_name",
+    )
+    email_address = user.email_addresses.get()
+    response = client.get(reverse("oidc_federation:peama:init"))
+
+    # Mock the oauth dance by returning the new @franctravail.fr email
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url, ft=True)
+    user = User.objects.get()
+
+    assert user.email == peama_data.user_info["email"]
+    assert user.first_name == peama_data.user_info["given_name"]
+    assert user.last_name == peama_data.user_info["family_name"]
+    assert user.federation_sub == peama_data.user_info["sub"]
+    assert user.federation == Federation.PEAMA
+    assert user.federation_data == {
+        "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
+        "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+    }
+
+    # The address mail of the user has been updated to francetravail.fr so
+    # the verified_at date should be newer than the original date
+    assert user.email_addresses.get().verified_at > email_address.verified_at
+
+    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+            ),
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {
+                    "event": "edit_user_info",
+                    "user": user.pk,
+                    "old_first_name": "old_first_name",
+                    "new_first_name": peama_data.user_info["given_name"],
+                    "old_last_name": "old_last_name",
+                    "new_last_name": peama_data.user_info["family_name"],
+                    "old_email": pe_email,
+                    # @francetravail.fr email
+                    "new_email": peama_data.user_info["email"],
                     "old_federation_sub": None,
                     "new_federation_sub": peama_data.user_info["sub"],
                     "old_federation": None,
