@@ -10,8 +10,8 @@
   
           <link href="/static/img/illustration-bg-ic.svg" rel="icon" type="image/svg+xml"/>
           <link href="/static/img/favicon.ico" rel="icon" type="image/ico"/>
-          <link href="/static/vendor/theme-inclusion/stylesheets/app.css" rel="stylesheet" type="text/css"/>
-          <link href="/static/css/inclusion_connect.css" rel="stylesheet" type="text/css"/>
+          <link href="/static/vendor/theme-inclusion/stylesheets/app.css" rel="stylesheet"/>
+          <link href="/static/css/inclusion_connect.css" rel="stylesheet"/>
   
           
       </head>
