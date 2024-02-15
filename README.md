@@ -16,6 +16,9 @@
 - [Rdv Insertion](https://www.rdv-insertion.fr/)
 - [eva](https://eva.beta.gouv.fr/)
 - [Portail Emploi de la métropole de Lyon](https://metemploi.grandlyon.com/accueil)
+- [Les Bases](https://lesbases.anct.gouv.fr/rechercher/tout/ressources)
+- [Académie France Travail](https://fedauthsbg1.talent-soft.com/hrd?wa=wsignin1.0&wtrealm=https%3a%2f%2ffrancetravail.talent-soft.com%2f&wctx=FgAAAAJSZXR1cm5VcmwAAgAAAC8AAA&wreply=https%3a%2f%2ffrancetravail.talent-soft.com%2ffedauth&wct=2024-02-15T13%3a58%3a39Z)
+- [BimBamJob](https://www.bimbamjob.fr/horizon)
 
 ## Documentation
 
