@@ -209,6 +209,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # Set django session ligespan to 30 minutes
 SESSION_COOKIE_AGE = 60 * 30
 
+SESSION_COOKIE_SAMESITE = "None"
+
 X_FRAME_OPTIONS = "DENY"
 
 LOGGING = {
