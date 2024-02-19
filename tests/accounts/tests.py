@@ -327,11 +327,12 @@ class TestLoginView:
             "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.",
         )
 
-    def test_pole_emploi_user_cannot_use_login_password(self, client, caplog):
+    @pytest.mark.parametrize("email", ["michel@pole-emploi.fr", "michel@francetravail.fr"])
+    def test_pole_emploi_user_cannot_use_login_password(self, client, caplog, email):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(
-            email="michel@pole-emploi.fr",
+            email=email,
             first_name="old_first_name",
             last_name="old_last_name",
         )
@@ -728,7 +729,14 @@ class TestRegisterView:
             "L’équipe d’inclusion connect\n"
         )
 
-    def test_pole_emploi_user_register_with_django(self, client, caplog):
+    @pytest.mark.parametrize(
+        "email,suffix",
+        [
+            ("michel@pole-emploi.fr", "@pole-emploi.fr"),
+            ("michel@francetravail.fr", "@francetravail.fr"),
+        ],
+    )
+    def test_pole_emploi_user_register_with_django(self, client, caplog, email, suffix):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
 
@@ -740,7 +748,7 @@ class TestRegisterView:
         response = client.post(
             url,
             data={
-                "email": "michel@pole-emploi.fr",
+                "email": email,
                 "first_name": "John",
                 "last_name": "Backy",
                 "password1": DEFAULT_PASSWORD,
@@ -756,12 +764,12 @@ class TestRegisterView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {
-                        "email": "michel@pole-emploi.fr",
+                        "email": email,
                         "event": "register_error",
                         "errors": {
                             "email": [
                                 {
-                                    "message": "Vous utilisez une adresse e-mail en @pole-emploi.fr. "
+                                    "message": f"Vous utilisez une adresse e-mail en {suffix}. "
                                     "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service.",
                                     "code": "",
                                 }
@@ -773,7 +781,7 @@ class TestRegisterView:
         )
         assertContains(
             response,
-            "Vous utilisez une adresse e-mail en @pole-emploi.fr. "
+            f"Vous utilisez une adresse e-mail en {suffix}. "
             "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service",
         )
 
