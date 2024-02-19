@@ -14,6 +14,7 @@ from inclusion_connect.users.models import EmailAddress, User
 
 EMAIL_FIELDS_WIDGET_ATTRS = {"placeholder": "nom@domaine.fr", "autocomplete": "email"}
 PASSWORD_PLACEHOLDER = "**********"
+FRANCETRAVAIL_EMAIL_SUFFIX = ("@pole-emploi.fr", "@francetravail.fr")
 
 
 class LoginForm(forms.Form):
@@ -42,7 +43,7 @@ class LoginForm(forms.Form):
             user = User.objects.filter(email=email).first()
             if (
                 user
-                and user.email.endswith("@pole-emploi.fr")
+                and user.email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX)
                 and settings.PEAMA_ENABLED
                 and not settings.PEAMA_STAGING
             ):
@@ -136,9 +137,10 @@ class RegisterForm(auth_forms.UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"]
-        if email.endswith("@pole-emploi.fr") and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
+        if email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX) and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
+            suffix = email.rsplit("@", maxsplit=1)[-1]
             error_message = (
-                "Vous utilisez une adresse e-mail en @pole-emploi.fr. "
+                f"Vous utilisez une adresse e-mail en @{suffix}. "
                 "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service."
             )
             self.log["email"] = email
