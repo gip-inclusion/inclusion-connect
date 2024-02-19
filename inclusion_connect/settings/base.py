@@ -397,7 +397,16 @@ CSP_CONNECT_SRC = ["'self'", "*.sentry.io"]
 CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
-CSP_FRAME_ANCESTORS = ["'https://portailpro.gouv.fr'"]
+CSP_FRAME_ANCESTORS = [
+    # Staging
+    "'https://monportailpro.ft-qvr.fr'",
+    "'https://cwportailconseiller.ft-qvr.fr'",
+    "'https://*.cwportailconseiller.ft-qvr.fr'",
+    # Production
+    "'https://monportailpro.francetravail.fr'",
+    "'https://cwportailconseiller.francetravail.fr'",
+    "'https://*.cwportailconseiller.francetravail.fr'",
+]
 
 # CORS
 if MATOMO_BASE_URL:
