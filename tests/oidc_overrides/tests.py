@@ -11,6 +11,7 @@ from django.utils import timezone
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertRedirects
 
+from inclusion_connect.oidc_overrides.enums import InclusionConnectChannel
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -397,6 +398,14 @@ class TestAuthorizeView:
         assertRedirects(response, reverse("accounts:login"))
         assert client.session["next_url"] == auth_complete_url
         assert client.session[OIDC_SESSION_KEY] == oidc_params
+
+    def test_redirect_to_peama_login_when_channel_is_map(self, client, oidc_params):
+        oidc_params["channel"] = InclusionConnectChannel.MAP_CONSEILLER.value
+        ApplicationFactory(client_id=oidc_params["client_id"])
+        auth_url = reverse("oauth2_provider:authorize")
+        auth_complete_url = add_url_params(auth_url, oidc_params)
+        response = client.get(auth_complete_url)
+        assertRedirects(response, reverse("oidc_federation:peama:init"), fetch_redirect_response=False)
 
 
 class TestRegisterView:

@@ -5,7 +5,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.models import Session
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
@@ -14,6 +14,7 @@ from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_federation.enums import Federation
+from inclusion_connect.oidc_overrides.enums import InclusionConnectChannel
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.stats.models import Actions, Stats
 from inclusion_connect.users.models import UserApplicationLink
@@ -105,7 +106,12 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
 
 
 class AuthorizationView(BaseAuthorizationView):
-    login_url = reverse_lazy("accounts:login")
+    @property
+    def login_url(self):
+        if self.request.GET.get("channel") == InclusionConnectChannel.MAP_CONSEILLER:
+            return reverse("oidc_federation:peama:init")
+
+        return reverse("accounts:login")
 
 
 class RegistrationView(BaseAuthorizationView):
