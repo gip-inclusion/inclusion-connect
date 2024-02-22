@@ -42,7 +42,7 @@
 
 
         {% if MATOMO_BASE_URL %}
-            <script src="static/vendor/tarteaucitron.js-1.16.1/tarteaucitron.min.js"></script>
+            <script src="{% static "vendor/tarteaucitron.js-1.16.1/tarteaucitron.min.js" %}"></script>
             <script nonce="{{ CSP_NONCE }}">
                 // Tarteaucitron's language is set according to the browser configuration
                 // but a lot of users don't know how to change it.
