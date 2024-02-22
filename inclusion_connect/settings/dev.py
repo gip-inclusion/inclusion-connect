@@ -12,6 +12,7 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
 SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = "Lax"  # SameSite=None cookies aren’t set when Secure=False.
 
 INSTALLED_APPS.extend(  # noqa: F405
     [
