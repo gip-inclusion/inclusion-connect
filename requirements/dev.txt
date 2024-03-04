@@ -346,9 +346,9 @@ django==4.2.10 \
     #   django-extensions
     #   django-oauth-toolkit
     #   mozilla-django-oidc
-django-admin-logs==1.1.0 \
-    --hash=sha256:bb139a99a08a4b08a98731efe9112a6ba269ab0af5efcdba435d1c79706fde16 \
-    --hash=sha256:bb87cd944cfa14b6d90c93584fbcdc3ffde9410fd999c65a0b524b94518a5c64
+django-admin-logs==1.2.0 \
+    --hash=sha256:251614a2aa15d5bdd57fe90f9f263d38e6123ea77f52af07393eecdae684e05a \
+    --hash=sha256:4bb69c6e2bfaa7bd47ecf5c13674623e2be3b39c1550f39b2500450e6b2bdc62
     # via -r requirements/dev.in
 django-anymail==10.2 \
     --hash=sha256:1f3006d3b16874aaa32976078da6cdc9baa7f5274cf80e3fc51a288887617aaf \
