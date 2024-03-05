@@ -3,13 +3,13 @@
 {% if PEAMA_STAGING %}
     <div class="alert alert-warning">
         Attention, le bouton suivant utilise l'environnement de test de Pôle emploi qui ne permet pas d'utiliser les identifiants Neptune.
-        Si vous avez un email en "@pole-emploi.fr" vous pouvez continuer à utiliser le formulaire ci dessus.
+        Si vous avez un email en "@pole-emploi.fr" ou "@francetravail.fr" vous pouvez continuer à utiliser le formulaire ci dessus.
     </div>
 {% endif %}
 
 <a class="btn btn-block pe-connect matomo-event" href="{% url 'oidc_federation:peama:init' %}" data-matomo-category="peama" data-matomo-action="clic" data-matomo-name="Connexion agents Pôle emploi">
-    <img class="me-2" height="30" src="{% static "img/icon-pe-connect.svg" %}" alt="">
-    <span>Connexion agents Pôle emploi
+    <img class="me-2" height="30" src="{% static "img/logo_ft.svg" %}" alt="">
+    <span>Connexion agents France Travail
         {% if PEAMA_STAGING %}(Test){% endif %}
     </span>
 </a>
