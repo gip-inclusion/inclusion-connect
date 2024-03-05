@@ -1682,7 +1682,7 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     assertRedirects(response, reverse("accounts:login"))
 
     response = client.get(reverse("accounts:login"))
-    assertContains(response, "Connexion agents Pôle emploi")
+    assertContains(response, "Connexion agents France Travail")
 
     response = client.get(reverse("oidc_federation:peama:init"))
     response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)

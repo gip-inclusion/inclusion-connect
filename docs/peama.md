@@ -1,6 +1,7 @@
-# Fédération d'indentité avec Pôle emploi Agents
+# Fédération d'indentité Agents France Travail
 
-Les utilisateurs d'Inclusion Connect ayant une adresse e-mail en @pole-emploi.fr doivent utiliser
+Les utilisateurs d'Inclusion Connect ayant une adresse e-mail en @pole-emploi.fr ou @francetravail.fr doivent
+utiliser
 le SSO de Pôle emploi pour créer leur compte et se connecter.
 
 Cette fédération met à disposition des informations supplémentaires fournies par Pôle emploi dans l'_IDToken_ :
