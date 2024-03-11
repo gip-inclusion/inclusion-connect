@@ -312,8 +312,8 @@ class TestLoginView:
                         "errors": {
                             "__all__": [
                                 {
-                                    "message": "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce "
-                                    "service.",
+                                    "message": "Votre compte est relié à France Travail. Merci de vous connecter avec "
+                                    "ce service.",
                                     "code": "",
                                 }
                             ]
@@ -324,7 +324,7 @@ class TestLoginView:
         )
         assertContains(
             response,
-            "Votre compte est relié à Pôle emploi. Merci de vous connecter avec ce service.",
+            "Votre compte est relié à France Travail. Merci de vous connecter avec ce service.",
         )
 
     @pytest.mark.parametrize("email", ["michel@pole-emploi.fr", "michel@francetravail.fr"])
@@ -356,8 +356,8 @@ class TestLoginView:
                         "errors": {
                             "__all__": [
                                 {
-                                    "message": "Votre compte est un compte agent Pôle Emploi. "
-                                    "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service.",
+                                    "message": "Votre compte est un compte agent France Travail. Vous devez "
+                                    "utiliser le bouton de connexion France Travail pour accéder au service.",
                                     "code": "",
                                 }
                             ]
@@ -368,8 +368,8 @@ class TestLoginView:
         )
         assertContains(
             response,
-            "Votre compte est un compte agent Pôle Emploi. "
-            "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service",
+            "Votre compte est un compte agent France Travail. "
+            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
         )
 
     @override_settings(PEAMA_STAGING=True)
@@ -769,8 +769,8 @@ class TestRegisterView:
                         "errors": {
                             "email": [
                                 {
-                                    "message": f"Vous utilisez une adresse e-mail en {suffix}. "
-                                    "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service.",
+                                    "message": f"Vous utilisez une adresse e-mail en {suffix}. Vous devez "
+                                    "utiliser le bouton de connexion France Travail pour accéder au service.",
                                     "code": "",
                                 }
                             ]
@@ -782,7 +782,7 @@ class TestRegisterView:
         assertContains(
             response,
             f"Vous utilisez une adresse e-mail en {suffix}. "
-            "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service",
+            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
         )
 
 
@@ -1162,7 +1162,7 @@ class TestPasswordResetView:
 
         # Check sent email
         [email] = mail.outbox
-        assert "Comme votre compte utilise Pôle emploi vous devez vous connecter avec ce service." in email.body
+        assert "Comme votre compte utilise France Travail vous devez vous connecter avec ce service." in email.body
         assertRecords(
             caplog,
             [

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             model_name="user",
             name="federation",
             field=models.TextField(
-                choices=[("peama", "Pôle emploi")], null=True, verbose_name="Fournisseur d'identité"
+                choices=[("peama", "France Travail")], null=True, verbose_name="Fournisseur d'identité"
             ),
         ),
         migrations.AddField(

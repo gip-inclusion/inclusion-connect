@@ -24,12 +24,12 @@
   
       <div>
           <p>
-              Votre fournisseur d'identité (Pôle emploi) nous indique que vous avez changé d’adresse e-mail.
+              Votre fournisseur d'identité (France Travail) nous indique que vous avez changé d’adresse e-mail.
               Cependant cette adresse e-mail existe déjà sur Inclusion Connect et ne peut pas être réutilisée.
           </p>
           <ul>
               <li>ancienne adresse (Inclusion Connect): old_email</li>
-              <li>nouvelle adresse (transmise par Pôle emploi): michel@pole-emploi.fr</li>
+              <li>nouvelle adresse (transmise par France Travail): michel@pole-emploi.fr</li>
           </ul>
           <p>
               Pour corriger la situation, merci de nous signaler le problème à <a href="mailto: support@connect.inclusion.beta.gouv.fr">support@connect.inclusion.beta.gouv.fr</a>.

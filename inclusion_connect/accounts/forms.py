@@ -48,8 +48,8 @@ class LoginForm(forms.Form):
                 and not settings.PEAMA_STAGING
             ):
                 error_message = (
-                    "Votre compte est un compte agent Pôle Emploi. "
-                    "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service."
+                    "Votre compte est un compte agent France Travail. "
+                    "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
                 )
                 self.log["user"] = user.pk
                 raise forms.ValidationError(error_message)
@@ -141,7 +141,7 @@ class RegisterForm(auth_forms.UserCreationForm):
             suffix = email.rsplit("@", maxsplit=1)[-1]
             error_message = (
                 f"Vous utilisez une adresse e-mail en @{suffix}. "
-                "Vous devez utiliser le bouton de connexion Pôle Emploi pour accéder au service."
+                "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
             )
             self.log["email"] = email
             raise forms.ValidationError(error_message)
