@@ -197,7 +197,6 @@ cryptography==42.0.4 \
     --hash=sha256:fb0cef872d8193e487fc6bdb08559c3aa41b659a7d9be48b2e10747f47863925 \
     --hash=sha256:ffc73996c4fca3d2b6c1c8c12bfd3ad00def8621da24f547626bf06441400449
     # via
-    #   django-anymail
     #   josepy
     #   jwcrypto
     #   mozilla-django-oidc
@@ -218,9 +217,9 @@ django==4.2.11 \
     #   django-csp
     #   django-oauth-toolkit
     #   mozilla-django-oidc
-django-anymail==10.2 \
-    --hash=sha256:1f3006d3b16874aaa32976078da6cdc9baa7f5274cf80e3fc51a288887617aaf \
-    --hash=sha256:ca273abbc04b5ce06d1f3b3e5f28e2d79331519198fa6d6b5ba1b5aa5eea02f7
+django-anymail==10.3 \
+    --hash=sha256:1e72f059e96930d3675d35fe4c61f82b138ae4a7fcb0337be39dcb4823f94a4f \
+    --hash=sha256:35d8ec20b06000af3c1638492e32f416fd1a584f0a572cded03f1bc570169ed0
     # via -r requirements/base.in
 django-bootstrap5==23.4 \
     --hash=sha256:5181bf1e97afae6211e963f28f48d4a90c937a3b036b3f752f52260f0029f3bc \
