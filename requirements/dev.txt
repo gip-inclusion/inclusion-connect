@@ -845,9 +845,9 @@ requests==2.31.0 \
     #   django-oauth-toolkit
     #   mozilla-django-oidc
     #   requests-mock
-requests-mock==1.11.0 \
-    --hash=sha256:ef10b572b489a5f28e09b708697208c4a3b2b89ef80a9f01584340ea357ec3c4 \
-    --hash=sha256:f7fae383f228633f6bececebdab236c478ace2284d6292c6e7e2867b9ab74d15
+requests-mock==1.12.1 \
+    --hash=sha256:b1e37054004cdd5e56c84454cc7df12b25f90f382159087f4b6915aaeef39563 \
+    --hash=sha256:e9e12e333b525156e82a3c852f22016b9158220d2f47454de9cae8a77d371401
     # via -r requirements/dev.in
 ruff==0.3.3 \
     --hash=sha256:0171aab5fecdc54383993389710a3d1227f2da124d76a2784a7098e818f92d61 \
@@ -881,7 +881,6 @@ six==1.16.0 \
     #   html5lib
     #   jsbeautifier
     #   python-dateutil
-    #   requests-mock
 soupsieve==2.5 \
     --hash=sha256:5663d5a7b3bfaeee0bc4372e7fc48f9cff4940b3eec54a6451cc5299f1097690 \
     --hash=sha256:eaa337ff55a1579b6549dc679565eac1e3d000563bcb1c8ab0d0fefbc0c2cdc7
