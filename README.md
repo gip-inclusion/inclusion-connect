@@ -21,6 +21,7 @@
 - [BimBamJob](https://www.bimbamjob.fr/horizon)
 - [Parcours Solidarités](https://worldline.com/fr-fr/home/main-navigation/qui-sont-nos-clients/secteur-public/worldline-parcours-solidarites.html)
 
+
 ## Documentation
 
 Pour lire comment intégrer Inclusion Connect à votre service ou comment développer et améliorer Inclusion Connect,
