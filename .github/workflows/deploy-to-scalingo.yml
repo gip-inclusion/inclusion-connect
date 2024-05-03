@@ -17,6 +17,8 @@ jobs:
       SCALINGO_GIT_URL: ${{ secrets.SCALINGO_GIT_URL }}
       SCALINGO_POSTGRESQL_ADDON_ID: ${{ secrets.SCALINGO_POSTGRESQL_ADDON_ID }}
       SCALINGO_API_TOKEN: ${{ secrets.SCALINGO_API_TOKEN }}
+      SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+      SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
 
     steps:
     - uses: actions/checkout@v4.1.4
@@ -28,6 +30,8 @@ jobs:
         mkdir ~/.ssh
         touch ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
+        echo "$SSH_SECRET_KEY" >~/.ssh/id_ed25519
+        echo "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
 
     - name: Install Scalingo CLI
       run: curl -O https://cli-dl.scalingo.com/install && bash install
