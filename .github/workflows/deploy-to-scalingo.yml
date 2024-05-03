@@ -16,8 +16,8 @@ jobs:
       SCALINGO_APP_NAME: ${{ secrets.SCALINGO_APP_NAME }}
       SCALINGO_GIT_URL: ${{ secrets.SCALINGO_GIT_URL }}
       SCALINGO_POSTGRESQL_ADDON_ID: ${{ secrets.SCALINGO_POSTGRESQL_ADDON_ID }}
+      SCALINGO_API_TOKEN: ${{ secrets.SCALINGO_API_TOKEN }}
       SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-      SSH_SECRET_KEY: ${{ secrets.SSH_SECRET_KEY }}
 
     steps:
     - uses: actions/checkout@v4.1.4
@@ -27,16 +27,22 @@ jobs:
     - name: Setup SSH
       run: |
         mkdir ~/.ssh
-        touch ~/.ssh/id_ed25519
+        ssh-keygen -o -a 100 -t ed25519 -f ~/.ssh/id_ed25519 -N "" -C "gihub_workflow"
         chmod 600 ~/.ssh/id_ed25519
-        echo "$SSH_SECRET_KEY" >~/.ssh/id_ed25519
         echo "$SSH_KNOWN_HOSTS" >~/.ssh/known_hosts
 
     - name: Install Scalingo CLI
       run: curl -O https://cli-dl.scalingo.com/install && bash install
 
     - name: Login to Scalingo
-      run: scalingo login --ssh --ssh-identity ~/.ssh/id_ed25519
+      run: scalingo login --api-token $SCALINGO_API_TOKEN
+
+    - name: Clean previous SSH public key if exists
+      run: scalingo keys-remove inclusion-connect-prod-deploy-pour-push-github
+      continue-on-error: true
+
+    - name: Add SSH public key
+      run: scalingo keys-add inclusion-connect-prod-deploy-pour-push-github ~/.ssh/id_ed25519.pub
 
     - name: Restore latest database backup
       run: >-
@@ -49,6 +55,9 @@ jobs:
 
     - name: Deploy to Scalingo
       run: git push $SCALINGO_GIT_URL HEAD:main --force
+
+    - name: Remove SSH public key
+      run: scalingo keys-remove inclusion-connect-prod-deploy-pour-push-github
 
     - name: Failover
       if: ${{ github.event_name == 'workflow_dispatch' }}
