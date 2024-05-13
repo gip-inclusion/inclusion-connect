@@ -416,9 +416,9 @@ filelock==3.13.1 \
     --hash=sha256:521f5f56c50f8426f5e03ad3b281b490a87ef15bc6c526f168290f0c7148d44e \
     --hash=sha256:57dbda9b35157b05fb3e58ee91448612eb674172fab98ee235ccb0b5bee19a1c
     # via virtualenv
-freezegun==1.5.0 \
-    --hash=sha256:200a64359b363aa3653d8aac289584078386c7c3da77339d257e46a01fb5c77c \
-    --hash=sha256:ec3f4ba030e34eb6cf7e1e257308aee2c60c3d038ff35996d7475760c9ff3719
+freezegun==1.5.1 \
+    --hash=sha256:b29dedfcda6d5e8e083ce71b2b542753ad48cfec44037b3fc79702e2980a89e9 \
+    --hash=sha256:bf111d7138a8abe55ab48a71755673dbaa4ab87f4cff5634a4442dfec34c15f1
     # via -r requirements/dev.in
 html-tag-names==0.1.2 \
     --hash=sha256:04924aca48770f36b5a41c27e4d917062507be05118acb0ba869c97389084297 \
