@@ -18,16 +18,8 @@ main {
 }
 
 .pe-connect {
-  color: #000000 !important;
-  background-color: #FFFFFF;
-  border-color: #E6E6EB;
-  font-weight: 400 !important;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.pe-connect:hover {
-  background-color: #F2F3F5;
-  border-color: #E6E6EB;
-}

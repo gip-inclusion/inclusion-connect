@@ -7,7 +7,11 @@
     </div>
 {% endif %}
 
-<a class="btn btn-block pe-connect matomo-event" href="{% url 'oidc_federation:peama:init' %}" data-matomo-category="peama" data-matomo-action="clic" data-matomo-name="Connexion agents Pôle emploi">
+<a class="btn btn-block btn-outline-primary pe-connect matomo-event"
+   href="{% url 'oidc_federation:peama:init' %}"
+   data-matomo-category="peama"
+   data-matomo-action="clic"
+   data-matomo-name="Connexion agents Pôle emploi">
     <img class="me-2" height="30" src="{% static "img/logo_ft.svg" %}" alt="">
     <span>Connexion agents France Travail
         {% if PEAMA_STAGING %}(Test){% endif %}
