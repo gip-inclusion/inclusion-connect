@@ -1174,6 +1174,48 @@ class TestPasswordResetView:
             ],
         )
 
+    @pytest.mark.parametrize(
+        "email,suffix",
+        [
+            ("michel@pole-emploi.fr", "@pole-emploi.fr"),
+            ("michel@francetravail.fr", "@francetravail.fr"),
+        ],
+    )
+    def test_pole_emploi_user(self, client, caplog, email, suffix):
+        user = UserFactory(email=email)
+
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        response = client.get(url)
+        password_reset_url = reverse("accounts:password_reset")
+        assertContains(response, password_reset_url)
+
+        response = client.get(password_reset_url)
+        assertTemplateUsed(response, "password_reset.html")
+
+        response = client.post(password_reset_url, data={"email": user.email})
+        assert response.status_code == 200
+
+        assert "email" in response.context["form"].errors
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {
+                        "event": "forgot_password_error",
+                        "user": user.pk,
+                    },
+                )
+            ],
+        )
+        assertContains(
+            response,
+            f"Vous utilisez une adresse e-mail en {suffix}. "
+            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
+        )
+
     def test_password_reset_unknown_email(self, caplog, client):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})

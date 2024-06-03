@@ -222,6 +222,17 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
                 html_email_template_name="registration/password_reset_body_federation.html",
             )
 
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX) and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
+            suffix = email.rsplit("@", maxsplit=1)[-1]
+            error_message = (
+                f"Vous utilisez une adresse e-mail en @{suffix}. "
+                "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
+            )
+            raise ValidationError(error_message)
+        return email
+
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
     def __init__(self, *args, **kwargs):
