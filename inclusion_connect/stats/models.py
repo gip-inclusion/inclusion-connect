@@ -22,3 +22,6 @@ class Stats(models.Model):
     )
     date = models.DateField("date de l'action")
     action = models.TextField("action", choices=Actions.choices)
+
+    class Meta:
+        unique_together = ["user", "application", "date", "action"]
