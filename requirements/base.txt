@@ -363,9 +363,9 @@ requests==2.32.2 \
     #   django-anymail
     #   django-oauth-toolkit
     #   mozilla-django-oidc
-sentry-sdk==2.3.1 \
-    --hash=sha256:139a71a19f5e9eb5d3623942491ce03cf8ebc14ea2e39ba3e6fe79560d8a5b1f \
-    --hash=sha256:c5aeb095ba226391d337dd42a6f9470d86c9fc236ecc71cfc7cd1942b45010c6
+sentry-sdk==2.7.1 \
+    --hash=sha256:25006c7e68b75aaa5e6b9c6a420ece22e8d7daec4b7a906ffd3a8607b67c037b \
+    --hash=sha256:ef1b3d54eb715825657cd4bb3cb42bb4dc85087bac14c56b0fd8c21abd968c9a
     # via -r requirements/base.in
 sqlparse==0.5.0 \
     --hash=sha256:714d0a4932c059d16189f58ef5411ec2287a4360f17cdd0edd2d09d4c5087c93 \
