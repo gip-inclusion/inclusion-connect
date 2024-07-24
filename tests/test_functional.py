@@ -16,7 +16,7 @@ from pytest_django.asserts import assertContains, assertNotContains, assertQuery
 
 from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.stats.models import Stats
-from inclusion_connect.users.models import EmailAddress, User
+from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
@@ -46,7 +46,7 @@ def get_verification_link(body):
     ],
 )
 def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -66,392 +66,7 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "terms_accepted": "on",
         },
     )
-    assertRedirects(response, reverse("accounts:confirm-email"))
-    assert get_user(client).is_authenticated is False
-    user = User.objects.get()
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "register",
-                },
-            )
-        ],
-    )
-
-    [email] = mailoutbox
-    assert email.subject == "Vérification de l’adresse e-mail"
-    assert email.to == [user_email]
-    verification_url = get_verification_link(email.body)
-    response = client.get(verification_url)
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-    user.refresh_from_db()
-    assert user.email == user_email
-    assertQuerySetEqual(
-        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [
-            (
-                user.pk,
-                user_email,
-                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
-            )
-        ],
-    )
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "login",
-                },
-            ),
-        ],
-    )
-
-    response = client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
-        [
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
-        ],
-    )
-
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
-
-
-@freeze_time("2023-05-05 11:11:11")
-def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_params, mailoutbox):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory.build(email="")
-
-    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:register"))
-    assertRecords(caplog, [])
-
-    user_email = "email@mailinator.com"
-    response = client.post(
-        response.url,
-        data={
-            "email": user_email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "password1": DEFAULT_PASSWORD,
-            "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
-        },
-    )
-    assertRedirects(response, reverse("accounts:confirm-email"))
-    assert get_user(client).is_authenticated is False
-    user = User.objects.get()
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": user_email,
-                    "user": user.pk,
-                    "event": "register",
-                },
-            )
-        ],
-    )
-
-    [email] = mailoutbox
-    assert email.subject == "Vérification de l’adresse e-mail"
-    assert email.to == [user_email]
-    verification_url = get_verification_link(email.body)
-    other_client = Client()
-    response = other_client.get(verification_url)
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(other_client).is_authenticated is True
-    user.refresh_from_db()
-    assert user.email == user_email
-    assertQuerySetEqual(
-        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [
-            (
-                user.pk,
-                user_email,
-                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
-            )
-        ],
-    )
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "email": user_email,
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                    "application": "my_application",
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "email": user_email,
-                    "user": user.pk,
-                    "event": "login",
-                    "application": "my_application",
-                },
-            ),
-        ],
-    )
-
-    response = other_client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
-        [
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
-        ],
-    )
-
-    oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
-
-
-@freeze_time("2023-05-05 11:11:11")
-@pytest.mark.parametrize("use_other_client", [True, False])
-def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_other_client):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory.build(email="")
-
-    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:register"))
-    assertRecords(caplog, [])
-
-    user_email = "email@mailinator.com"
-    response = client.post(
-        response.url,
-        data={
-            "email": user_email,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "password1": DEFAULT_PASSWORD,
-            "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
-        },
-    )
-    assertRedirects(response, reverse("accounts:confirm-email"))
-    assert get_user(client).is_authenticated is False
-    user = User.objects.get()
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "register",
-                },
-            )
-        ],
-    )
-
-    # Support user validates the email in the admin
-    admin_client = Client()
-    admin_user = UserFactory(is_superuser=True, is_staff=True)
-    admin_client.force_login(admin_user)
-    url = reverse("admin:users_user_change", kwargs={"object_id": user.pk})
-    email_address = user.email_addresses.get()
-    response = admin_client.post(
-        url,
-        data={
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "confirm_email": "on",
-            "is_active": "on",
-            "last_login_0": "11/05/2023",
-            "last_login_1": "11:01:25",
-            "date_joined_0": "11/05/2023",
-            "date_joined_1": "10:59:39",
-            "initial-date_joined_0": "11/05/2023",
-            "initial-date_joined_1": "10:59:39",
-            "email_addresses-TOTAL_FORMS": "1",
-            "email_addresses-INITIAL_FORMS": "1",
-            "email_addresses-MIN_NUM_FORMS": "0",
-            "email_addresses-MAX_NUM_FORMS": "0",
-            "email_addresses-0-id": email_address.pk,
-            "email_addresses-0-user": user.pk,
-            "linked_applications-TOTAL_FORMS": "0",
-            "linked_applications-INITIAL_FORMS": "0",
-            "linked_applications-MIN_NUM_FORMS": "0",
-            "linked_applications-MAX_NUM_FORMS": "0",
-            "_continue": "Enregistrer+et+continuer+les+modifications",
-        },
-    )
-    assertRedirects(response, url)
-    user.refresh_from_db()
-    assert user.email == user_email
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "admin_change",
-                    "acting_user": admin_user.pk,
-                    "user": user.pk,
-                    "email_confirmed": "email@mailinator.com",
-                },
-            )
-        ],
-    )
-
-    # The user is told to go to IC login page
-    other_client = Client() if use_other_client else client
-    response = other_client.get(reverse("accounts:login"))
-    response = other_client.post(
-        reverse("accounts:login"),
-        data={"email": user.email, "password": DEFAULT_PASSWORD},
-    )
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    if use_other_client:
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "login",
-                        "application": "my_application",
-                    },
-                )
-            ],
-        )
-    else:
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": "my_application",
-                        "user": user.pk,
-                        "event": "login",
-                    },
-                )
-            ],
-        )
-
-    response = other_client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
-        [
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
-        ],
-    )
-
-    oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
-
-    user.refresh_from_db()
-    assert user.next_redirect_uri is None
+    assert response.status_code == 405
 
 
 @freeze_time("2023-05-05 11:11:11")
@@ -464,16 +79,13 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     ],
 )
 def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory.build(email="")
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url, follow=True)
-    assert response.status_code == 400
-    assertRecords(
-        caplog,
-        [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
-    )
+    assert response.status_code == 200  # No check on params anymore
+    assertRecords(caplog, [])
 
     user_email = "email@mailinator.com"
     auth_url = reverse("oauth2_provider:activate")
@@ -487,7 +99,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     assertRedirects(response, reverse("accounts:activate"))
     activation_url = response.url
     response = client.get(activation_url)
-    assertContains(response, f"Vous pouvez réutiliser celui de votre compte sur {application.name}")
+    assert response.status_code == 200
 
     response = client.post(
         activation_url,
@@ -500,102 +112,7 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "terms_accepted": "on",
         },
     )
-    assertRedirects(response, reverse("accounts:confirm-email"))
-    assert get_user(client).is_authenticated is False
-    user = User.objects.get()
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "activate",
-                },
-            )
-        ],
-    )
-
-    [email] = mailoutbox
-    assert email.subject == "Vérification de l’adresse e-mail"
-    assert email.to == [user_email]
-    verification_url = get_verification_link(email.body)
-    response = client.get(verification_url)
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-    user.refresh_from_db()
-    assert user.email == user_email
-    assertQuerySetEqual(
-        EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-        [
-            (
-                user.pk,
-                user_email,
-                datetime.datetime(2023, 5, 5, 11, 11, 11, tzinfo=datetime.timezone.utc),
-            )
-        ],
-    )
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "email": "email@mailinator.com",
-                    "user": user.pk,
-                    "event": "login",
-                },
-            ),
-        ],
-    )
-
-    response = client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.pk,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action").order_by("action"),
-        [
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application.pk, "register"),
-        ],
-    )
-
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
+    assert response.status_code == 405
 
 
 @freeze_time("2023-05-05 11:11:11")
@@ -871,47 +388,6 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
-
-
-@freeze_time("2023-05-05 11:11:11")
-def test_login_hint_is_preserved(caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
-
-    user_email = "email@mailinator.com"
-    auth_url = reverse("oauth2_provider:register")
-    auth_params = oidc_params | {"login_hint": user_email}
-    auth_complete_url = add_url_params(auth_url, auth_params)
-    response = client.get(auth_complete_url, follow=True)
-    assertContains(
-        response,
-        # Pre-filled with email address from login_hint.
-        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" class="form-control" required disabled id="id_email">',
-        count=1,
-    )
-
-    response = client.get(reverse("accounts:login"))
-    assertContains(
-        response,
-        # Pre-filled with email address from login_hint.
-        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
-        count=1,
-    )
-
-    response = client.get(reverse("accounts:password_reset"))
-    assertContains(
-        response,
-        # Pre-filled with email address from login_hint.
-        # Disabled, users cannot change data passed by the RP.
-        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        'autocomplete="email" class="form-control" required disabled id="id_email">',
-        count=1,
-    )
-
-    assertRecords(caplog, [])
 
 
 def test_logout_no_confirmation(caplog, client, oidc_params):

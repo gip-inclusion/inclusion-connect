@@ -12,13 +12,12 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
-from django.utils.html import escape, format_html
+from django.utils.html import escape
 from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 from pytest_django.asserts import (
     assertContains,
     assertNotContains,
-    assertQuerySetEqual,
     assertRedirects,
     assertTemplateUsed,
 )
@@ -32,7 +31,7 @@ from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.helpers import parse_response_to_soup
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import DEFAULT_PASSWORD, EmailAddressFactory, UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 class TestLoginView:
@@ -44,7 +43,7 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -238,7 +237,7 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to registration page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
         assertContains(
             response,
             # Pre-filled with email address from login_hint.
@@ -271,7 +270,7 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to registration page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
         assertContains(
             response,
             # Not pre-filled with email address since login_hint is empty
@@ -295,7 +294,7 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is False
@@ -339,7 +338,7 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is False
@@ -384,17 +383,17 @@ class TestLoginView:
         response = client.get(url)
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is True
 
 
-class TestRegisterView:
-    @freeze_time("2023-04-26 11:11:11")
-    def test_register(self, caplog, client, mailoutbox):
+class TestNoRegisterView:
+    @pytest.mark.parametrize("end_point", ["register", "activate"])
+    def test_no_register_or_activation(self, caplog, client, end_point):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
+        url = add_url_params(reverse(f"accounts:{end_point}"), {"next": redirect_url})
 
         response = client.get(url)
         assertContains(response, "Créer un compte")
@@ -414,630 +413,14 @@ class TestRegisterView:
                 "terms_accepted": "on",
             },
         )
-        assertRedirects(response, reverse("accounts:confirm-email"))
-        assert get_user(client).is_authenticated is False
-        assert client.session["next_url"] == redirect_url
-        user_from_db = User.objects.get()
-        assert user_from_db.terms_accepted_at == user_from_db.date_joined
-        assert user_from_db.first_name == "Jack"
-        assert user_from_db.last_name == "Jackson"
-        assert user_from_db.email == ""
-        assertQuerySetEqual(
-            EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-            [(user_from_db.pk, user_email, None)],
-        )
-
-        [email] = mailoutbox
-        assert email.to == [user_email]
-        assert email.subject == "Vérification de l’adresse e-mail"
-        uidb64 = urlsafe_base64_encode(str(user_from_db.pk).encode())
-        token = email_verification_token(user_email)
-        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
-        verify_link = f"http://testserver{verify_path}"
-        assert email.body == (
-            "Bonjour,\n\n"
-            "Une demande de création de compte a été effectuée avec votre adresse e-mail. Si\n"
-            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
-            "afin de vérifier votre adresse e-mail :\n\n"
-            f"{verify_link}\n\n"
-            "Ce lien expire dans 1 jour.\n\n"
-            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
-            "---\n"
-            "L’équipe d’inclusion connect\n"
-        )
-        assert email.alternatives[0][0] == (
-            "<p>Bonjour,</p>\n\n    "
-            "<p>\n        Une demande de\n        \n            création\n        \n        "
-            "de compte a été effectuée avec votre adresse\n"
-            "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
-            f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
-            "<p>Ce lien expire dans 1 jour.</p>\n\n    "
-            "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
-            "</p>\n\n<p>\n    ---\n    <br>\n    L’équipe d’inclusion connect\n</p>\n"
-        )
+        assert response.status_code == 405
+        assert not User.objects.exists()
+        assert not EmailAddress.objects.exists()
         assertRecords(
             caplog,
             [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "user@mailinator.com",
-                        "user": user_from_db.pk,
-                        "event": "register",
-                    },
-                )
-            ],
-        )
-
-    def test_error_email_exists(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-        user = UserFactory()
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assert client.session["next_url"] == redirect_url
-        assertTemplateUsed(response, "register.html")
-        assert "email" in response.context["form"].errors
-        assertContains(
-            response,
-            format_html(
-                'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
-                reverse("accounts:login"),
-            ),
-            html=True,
-        )
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "register_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                    '<a href="/accounts/login/">se connecter</a> ?',
-                                    "code": "existing_email",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_error_email_not_verified(self, caplog, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-        user = UserFactory(email="")
-        user_email = "me@mailinator.com"
-        EmailAddress.objects.create(user=user, email=user_email)
-
-        response = client.post(
-            url,
-            data={
-                "email": user_email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assert client.session["next_url"] == redirect_url
-        assertTemplateUsed(response, "register.html")
-        assert "email" in response.context["form"].errors
-        msg = (
-            "Un compte inactif avec cette adresse e-mail existe déjà, "
-            "l’email de vérification vient d’être envoyé à nouveau."
-        )
-        assertContains(response, msg, html=True, count=1)
-        [email] = mailoutbox
-        assert email.subject == "Vérification de l’adresse e-mail"
-        assert email.to == [user_email]
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "register_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                    "l’email de vérification vient d’être envoyé à nouveau.",
-                                    "code": "unverified_email",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_email_already_exists_and_not_verified(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-        user_email = "me@mailinator.com"
-        EmailAddressFactory.create(email=user_email, verified_at=timezone.now())
-
-        response = client.post(
-            url,
-            data={
-                "email": user_email,
-                "first_name": "Manuel",
-                "last_name": "Calavera",
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assert client.session["next_url"] == redirect_url
-        assertTemplateUsed(response, "register.html")
-        assert "email" in response.context["form"].errors
-        login_url = reverse("accounts:login")
-        msg = f'Un compte avec cette adresse e-mail existe déjà, <a href="{login_url}">se connecter</a> ?'
-        # Displayed in bootstrap_form_errors type="all" and next to the field.
-        assertContains(response, msg, count=1)
-        user = User.objects.get()
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "register_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                    '<a href="/accounts/login/">se connecter</a> ?',
-                                    "code": "existing_email",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_terms_are_required(self, caplog, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-        user = UserFactory.build()
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assert client.session["next_url"] == redirect_url
-        assertTemplateUsed(response, "register.html")
-        assert "terms_accepted" in response.context["form"].errors
-        assert mailoutbox == []
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": user.email,
-                        "event": "register_error",
-                        "errors": {
-                            "terms_accepted": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_login_hint(self, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {"login_hint": "me@mailinator.com"}
-        client_session.save()
-
-        response = client.get(url)
-        assertContains(response, "Créer un compte")
-        assertContains(response, reverse("accounts:login"))  # Link to login page
-        assertContains(response, "CGU_v5.pdf")
-        assertContains(response, quote("Politique_de_confidentialite_v7.pdf"))
-        assertContains(
-            response,
-            # Pre-filled with email address from login_hint.
-            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
-            # Disabled, users cannot change data passed by the RP.
-            'autocomplete="email" class="form-control" required disabled id="id_email">',
-            count=1,
-        )
-
-        response = client.post(
-            url,
-            data={
-                # Email is simply ignored.
-                "email": "evil@mailinator.com",
-                "first_name": "John",
-                "last_name": "Backy",
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assertRedirects(response, reverse("accounts:confirm-email"))
-        assert get_user(client).is_authenticated is False
-        assert client.session["next_url"] == redirect_url
-        user_from_db = User.objects.get()
-        assert user_from_db.terms_accepted_at == user_from_db.date_joined
-        assert user_from_db.first_name == "John"
-        assert user_from_db.last_name == "Backy"
-        assert user_from_db.email == ""
-        assertQuerySetEqual(
-            EmailAddress.objects.values_list("user_id", "email", "verified_at"),
-            [(user_from_db.pk, "me@mailinator.com", None)],
-        )
-
-        [email] = mailoutbox
-        assert email.to == ["me@mailinator.com"]
-        assert email.subject == "Vérification de l’adresse e-mail"
-        uidb64 = urlsafe_base64_encode(str(user_from_db.pk).encode())
-        token = email_verification_token("me@mailinator.com")
-        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
-        verify_link = f"http://testserver{verify_path}"
-        assert email.body == (
-            "Bonjour,\n\n"
-            "Une demande de création de compte a été effectuée avec votre adresse e-mail. Si\n"
-            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
-            "afin de vérifier votre adresse e-mail :\n\n"
-            f"{verify_link}\n\n"
-            "Ce lien expire dans 1 jour.\n\n"
-            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
-            "---\n"
-            "L’équipe d’inclusion connect\n"
-        )
-
-    @pytest.mark.parametrize(
-        "email,suffix",
-        [
-            ("michel@pole-emploi.fr", "@pole-emploi.fr"),
-            ("michel@francetravail.fr", "@francetravail.fr"),
-        ],
-    )
-    def test_pole_emploi_user_register_with_django(self, client, caplog, email, suffix):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:login"))  # Link to register page
-
-        response = client.post(
-            url,
-            data={
-                "email": email,
-                "first_name": "John",
-                "last_name": "Backy",
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assert get_user(client).is_authenticated is False
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": email,
-                        "event": "register_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": f"Vous utilisez une adresse e-mail en {suffix}. Vous devez "
-                                    "utiliser le bouton de connexion France Travail pour accéder au service.",
-                                    "code": "",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-        assertContains(
-            response,
-            f"Vous utilisez une adresse e-mail en {suffix}. "
-            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
-        )
-
-
-class TestActivateAccountView:
-    def test_activate_account(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory.build(email="me@mailinator.com")
-
-        # If missing params in oidc session
-        response = client.get(url)
-        assert response.status_code == 400
-        assertRecords(
-            caplog,
-            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
-        )
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-        response = client.get(url)
-        assertTemplateUsed(response, "activate_account.html")
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assertRedirects(response, reverse("accounts:confirm-email"))
-        assert get_user(client).is_authenticated is False
-        assert client.session["next_url"] == redirect_url
-        user = User.objects.get()  # Previous instance was a built factory, so refresh_from_db won't work
-        assert user.terms_accepted_at == user.date_joined
-        email_address = EmailAddress.objects.get()
-        assert email_address.email == email_address.email
-        assert email_address.user_id == email_address.user.pk
-        assert email_address.verified_at is None
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": application.client_id,
-                        "email": "me@mailinator.com",
-                        "user": user.pk,
-                        "event": "activate",
-                    },
-                )
-            ],
-        )
-
-    def test_email_already_exists(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory()
-
-        # If missing params in oidc session
-        response = client.get(url)
-        assert response.status_code == 400
-        assertRecords(
-            caplog,
-            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
-        )
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-        response = client.get(url)
-        assertTemplateUsed(response, "activate_account.html")
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assertContains(
-            response,
-            format_html(
-                'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
-                reverse("accounts:login"),
-            ),
-        )
-        assert get_user(client).is_authenticated is False
-        assert client.session["next_url"] == redirect_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": application.client_id,
-                        "user": user.pk,
-                        "event": "activate_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                    '<a href="/accounts/login/">se connecter</a> ?',
-                                    "code": "existing_email",
-                                }
-                            ],
-                            "__all__": [
-                                {
-                                    "message": "Un compte avec cette adresse e-mail existe déjà, "
-                                    '<a href="/accounts/login/">se connecter</a> ?',
-                                    "code": "",
-                                }
-                            ],
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_email_already_exists_not_verified(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory(email="")
-        user_email = "me@mailinator.com"
-        EmailAddress.objects.create(user=user, email=user_email)
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user_email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-        response = client.post(
-            url,
-            data={
-                "email": user_email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-            follow=True,
-        )
-        assertContains(
-            response,
-            "Un compte inactif avec cette adresse e-mail existe déjà, "
-            "l’email de vérification vient d’être envoyé à nouveau.",
-            count=1,
-        )
-        assert get_user(client).is_authenticated is False
-        assert client.session["next_url"] == redirect_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": application.client_id,
-                        "user": user.pk,
-                        "event": "activate_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                    "l’email de vérification vient d’être envoyé à nouveau.",
-                                    "code": "unverified_email",
-                                }
-                            ],
-                            "__all__": [
-                                {
-                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                    "l’email de vérification vient d’être envoyé à nouveau.",
-                                    "code": "",
-                                }
-                            ],
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_terms_are_required(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory.build()
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assertTemplateUsed(response, "activate_account.html")
-        assert "terms_accepted" in response.context["form"].errors
-        assert client.session["next_url"] == redirect_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": application.client_id,
-                        "email": user.email,
-                        "event": "activate_error",
-                        "errors": {
-                            "terms_accepted": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
-                                }
-                            ]
-                        },
-                    },
-                )
+                ("django.request", logging.WARNING, f"Method Not Allowed (POST): /accounts/{end_point}/"),
+                ("django.request", logging.WARNING, f"Method Not Allowed: /accounts/{end_point}/"),
             ],
         )
 
