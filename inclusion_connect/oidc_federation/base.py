@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from mozilla_django_oidc import auth, views
 
-from inclusion_connect.accounts.views import EditUserInfoView, LoginView, RegisterView
+from inclusion_connect.accounts.views import LoginView, RegisterView
 from inclusion_connect.logging import log_data
 from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.oidc import get_next_url
@@ -141,13 +141,13 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
 
         if user.new_email_already_used:
             log = log_data(self.request)
-            log["event"] = f"{EditUserInfoView.EVENT_NAME}_error"
+            log["event"] = "edit_user_info_error"
             log["user"] = user.pk
             log["errors"] = {"already_used_email": user.new_email_already_used}
             transaction.on_commit(partial(logger.info, log))
         else:
             log = log_data(self.request)
-            log["event"] = EditUserInfoView.EVENT_NAME
+            log["event"] = "edit_user_info"
             log["user"] = user.pk
             for key in old_user_data.keys():
                 if old_user_data[key] != new_user_data[key]:

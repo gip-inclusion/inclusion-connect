@@ -9,12 +9,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
-from django.http import Http404, HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http, timezone
 from django.utils.html import format_html
-from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
+from django.views.generic import CreateView, FormView, TemplateView, View
 
 from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
@@ -23,7 +23,7 @@ from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.stats import helpers as stats_helpers
 from inclusion_connect.stats.models import Actions
-from inclusion_connect.users.models import EmailAddress, User
+from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint, oidc_params
 
 
@@ -419,56 +419,12 @@ class MyAccountMixin(LoginRequiredMixin):
         return self.request.get_full_path()
 
 
-class EditUserInfoView(MyAccountMixin, UpdateView):
+class EditUserInfoView(MyAccountMixin, TemplateView):
     template_name = "edit_user_info.html"
-    form_class = forms.EditUserInfoForm
-    model = User
-    EVENT_NAME = "edit_user_info"
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        log = log_data(self.request)
-        log["event"] = f"{self.EVENT_NAME}_error"
-        log["user"] = self.request.user.pk
-        if self.application:
-            log["application"] = self.application.client_id
-        log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
-        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["edit_user_info"]["active"] = True
         return context
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        user = self.object
-        email = form.cleaned_data["email"]
-        log = log_data(self.request)
-        log["event"] = self.EVENT_NAME
-        log["user"] = self.request.user.pk
-        if self.application:
-            log["application"] = self.application.client_id
-        for key in form.changed_data:
-            log[f"old_{key}"] = form.initial[key]
-            log[f"new_{key}"] = form.cleaned_data[key]
-        transaction.on_commit(partial(logger.info, log))
-        if user.email != email and not form.email_case_changed(user):
-            # Do not hit the database again, we have all necessary information.
-            email_address = EmailAddress(user=user, email=email)
-            emails.send_verification_email(self.request, email_address, registration=False)
-            self.request.session[EMAIL_CONFIRM_KEY] = email
-            user.save_next_redirect_uri(self.request.get_full_path())
-            return HttpResponseRedirect(reverse("accounts:confirm-email") + "?" + self.request.GET.urlencode())
-        if form.changed_data:
-            messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
-        return response
-
-    def post(self, request, *args, **kwargs):
-        if self.get_object().federation:
-            return HttpResponseForbidden()
-        return super().post(request, *args, **kwargs)
 
 
 class PasswordChangeView(MyAccountMixin, FormView):
