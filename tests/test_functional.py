@@ -9,13 +9,11 @@ from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
-from django.db.models import F
 from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertNotContains, assertQuerySetEqual, assertRedirects
 
-from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import EmailAddress, User
@@ -1272,7 +1270,6 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
 def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
     application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
-    verified_email = user.email
     referrer_uri = "https://go/back/there"
     params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
     edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
@@ -1308,92 +1305,9 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
 
-    # Edit user info
-    response = client.post(
-        edit_user_info_url,
-        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
-    )
-    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-    confirm_email_url = response.url
-    user.refresh_from_db()
-    assert user.first_name == "John"
-    assert user.last_name == "Doe"
-    assert user.email == verified_email
-    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-    assert old.verified_at is not None
-    assert old.email == verified_email
-    assert new.verified_at is None
-    assert new.email == "my@email.com"
-    assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_last_name": "Calavera",
-                    "new_last_name": "Doe",
-                    "old_first_name": "Manuel",
-                    "new_first_name": "John",
-                    "old_email": "manny.calavera@mailinator.com",
-                    "new_email": "my@email.com",
-                },
-            )
-        ],
-    )
-
-    [verification_email] = mailoutbox
-    assert verification_email.to == ["my@email.com"]
-    assert verification_email.subject == "Vérification de l’adresse e-mail"
-
-    # send new link
-    response = client.post(confirm_email_url, follow=True)
-    assertRedirects(response, confirm_email_url)
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"event": "send_verification_email", "user": user.pk},
-            )
-        ],
-    )
-
-    # Verify email address
-    verification_url = get_verification_link(verification_email.body)
-    response = client.get(verification_url)
-    assertRedirects(response, edit_user_info_url)
-    user.refresh_from_db()
-    assert user.next_redirect_uri is None
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "email": "my@email.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"email": "my@email.com", "user": user.pk, "event": "login"},
-            ),
-        ],
-    )
-
-    # Page still contains return to referrer link
-    response = client.get(response.url)
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
+    # Edit user info is disabled
+    assertContains(response, "vous ne pouvez plus modifier vos informations personnelles")
+    assertNotContains(response, 'type="submit"')
 
     # Go change password
     response = client.get(change_password_url)
@@ -1428,7 +1342,7 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     # User may login with new password
     response = client.post(
         reverse("accounts:login"),
-        data={"email": "my@email.com", "password": "V€r¥--$3©®€7"},
+        data={"email": user.email, "password": "V€r¥--$3©®€7"},
         follow=True,
     )
     assert get_user(client).is_authenticated is True
@@ -1490,129 +1404,6 @@ def test_edit_user_info_and_password_with_login_hint(caplog, client, mailoutbox)
     )
 
     # Page contains return to referrer link
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
-
-
-def test_edit_user_info_other_client(caplog, client, oidc_params, mailoutbox):
-    application = ApplicationFactory()
-    user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
-    verified_email = user.email
-    referrer_uri = "https://go/back/there"
-    params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-
-    # User is redirected to login
-    response = client.get(edit_user_info_url)
-    assertRedirects(
-        response,
-        add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}),
-    )
-    response = client.post(
-        response.url,
-        data={"email": user.email, "password": DEFAULT_PASSWORD},
-        follow=True,
-    )
-    assertRedirects(response, edit_user_info_url)
-    assertContains(response, "<h1>\n                Informations générales\n            </h1>")
-    # The redirect cleans `next_url` from the session.
-    assert "next_url" not in client.session
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"user": user.pk, "event": "login"},
-            )
-        ],
-    )
-
-    # Page contains return to referrer link
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
-
-    # Edit user info
-    response = client.post(
-        edit_user_info_url,
-        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
-    )
-    assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-    confirm_email_url = response.url
-    user.refresh_from_db()
-    assert user.first_name == "John"
-    assert user.last_name == "Doe"
-    assert user.email == verified_email
-    [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-    assert old.verified_at is not None
-    assert old.email == verified_email
-    assert new.verified_at is None
-    assert new.email == "my@email.com"
-    assert client.session[EMAIL_CONFIRM_KEY] == "my@email.com"
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "edit_user_info",
-                    "user": user.pk,
-                    "application": application.client_id,
-                    "old_last_name": "Calavera",
-                    "new_last_name": "Doe",
-                    "old_first_name": "Manuel",
-                    "new_first_name": "John",
-                    "old_email": "manny.calavera@mailinator.com",
-                    "new_email": "my@email.com",
-                },
-            )
-        ],
-    )
-
-    [verification_email] = mailoutbox
-    assert verification_email.to == ["my@email.com"]
-    assert verification_email.subject == "Vérification de l’adresse e-mail"
-    verification_url = get_verification_link(verification_email.body)
-    other_client = Client()
-    response = other_client.get(verification_url)
-    assertRedirects(response, edit_user_info_url)
-    user.refresh_from_db()
-    assert user.next_redirect_uri is None
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "email": "my@email.com",
-                    "user": user.pk,
-                    "event": "confirm_email_address",
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"email": "my@email.com", "user": user.pk, "event": "login"},
-            ),
-        ],
-    )
-
-    # Page still contains return to referrer link
-    response = other_client.get(response.url)
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
-
-    # Still dsplay the return button if the user asks again for a verification e-mail
-    response = client.post(confirm_email_url, follow=True)
-    assertRedirects(response, edit_user_info_url)
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
-
-    # Same thing if the user refreshes the page (why would he do that?)
-    response = client.get(confirm_email_url, follow=True)
-    assertRedirects(response, edit_user_info_url)
     assertContains(response, "Retour")
     assertContains(response, referrer_uri)
 

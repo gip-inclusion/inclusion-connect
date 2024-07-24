@@ -8,7 +8,6 @@ from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
-from django.db.models import F
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1380,258 +1379,7 @@ class TestPasswordResetConfirmView:
 
 
 class TestEditUserInfoView:
-    def test_edit_name(self, caplog, client):
-        application = ApplicationFactory()
-        user = UserFactory(first_name="Manuel", last_name="Calavera")
-        verified_email = user.email
-        client.force_login(user)
-        referrer_uri = "https://go/back/there"
-        params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-        change_password_url = add_url_params(reverse("accounts:change_password"), params)
-
-        # Dont display return button without referrer_uri
-        response = client.get(reverse("accounts:edit_user_info"))
-        return_text = "Retour"
-        assertNotContains(response, return_text)
-        assertContains(
-            response,
-            f'<input type="email" name="email" value="{user.email}" placeholder="nom@domaine.fr" '
-            'autocomplete="email" class="form-control" required id="id_email">',
-            count=1,
-        )
-
-        # with referrer_uri
-        response = client.get(edit_user_info_url)
-        assertContains(response, "<h1>\n                Informations générales\n            </h1>")
-        # Left menu contains both pages
-        assertContains(response, escape(edit_user_info_url))
-        assertContains(response, escape(change_password_url))
-        # Page contains return to referrer link
-        assertContains(response, return_text)
-        assertContains(response, referrer_uri)
-
-        # Edit user info
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": user.email},
-            follow=True,
-        )
-        assertRedirects(response, edit_user_info_url)
-        assertContains(response, "Vos informations personnelles ont été mises à jour.")
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_last_name": "Calavera",
-                        "new_last_name": "Doe",
-                        "old_first_name": "Manuel",
-                        "new_first_name": "John",
-                    },
-                )
-            ],
-        )
-
-    def test_edit_email(self, caplog, client, mailoutbox):
-        application = ApplicationFactory()
-        verified_email = "oldjo@email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-
-        # Edit user info
-        response = client.post(
-            edit_user_info_url,
-            data={
-                "last_name": "Doe",
-                "first_name": "John",
-                "email": "jo-with-typo@email.com",
-            },
-        )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-        assert old.verified_at is not None
-        assert old.email == verified_email
-        assert new.verified_at is None
-        assert new.email == "jo-with-typo@email.com"
-        assert client.session[EMAIL_CONFIRM_KEY] == "jo-with-typo@email.com"
-        assert user.next_redirect_uri == edit_user_info_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": "jo-with-typo@email.com",
-                    },
-                )
-            ],
-        )
-
-        # Now, fix the typo.
-        user_email = "joe@email.com"
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": user_email},
-        )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-        assert old.verified_at is not None
-        assert old.email == verified_email
-        assert new.verified_at is None
-        assert new.email == user_email
-        assert client.session[EMAIL_CONFIRM_KEY] == user_email
-        assert user.next_redirect_uri == edit_user_info_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": user_email,
-                    },
-                )
-            ],
-        )
-
-        email = mailoutbox[1]  # Only check second emial, without the typo
-        assert email.to == [user_email]
-        assert email.subject == "Vérification de l’adresse e-mail"
-        uidb64 = urlsafe_base64_encode(str(user.pk).encode())
-        token = email_verification_token(user_email)
-        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
-        verify_link = f"http://testserver{verify_path}"
-        assert email.body == (
-            "Bonjour,\n\n"
-            "Une demande de modification de compte a été effectuée avec votre adresse e-mail. Si\n"
-            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
-            "afin de vérifier votre adresse e-mail :\n\n"
-            f"{verify_link}\n\n"
-            "Ce lien expire dans 1 jour.\n\n"
-            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
-            "---\n"
-            "L’équipe d’inclusion connect\n"
-        )
-        assert email.alternatives[0][0] == (
-            "<p>Bonjour,</p>\n\n    "
-            "<p>\n        Une demande de\n        \n            modification\n        \n        "
-            "de compte a été effectuée avec votre adresse\n"
-            "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
-            f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
-            "<p>Ce lien expire dans 1 jour.</p>\n\n    "
-            "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
-            "</p>\n\n<p>\n    ---\n    <br>\n    L’équipe d’inclusion connect\n</p>\n"
-        )
-
-    def test_edit_email_case(self, caplog, client):
-        application = ApplicationFactory()
-        verified_email = "ME@Email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-
-        new_email = "me@email.com"
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": new_email},
-        )
-
-        assertRedirects(response, edit_user_info_url)
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == "me@email.com"
-        email_address = user.email_addresses.get()
-        assert email_address.verified_at is not None
-        assert email_address.email == new_email
-        assert user.next_redirect_uri is None
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": new_email,
-                    },
-                )
-            ],
-        )
-
-    def test_edit_invalid(self, caplog, client):
-        application = ApplicationFactory()
-        verified_email = "verified@email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        response = client.post(add_url_params(reverse("accounts:edit_user_info"), params))
-        assert response.status_code == 200
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        emailaddress = user.email_addresses.get()
-        assert emailaddress.verified_at is not None
-        assert emailaddress.email == verified_email
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info_error",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_edit_federated(self, caplog, client):
-        BUTTON_HTML_STR = 'type="submit"'
+    def test_edit_is_disabled(self, caplog, client):
         application = ApplicationFactory()
         user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
         client.force_login(
@@ -1641,24 +1389,61 @@ class TestEditUserInfoView:
         params = {"referrer_uri": "rp_url", "referrer": application.client_id}
         edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
         response = client.get(edit_user_info_url)
-        assertContains(response, BUTTON_HTML_STR)
-        user.federation = Federation.PEAMA
-        user.save()
-        response = client.get(edit_user_info_url)
-        assertNotContains(response, BUTTON_HTML_STR)
+        assertRecords(caplog, [])
+        assertNotContains(response, 'type="submit"')
+        assertContains(response, "vous ne pouvez plus modifier vos informations personnelles")
         response = client.post(
             edit_user_info_url,
             data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
             follow=True,
         )
-        assert response.status_code == 403
+        assert response.status_code == 405
         user.refresh_from_db()
         assert user.first_name == "Jean"
         assert user.last_name == "Dupond"
         assert user.email == "jean.dupond@email.com"
         assertRecords(
             caplog,
-            [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")],
+            [
+                ("django.request", logging.WARNING, "Method Not Allowed (POST): /accounts/my-account/"),
+                ("django.request", logging.WARNING, "Method Not Allowed: /accounts/my-account/"),
+            ],
+        )
+
+    def test_edit_federated(self, caplog, client):
+        application = ApplicationFactory()
+        user = UserFactory(
+            first_name="Jean",
+            last_name="Dupond",
+            email="jean.dupond@email.com",
+            federation=Federation.PEAMA,
+        )
+        client.force_login(
+            user,
+            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
+        )
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+        response = client.get(edit_user_info_url)
+        assertRecords(caplog, [])
+        assertNotContains(response, 'type="submit"')
+        assertContains(response, "Compte agent France Travail")
+        response = client.post(
+            edit_user_info_url,
+            data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
+            follow=True,
+        )
+        assert response.status_code == 405
+        user.refresh_from_db()
+        assert user.first_name == "Jean"
+        assert user.last_name == "Dupond"
+        assert user.email == "jean.dupond@email.com"
+        assertRecords(
+            caplog,
+            [
+                ("django.request", logging.WARNING, "Method Not Allowed (POST): /accounts/my-account/"),
+                ("django.request", logging.WARNING, "Method Not Allowed: /accounts/my-account/"),
+            ],
         )
 
 
