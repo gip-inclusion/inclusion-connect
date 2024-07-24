@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from mozilla_django_oidc import auth, views
 
-from inclusion_connect.accounts.views import LoginView, RegisterView
+from inclusion_connect.accounts.views import LoginView
 from inclusion_connect.logging import log_data
 from inclusion_connect.users.models import EmailAddress
 from inclusion_connect.utils.oidc import get_next_url
@@ -99,7 +99,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         log = log_data(self.request)
         log["email"] = user.email
         log["user"] = user.pk
-        log["event"] = RegisterView.EVENT_NAME
+        log["event"] = "register"
         log["federation"] = self.name
         transaction.on_commit(partial(logger.info, log))
 

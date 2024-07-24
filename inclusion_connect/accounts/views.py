@@ -10,11 +10,10 @@ from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
 from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http, timezone
 from django.utils.html import format_html
-from django.views.generic import CreateView, FormView, TemplateView, View
+from django.views.generic import FormView, TemplateView, View
 
 from inclusion_connect.accounts import emails, forms
 from inclusion_connect.accounts.helpers import login
@@ -24,7 +23,7 @@ from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.stats import helpers as stats_helpers
 from inclusion_connect.stats.models import Actions
 from inclusion_connect.users.models import EmailAddress
-from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint, oidc_params
+from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint
 
 
 logger = logging.getLogger("inclusion_connect.auth")
@@ -62,90 +61,8 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         return response
 
 
-class BaseUserCreationView(OIDCSessionMixin, CreateView):
-    form_class = forms.RegisterForm
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["log"] = log_data(self.request)
-        kwargs["request"] = self.request
-        return kwargs
-
-    def get_success_url(self):
-        return reverse("accounts:confirm-email")
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        log = form.log
-        log["event"] = f"{self.EVENT_NAME}_error"
-        log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
-        return response
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        email = form.cleaned_data["email"]
-        email_address = EmailAddress.objects.get(email=email)
-        emails.send_verification_email(self.request, email_address)
-        self.request.session[EMAIL_CONFIRM_KEY] = email
-        if next_url := self.request.session.get("next_url"):
-            self.object.save_next_redirect_uri(next_url)
-        form.log["event"] = self.EVENT_NAME
-        transaction.on_commit(partial(logger.info, form.log))
-        stats_helpers.account_action(form.instance, Actions.REGISTER, self.request)
-        return response
-
-
-class RegisterView(BaseUserCreationView):
-    template_name = "register.html"
-    EVENT_NAME = "register"
-
-    # TODO: Remove keycloak compatibility
-    def dispatch(self, request, *args, **kwargs):
-        if all(param in oidc_params(request) for param in ["login_hint", "lastname", "firstname"]):
-            return HttpResponseRedirect(reverse("accounts:activate"))
-        return super().dispatch(request, *args, **kwargs)
-
-
-class ActivateAccountView(BaseUserCreationView):
-    form_class = forms.ActivateAccountForm
-    template_name = "activate_account.html"
-    EVENT_NAME = "activate"
-
-    def dispatch(self, request, *args, **kwargs):
-        # Check user info is provided
-        try:
-            self.get_user_info()
-            params = oidc_params(self.request)
-            self.application = Application.objects.get(client_id=params["client_id"])
-        except (KeyError, Application.DoesNotExist):
-            return render(
-                request,
-                "oidc_authorize.html",
-                {
-                    "error": {
-                        "error": "invalid_request",
-                        "description": "Missing activation parameters",
-                    }
-                },
-                status=400,
-            )
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_user_info(self):
-        params = oidc_params(self.request)
-        return {
-            "email": params["login_hint"],
-            "first_name": params["firstname"],
-            "last_name": params["lastname"],
-        }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context | {"application_name": self.application.name} | self.get_user_info()
-
-    def get_initial(self):
-        return super().get_initial() | self.get_user_info()
+class NoRegisterView(TemplateView):
+    template_name = "no_register.html"
 
 
 class PasswordResetView(auth_views.PasswordResetView):
