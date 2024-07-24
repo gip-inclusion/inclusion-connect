@@ -245,39 +245,6 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
         return super().save(commit)
 
 
-class EditUserInfoForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ("last_name", "first_name")
-
-    def __init__(self, *args, initial, instance, **kwargs):
-        initial["email"] = instance.email
-        super().__init__(*args, initial=initial, instance=instance, **kwargs)
-        self.fields["email"] = verified_email_field()
-        self.fields["last_name"].widget.attrs["autofocus"] = True
-
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if EmailAddress.objects.exclude(user=self.instance).filter(email=email).exists():
-            raise ValidationError("Un compte avec cette adresse e-mail existe déjà.")
-        return email
-
-    def email_case_changed(self, user):
-        new_email = self.cleaned_data["email"]
-        return new_email.lower() == user.email.lower()
-
-    def save(self, commit=True):
-        user = super().save(commit=commit)
-        email = self.cleaned_data["email"]
-        if email != user.email:
-            if self.email_case_changed(user):
-                EmailAddress.objects.filter(user=user).update(email=email)
-                User.objects.filter(pk=user.pk).update(email=email)
-            else:
-                save_unverified_email(user, email)
-        return user
-
-
 class PasswordChangeForm(auth_forms.PasswordChangeForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
