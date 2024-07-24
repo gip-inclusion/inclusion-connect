@@ -1,38 +1,11 @@
 import datetime
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import pytest
 from django.urls import reverse
 
-from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import UserFactory
-
-
-@dataclass
-class OIDCSessionMixinTestInput:
-    requires_login: bool
-    viewname: str
-    oidc_data: Optional[Dict[str, str]]
-
-
-# All OIDCSessionMixin subclasses in the accounts app.
-OIDCSessionMixin_accounts: List[OIDCSessionMixinTestInput] = [
-    OIDCSessionMixinTestInput(False, "accounts:login", None),
-    OIDCSessionMixinTestInput(False, "accounts:register", None),
-    OIDCSessionMixinTestInput(
-        False,
-        "accounts:activate",
-        {
-            "firstname": "Mercedes",
-            "lastname": "Colomar",
-            "login_hint": "m.c@mailinator.com",
-            "client_id": "client_id",
-        },
-    ),
-]
 
 
 @dataclass
@@ -51,16 +24,9 @@ class NextUrlExpected:
     ],
 )
 class TestOpenRedirectWithNextParameter:
-    @pytest.mark.parametrize("view", OIDCSessionMixin_accounts)
-    def test_accounts(self, client, testinput, view):
+    def test_accounts(self, client, testinput):
         ApplicationFactory(client_id="client_id")
-        if view.requires_login:
-            client.force_login(UserFactory())
-        if view.oidc_data:
-            client_session = client.session
-            client_session[OIDC_SESSION_KEY] = view.oidc_data
-            client_session.save()
-        response = client.get(f"{reverse(view.viewname)}?next={testinput.next_url}")
+        response = client.get(f"{reverse('accounts:login')}?next={testinput.next_url}")
         assert response.status_code in [200, 302]
         if testinput.expected:
             assert client.session["next_url"] == testinput.next_url

@@ -515,7 +515,7 @@ def test_dont_crash_if_not_configured(client):
     response = client.get(url)
     assertContains(response, "Connexion")
     assertContains(response, "Adresse e-mail")  # Ask for email, not username
-    assertContains(response, reverse("accounts:register"))  # Link to register page
+    assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
     response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
