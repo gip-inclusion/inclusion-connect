@@ -26,7 +26,7 @@ PEAMA_ADDITIONAL_DATA = {
 }
 
 
-def generate_peama_data(nonce, ft=False):
+def generate_peama_data(nonce, ft=False, with_additional_data=True):
     key_kid = "random_kid"
 
     key = jwk.JWK.generate(kty="RSA", size=2048, alg="RS256", use="sig", kid=key_kid)
@@ -40,7 +40,9 @@ def generate_peama_data(nonce, ft=False):
         "sub": PEAMA_SUB,
     }
 
-    id_token_data = user_info | {"nonce": nonce} | PEAMA_ADDITIONAL_DATA
+    id_token_data = user_info | {"nonce": nonce}
+    if with_additional_data:
+        id_token_data = id_token_data | PEAMA_ADDITIONAL_DATA
     id_token = jwt.encode(payload=id_token_data, key=private_key, algorithm="RS256", headers={"kid": key_kid})
 
     access_token = {
@@ -61,13 +63,13 @@ def generate_peama_data(nonce, ft=False):
     )
 
 
-def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False):
+def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False, with_additional_data=True):
     assert auth_complete_url.startswith(settings.PEAMA_AUTH_ENDPOINT)
     state = get_url_params(auth_complete_url)["state"]
     nonce = get_url_params(auth_complete_url)["nonce"]
     callback_url = reverse("oidc_federation:peama:callback")
 
-    peama_data = generate_peama_data(nonce, ft)
+    peama_data = generate_peama_data(nonce, ft, with_additional_data)
     requests_mock.post(settings.PEAMA_TOKEN_ENDPOINT, json=peama_data.access_token)
     requests_mock.get(settings.PEAMA_USER_ENDPOINT, json=peama_data.user_info)
     requests_mock.get(settings.PEAMA_JWKS_ENDPOINT, json=peama_data.jwks)
@@ -110,6 +112,30 @@ def test_new_user(client, requests_mock, caplog):
         "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
         "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
     }
+    assert user.email_addresses.get().email == peama_data.user_info["email"]
+    assertRedirects(response, reverse("accounts:accept_terms"))
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": user.email, "user": user.pk, "event": "register", "federation": Federation.PEAMA},
+            )
+        ],
+    )
+
+
+def test_no_additional_data(client, requests_mock, caplog):
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url, with_additional_data=False)
+    user = User.objects.get()
+    assert user.email == peama_data.user_info["email"]
+    assert user.first_name == peama_data.user_info["given_name"]
+    assert user.last_name == peama_data.user_info["family_name"]
+    assert user.federation_sub == peama_data.user_info["sub"]
+    assert user.federation == Federation.PEAMA
+    assert user.federation_data == {}
     assert user.email_addresses.get().email == peama_data.user_info["email"]
     assertRedirects(response, reverse("accounts:accept_terms"))
     assertRecords(

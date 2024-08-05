@@ -159,4 +159,5 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
 
     def verify_claims(self, claims):
         if super().verify_claims(claims):
-            return all(field in claims for field in self.required_claims + self.additionnal_claims)
+            # Additional claims are not mandatory
+            return all(field in claims for field in self.required_claims)

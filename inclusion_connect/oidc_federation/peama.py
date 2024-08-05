@@ -55,10 +55,11 @@ class OIDCAuthenticationBackend(base.OIDCAuthenticationBackend):
 
     def get_userinfo(self, access_token, id_token, payload):
         user_info = super().get_userinfo(access_token, id_token, payload)
-        return user_info | {
-            "structure_pe": payload["structureTravail"],
-            "site_pe": payload["siteTravail"],
-        }
+        if structure_pe := payload.get("structureTravail"):
+            user_info["structure_pe"] = structure_pe
+        if site_pe := payload.get("siteTravail"):
+            user_info["site_pe"] = site_pe
+        return user_info
 
 
 def logout(request, user, application):
