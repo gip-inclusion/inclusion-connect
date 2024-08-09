@@ -21,7 +21,7 @@ from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
 from tests.helpers import call_logout, oidc_complete_flow, oidc_flow_followup, token_are_revoked
-from tests.oidc_federation.test_peama import PEAMA_ADDITIONAL_DATA, mock_peama_oauth_dance
+from tests.oidc_federation.test_peama import PEAMA_ADDITIONAL_DATA, PEAMA_SUB, mock_peama_oauth_dance
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -942,6 +942,15 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
 
 def test_use_peama(client, oidc_params, requests_mock, caplog):
     application = ApplicationFactory(client_id=oidc_params["client_id"])
+    federation_details = {
+        "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+        "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
+    }
+    user = UserFactory(
+        federation_sub=PEAMA_SUB,
+        federation=Federation.PEAMA,
+        federation_data=federation_details,
+    )
 
     auth_url = reverse("oauth2_provider:authorize")
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -952,42 +961,8 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     assertContains(response, "Connexion agents France Travail")
 
     response = client.get(reverse("oidc_federation:peama:init"))
-    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
-    assertRedirects(response, reverse("accounts:accept_terms"))
-    user = User.objects.get()
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth.oidc_federation",
-                logging.INFO,
-                {
-                    "application": application.client_id,
-                    "email": user.email,
-                    "user": user.pk,
-                    "event": "register",
-                    "federation": Federation.PEAMA,
-                },
-            )
-        ],
-    )
-
-    response = client.post(reverse("accounts:accept_terms"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url, follow=False)
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": application.client_id,
-                    "event": "accept_terms",
-                    "user": user.pk,
-                },
-            )
-        ],
-    )
 
     response = client.get(auth_complete_url)
     assert response.status_code == 302
@@ -998,6 +973,17 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
         caplog,
         [
             (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {
+                    "application": application.client_id,
+                    "email": user.email,
+                    "user": user.pk,
+                    "event": "login",
+                    "federation": Federation.PEAMA,
+                },
+            ),
+            (
                 "inclusion_connect.oidc",
                 logging.INFO,
                 {
@@ -1006,16 +992,12 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
                     "user": user.pk,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
-            )
+            ),
         ],
     )
 
     user = User.objects.get()
-    additional_claims = {
-        "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
-        "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
-    }
-    id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, additional_claims)
+    id_token = oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog, federation_details)
 
     logout_endpoint = requests_mock.get(settings.PEAMA_LOGOUT_ENDPOINT, status_code=204)
     response = call_logout(
