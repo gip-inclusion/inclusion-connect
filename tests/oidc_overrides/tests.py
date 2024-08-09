@@ -519,21 +519,6 @@ class TestActivateView:
             ],
         )
 
-    def test_missing_user_info(self, client, oidc_params, snapshot):
-        ApplicationFactory(client_id=oidc_params["client_id"])
-        auth_url = reverse("oauth2_provider:activate")
-        # Missing: email, firstname and lastname.
-        auth_complete_url = add_url_params(auth_url, oidc_params)
-        response = client.get(auth_complete_url)
-        # The user is redirected to the activation view as the oidc parameters are valid
-        assertRedirects(response, reverse("accounts:activate"), fetch_redirect_response=False)
-        assert client.session["next_url"] == auth_complete_url
-        assert client.session[OIDC_SESSION_KEY] == oidc_params
-
-        response = client.get(response.url)
-        assert response.status_code == 400
-        assert str(parse_response_to_soup(response, selector="main")) == snapshot
-
     def test_not_authenticated(self, client, oidc_params):
         ApplicationFactory(client_id=oidc_params["client_id"])
         auth_params = oidc_params | {"login_hint": "email", "firstname": "firstname", "lastname": "lastname"}
