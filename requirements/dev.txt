@@ -369,9 +369,9 @@ django-admin-logs==1.3.0 \
     --hash=sha256:57cd55f2dcc04592729b2778c03b86ba94cc64f5c2e286993114ca16464ff7e9 \
     --hash=sha256:e9619f185beb09397223bf973f6574db29da50c3066cc25f800f04d58af4c595
     # via -r requirements/dev.in
-django-anymail==11.1 \
-    --hash=sha256:ec373c0a2d79f5e6a3ecda819c8087af0b0e114e4ec1d8576dea4c786f9b2a59 \
-    --hash=sha256:f1a5b2de713f46fbdf311f875a9546511e4aa9bfa1c3f8350d21b43e75579acc
+django-anymail==12.0 \
+    --hash=sha256:65789c1b0f42915aa0450a4f173f77572d4c552979b748ddd8125af41972ad30 \
+    --hash=sha256:de8458d713d0f9776da9ed04dcd3a0161be23e9ecbcb49dcf149219700ecd274
     # via -r requirements/base.txt
 django-bootstrap5==24.2 \
     --hash=sha256:6a5d83e9ff1952f7c07c54cebcb76c85f09787b8b57eeb4ec07554cd583acc64 \
