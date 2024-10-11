@@ -1,4 +1,4 @@
-import django.contrib.postgres.fields.citext
+import citext
 from django.db import migrations
 
 
@@ -11,8 +11,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="emailaddress",
             name="email",
-            field=django.contrib.postgres.fields.citext.CIEmailField(
-                max_length=254, unique=True, verbose_name="adresse e-mail"
-            ),
+            field=citext.CIEmailField(max_length=254, unique=True, verbose_name="adresse e-mail"),
         ),
     ]

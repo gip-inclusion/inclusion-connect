@@ -197,7 +197,7 @@ class TestUserAdmin:
                         "event": "admin_change",
                         "acting_user": admin_user.pk,
                         "user": user.pk,
-                        "groups": {"added": {1: "support"}},
+                        "groups": {"added": {staff_group.pk: "support"}},
                     },
                 )
             ],
@@ -755,14 +755,14 @@ class TestUserAdmin:
         response = client.get(response.url)
         assertContains(
             response,
-            '<select name="groups" id="id_groups" multiple class="selectfilter" data-field-name="groupes" '
-            'data-is-stacked="0">',
+            '<select name="groups" aria-describedby="id_groups_helptext" id="id_groups" multiple class="selectfilter" '
+            'data-field-name="groupes" data-is-stacked="0">',
             count=1,
         )
         assertContains(
             response,
-            '<select name="user_permissions" id="id_user_permissions" multiple class="selectfilter" '
-            'data-field-name="permissions de l’utilisateur" data-is-stacked="0">',
+            '<select name="user_permissions" aria-describedby="id_user_permissions_helptext" id="id_user_permissions" '
+            'multiple class="selectfilter" data-field-name="permissions de l’utilisateur" data-is-stacked="0">',
             count=1,
         )
 
