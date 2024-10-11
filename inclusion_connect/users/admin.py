@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F, Prefetch
 from django.forms.formsets import DELETION_FIELD_NAME
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from inclusion_connect.logging import log_data
 
@@ -112,7 +112,7 @@ class UserChangeForm(auth_forms.UserChangeForm):
         widget=TemporaryPasswordWidget,
     )
     confirm_email = forms.BooleanField(
-        label=format_html('<img src="/static/admin/img/icon-alert.svg" alt="True"> Confirmer l’e-mail'),
+        label=mark_safe('<img src="/static/admin/img/icon-alert.svg" alt="True"> Confirmer l’e-mail'),
         disabled=True,
         required=False,
         widget=forms.HiddenInput(),

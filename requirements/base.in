@@ -3,7 +3,7 @@ psycopg[binary]  # https://github.com/psycopg/psycopg
 # Django
 # ------------------------------------------------------------------------------
 
-django==4.2.*  # https://www.djangoproject.com/
+django==5.0.*  # https://www.djangoproject.com/
 
 django-oauth-toolkit  # https://github.com/jazzband/django-oauth-toolkit
 
@@ -12,6 +12,8 @@ django-anymail  # https://github.com/anymail/django-anymail
 django-cors-headers  # https://github.com/adamchainz/django-cors-headers
 
 dj-database-url  # https://github.com/jazzband/dj-database-url
+
+django-citext  # https://github.com/voiio/django-citext
 
 # Add Content Security Policy headers
 django-csp  # https://github.com/mozilla/django-csp
