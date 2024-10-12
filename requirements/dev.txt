@@ -432,9 +432,9 @@ editorconfig==0.12.4 \
     # via
     #   cssbeautifier
     #   jsbeautifier
-elastic-transport==8.12.0 \
-    --hash=sha256:48839b942fcce199eece1558ecea6272e116c58da87ca8d495ef12eb61effaf7 \
-    --hash=sha256:87d9dc9dee64a05235e7624ed7e6ab6e5ca16619aa7a6d22e853273b9f1cfbee
+elastic-transport==8.15.1 \
+    --hash=sha256:9cac4ab5cf9402668cf305ae0b7d93ddc0c7b61461d6d1027850db6da9cc5742 \
+    --hash=sha256:b5e82ff1679d8c7705a03fd85c7f6ef85d6689721762d41228dd312e34f331fc
     # via
     #   -r requirements/base.txt
     #   elasticsearch
