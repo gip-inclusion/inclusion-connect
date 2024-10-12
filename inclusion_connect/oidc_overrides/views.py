@@ -1,7 +1,6 @@
 import logging
 from functools import partial
 
-from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.models import Session
 from django.db import transaction
 from django.http import HttpResponseRedirect
@@ -9,7 +8,6 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
-from oauth2_provider.settings import oauth2_settings
 from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.logging import log_data
@@ -140,59 +138,9 @@ def handle_app_authorized(sender, request, token, **kwargs):
 app_authorized.connect(handle_app_authorized)
 
 
-original_validate_logout_request = oauth2_views.oidc.validate_logout_request
-
-
-def validate_logout_request(request, id_token_hint, client_id, post_logout_redirect_uri):
-    try:
-        prompt_logout, (post_logout_redirect_uri, application), token_user = original_validate_logout_request(
-            request, id_token_hint, client_id, post_logout_redirect_uri
-        )
-    except (InvalidIDTokenError, InvalidOIDCClientError) as e:
-        # If there's a logged in user, don't allow invalid token
-        if request.user.is_authenticated:
-            raise e
-
-        prompt_logout = False
-        application = None
-        token_user = None
-        if post_logout_redirect_uri:
-            for app in Application.objects.all():
-                if app.post_logout_redirect_uri_allowed(post_logout_redirect_uri):
-                    application = app
-
-            if application is None:
-                # Don't allow logout with bad id_token_hint if there's a redirect url and
-                # we can't find an application matching the url
-                raise e
-
-    if (
-        token_user  # We found a user with the token
-        and prompt_logout
-        and request.user.is_authenticated is False  # But the user is already logged out
-        and not any(
-            [
-                token_user.oauth2_provider_accesstoken.filter(expires__gt=timezone.now()).exists(),
-                token_user.oauth2_provider_grant.filter(expires__gt=timezone.now()).exists(),
-                token_user.oauth2_provider_idtoken.filter(expires__gt=timezone.now()).exists(),
-                # confidential clients refresh tokens cannot be used with logging in again, we can ignore them
-                token_user.oauth2_provider_refreshtoken.filter(revoked=None)
-                .exclude(application__client_type="confidential")
-                .exists(),
-            ]
-        )  # And all tokens expired
-    ):
-        prompt_logout = False
-    return prompt_logout, (post_logout_redirect_uri, application), token_user
-
-
-# monkey patch the function while waiting for https://github.com/jazzband/django-oauth-toolkit/pull/1274
-# The refactor from this PR will allow us to override LogoutView.must_prompt() instead
-oauth2_views.oidc.validate_logout_request = validate_logout_request
-
-
 class LogoutView(oauth2_views.RPInitiatedLogoutView):
     EVENT_NAME = "logout"
+    no_prompt_override = False
 
     def log(self, event_name, application, user, **extra):
         request = self.request
@@ -213,19 +161,9 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
 
     def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
         user = token_user or self.request.user
-        # There's an issue when the user session already expired and the RP only passes the client_id
-        # See https://github.com/jazzband/django-oauth-toolkit/pull/1281
-        # This is a temporary workaround
-        original_setting = oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS
-        if isinstance(user, AnonymousUser):
-            try:
-                oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS = False
-                response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
-            finally:
-                oauth2_settings.OIDC_RP_INITIATED_LOGOUT_DELETE_TOKENS = original_setting
-        else:
-            response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
+        response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
 
+        # Clear sessions
         [
             s.delete()
             for s in Session.objects.filter(expire_date__gte=timezone.now())
@@ -243,6 +181,52 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
                 user.save()
 
         return response
+
+    def validate_logout_request(self, id_token_hint, client_id, post_logout_redirect_uri):
+        try:
+            return super().validate_logout_request(id_token_hint, client_id, post_logout_redirect_uri)
+        except (InvalidIDTokenError, InvalidOIDCClientError) as e:
+            # If there's a logged in user, don't allow invalid token
+            if self.request.user.is_authenticated:
+                raise e
+
+            application = None
+            if post_logout_redirect_uri:
+                for app in Application.objects.all():
+                    if app.post_logout_redirect_uri_allowed(post_logout_redirect_uri):
+                        application = app
+
+                if application is None:
+                    # Don't allow logout with bad id_token_hint if there's a redirect url and
+                    # we can't find an application matching the url
+                    raise e
+
+            self.no_prompt_override = True
+            return application, None
+
+    def must_prompt(self, token_user):
+        if self.no_prompt_override:
+            return False
+
+        prompt_logout = super().must_prompt(token_user)
+        if (
+            token_user  # We found a user with the token
+            and prompt_logout
+            and self.request.user.is_authenticated is False  # But the user is already logged out
+            and not any(
+                [
+                    token_user.oauth2_provider_accesstoken.filter(expires__gt=timezone.now()).exists(),
+                    token_user.oauth2_provider_grant.filter(expires__gt=timezone.now()).exists(),
+                    token_user.oauth2_provider_idtoken.filter(expires__gt=timezone.now()).exists(),
+                    # confidential clients refresh tokens cannot be used with logging in again, we can ignore them
+                    token_user.oauth2_provider_refreshtoken.filter(revoked=None)
+                    .exclude(application__client_type="confidential")
+                    .exists(),
+                ]
+            )  # And all tokens expired
+        ):
+            prompt_logout = False
+        return prompt_logout
 
     def form_invalid(self, form):
         response = super().form_invalid(form)
