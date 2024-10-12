@@ -256,9 +256,9 @@ elasticsearch==8.12.1 \
     --hash=sha256:00c997720fbd0f2afe5417c8193cf65d116817a0250de0521e30c3e81f00b8ac \
     --hash=sha256:cc459b7e0fb88dc85b43b9d7d254cffad552b0063a3e0a12290c8fa5f138c038
     # via -r requirements/base.in
-idna==3.7 \
-    --hash=sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc \
-    --hash=sha256:82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0
+idna==3.10 \
+    --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
+    --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
     # via requests
 josepy==1.14.0 \
     --hash=sha256:308b3bf9ce825ad4d4bba76372cf19b5dc1c2ce96a9d298f9642975e64bd13dd \
