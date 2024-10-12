@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("users", "0015_rename_must_reset_password_user_password_is_temporary"),
     ]

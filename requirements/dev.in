@@ -10,7 +10,6 @@ ipdb  # https://github.com/gotcha/ipdb
 
 # Code quality
 # ------------------------------------------------------------------------------
-black  # https://github.com/psf/black
 coverage  # https://github.com/nedbat/coveragepy
 djlint  # https://www.djlint.com
 ruff  # https://github.com/charliermarsh/ruff
