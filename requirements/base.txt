@@ -244,9 +244,9 @@ django-csp==3.8 \
     --hash=sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719 \
     --hash=sha256:ef0f1a9f7d8da68ae6e169c02e9ac661c0ecf04db70e0d1d85640512a68471c0
     # via -r requirements/base.in
-django-oauth-toolkit==2.3.0 \
-    --hash=sha256:47dfeab97ec21496f307c2cf3468e64ca08897fa499bf3104366d32005c9111d \
-    --hash=sha256:cf1cb1a5744672e6bd7d66b4a110a463bcef9cf5ed4f27e29682cc6a4d0df1ed
+django-oauth-toolkit==3.0.1 \
+    --hash=sha256:3ef00b062a284f2031b0732b32dc899e3bbf0eac221bbb1cffcb50b8932e55ed \
+    --hash=sha256:7200e4a9fb229b145a6d808cbf0423b6d69a87f68557437733eec3c0cf71db02
     # via -r requirements/base.in
 elastic-transport==8.12.0 \
     --hash=sha256:48839b942fcce199eece1558ecea6272e116c58da87ca8d495ef12eb61effaf7 \
