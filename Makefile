@@ -48,13 +48,13 @@ clean:
 	find . -type d -name "__pycache__" -depth -exec rm -rf '{}' \;
 
 quality: $(VIRTUAL_ENV)
-	black --check $(PY_PACKAGES)
+	ruff format --check $(PY_PACKAGES)
 	ruff check $(PY_PACKAGES)
 	djlint --lint --check inclusion_connect
 	python manage.py makemigrations --check --dry-run --noinput
 
 fix: $(VIRTUAL_ENV)
-	black $(PY_PACKAGES)
+	ruff format $(PY_PACKAGES)
 	ruff check --fix $(PY_PACKAGES)
 	djlint --reformat inclusion_connect
 
