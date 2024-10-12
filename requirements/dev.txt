@@ -500,9 +500,9 @@ jsbeautifier==1.15.1 \
     # via
     #   cssbeautifier
     #   djlint
-json5==0.9.17 \
-    --hash=sha256:717d99d657fa71b7094877b1d921b1cce40ab444389f6d770302563bb7dfd9ae \
-    --hash=sha256:f8ec1ecf985951d70f780f6f877c4baca6a47b6e61e02c4cd190138d10a7805a
+json5==0.9.25 \
+    --hash=sha256:34ed7d834b1341a86987ed52f3f76cd8ee184394906b6e22a1e0deb9ab294e8f \
+    --hash=sha256:548e41b9be043f9426776f05df8635a00fe06104ea51ed24b67f908856e151ae
     # via djlint
 jwcrypto==1.5.6 \
     --hash=sha256:150d2b0ebbdb8f40b77f543fb44ffd2baeff48788be71f67f03566692fd55789 \
