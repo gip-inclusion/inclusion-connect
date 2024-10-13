@@ -179,8 +179,7 @@ L'_id token_ est un objet JWT signé qui contient notamment :
 - **email** : son adresse e-mail.
 
 
-La signature du token est chiffrée avec l'algorithme `RS256` et il est possible de récupérer la clé publique sur une API
-de keycloak pour vérifier la signature.
+La signature du token est chiffrée avec l'algorithme `RS256` et il est possible de récupérer la clé publique pour vérifier la signature.
 
 Cependant, dans le cas où l'_access token_ est  récupéré via un appel direct du _backend_ au _OpendID Connect provider_ (Inclusion Connect)
 et non par exemple récupéré par le _frontend_ puis transmis au _backend_, la validation du token ne protège pas grand-chose.
