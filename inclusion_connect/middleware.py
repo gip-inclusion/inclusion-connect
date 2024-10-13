@@ -1,14 +1,9 @@
-import logging
-
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils.cache import add_never_cache_headers
 from django.utils.html import format_html
 
 from inclusion_connect.utils.urls import add_url_params
-
-
-logger = logging.getLogger("keycloak_compat")
 
 
 def never_cache(get_response):

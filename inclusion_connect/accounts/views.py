@@ -100,12 +100,6 @@ class RegisterView(BaseUserCreationView):
     template_name = "register.html"
     EVENT_NAME = "register"
 
-    # TODO: Remove keycloak compatibility
-    def dispatch(self, request, *args, **kwargs):
-        if all(param in oidc_params(request) for param in ["login_hint", "lastname", "firstname"]):
-            return HttpResponseRedirect(reverse("accounts:activate"))
-        return super().dispatch(request, *args, **kwargs)
-
 
 class ActivateAccountView(BaseUserCreationView):
     form_class = forms.ActivateAccountForm
