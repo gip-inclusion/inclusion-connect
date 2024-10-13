@@ -333,6 +333,8 @@ class ConfirmEmailTokenView(View):
         return http.urlsafe_base64_decode(encoded_email).decode()
 
     def get(self, request, uidb64, token):
+        if settings.FREEZE_ACCOUNTS:
+            return render(request, "no_confirm_email.html")
         try:
             uid = uuid.UUID(http.urlsafe_base64_decode(uidb64).decode())
         except (TypeError, ValueError, OverflowError) as e:
