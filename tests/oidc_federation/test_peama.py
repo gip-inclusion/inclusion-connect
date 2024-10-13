@@ -63,7 +63,7 @@ def generate_peama_data(nonce, ft=False, with_additional_data=True):
     )
 
 
-def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False, with_additional_data=True):
+def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False, with_additional_data=True, follow=True):
     assert auth_complete_url.startswith(settings.PEAMA_AUTH_ENDPOINT)
     state = get_url_params(auth_complete_url)["state"]
     nonce = get_url_params(auth_complete_url)["nonce"]
@@ -74,7 +74,7 @@ def mock_peama_oauth_dance(client, requests_mock, auth_complete_url, ft=False, w
     requests_mock.get(settings.PEAMA_USER_ENDPOINT, json=peama_data.user_info)
     requests_mock.get(settings.PEAMA_JWKS_ENDPOINT, json=peama_data.jwks)
 
-    return client.get(callback_url, data={"code": "123", "state": state}), peama_data
+    return client.get(callback_url, data={"code": "123", "state": state}, follow=follow), peama_data
 
 
 def test_init_view(client):
@@ -121,6 +121,25 @@ def test_new_user(client, requests_mock, caplog):
                 "inclusion_connect.auth.oidc_federation",
                 logging.INFO,
                 {"email": user.email, "user": user.pk, "event": "register", "federation": Federation.PEAMA},
+            )
+        ],
+    )
+
+
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_new_user_after_freeze(client, requests_mock, caplog):
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    assert not User.objects.exists()
+    assertRedirects(response, reverse("accounts:login"))
+    assertContains(response, "La création de votre compte a échoué")
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": peama_data.user_info["email"], "event": "register_error", "federation": Federation.PEAMA},
             )
         ],
     )
@@ -203,6 +222,42 @@ def test_update_existing_pe_user(client, requests_mock, caplog):
     )
 
 
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_dont_update_existing_pe_user_after_freeze(client, requests_mock, caplog):
+    user = UserFactory(
+        email="old_email",
+        first_name="old_first_name",
+        last_name="old_last_name",
+        federation_sub=PEAMA_SUB,
+        federation=Federation.PEAMA,
+    )
+    assert user.email_addresses.get().email == "old_email"
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    user = User.objects.get()
+    assert user.email == "old_email"
+    assert user.first_name == "old_first_name"
+    assert user.last_name == "old_last_name"
+    assert user.federation_sub == PEAMA_SUB
+    assert user.federation == Federation.PEAMA
+    assert user.federation_data == {
+        "site_pe": PEAMA_ADDITIONAL_DATA["siteTravail"],
+        "structure_pe": PEAMA_ADDITIONAL_DATA["structureTravail"],
+    }
+    assert user.email_addresses.get().email == "old_email"
+    assertRedirects(response, reverse("accounts:edit_user_info"))
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": user.email, "user": user.pk, "event": "login", "federation": Federation.PEAMA},
+            ),
+        ],
+    )
+
+
 def test_convert_existing_ic_user(client, requests_mock, caplog):
     user = UserFactory(
         email="michel@pole-emploi.fr",
@@ -256,7 +311,39 @@ def test_convert_existing_ic_user(client, requests_mock, caplog):
     )
 
 
-def test_convert_existing_ic_user_to_ft(client, requests_mock, caplog):
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_dont_convert_existing_ic_user_after_freeze(client, requests_mock, caplog):
+    user = UserFactory(
+        email="michel@pole-emploi.fr",
+        first_name="old_first_name",
+        last_name="old_last_name",
+    )
+    email_address = user.email_addresses.get()
+    response = client.get(reverse("oidc_federation:peama:init"))
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    user = User.objects.get()
+    assert user.email == "michel@pole-emploi.fr"
+    assert user.first_name == "old_first_name"
+    assert user.last_name == "old_last_name"
+    assert user.federation_sub is None
+    assert user.federation is None
+    assert user.federation_data is None
+    assert user.email_addresses.get().verified_at == email_address.verified_at
+    assertRedirects(response, reverse("accounts:login"))
+    assertContains(response, "La création de votre compte a échoué")
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth.oidc_federation",
+                logging.INFO,
+                {"email": user.email, "event": "register_error", "federation": Federation.PEAMA},
+            ),
+        ],
+    )
+
+
+def test_convert_existing_ic_user_with_pe_email(client, requests_mock, caplog):
     pe_email = "michel@pole-emploi.fr"
 
     user = UserFactory(
@@ -534,7 +621,7 @@ def test_updated_email_already_exists(client, requests_mock, caplog, snapshot):
     )
     assert user.email_addresses.get().email == "old_email"
     response = client.get(reverse("oidc_federation:peama:init"))
-    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url)
+    response, peama_data = mock_peama_oauth_dance(client, requests_mock, response.url, follow=False)
     assert User.objects.count() == 2
     user.refresh_from_db()
     assert user.email == "old_email"  # Email was not updated

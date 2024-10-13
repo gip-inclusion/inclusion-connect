@@ -1,6 +1,7 @@
 import logging
 from functools import partial
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
@@ -8,6 +9,7 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils.html import format_html
 from mozilla_django_oidc import auth, views
 
 from inclusion_connect.accounts.views import EditUserInfoView, LoginView, RegisterView
@@ -35,7 +37,9 @@ class OIDCAuthenticationCallbackView(ConfigMixin, views.OIDCAuthenticationCallba
         return get_next_url(self.request)
 
     def login_failure(self):
-        messages.error(self.request, "La connexion n'a pas fonctionné.")
+        # Don't add message if there's already the "no register" message
+        if not self.request._messages._queued_messages:
+            messages.error(self.request, "La connexion n'a pas fonctionné.")
         return HttpResponseRedirect(reverse("accounts:login"))
 
 
@@ -61,7 +65,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
 
     def filter_users_by_claims(self, claims):
         sub_users = self.UserModel.objects.filter(federation_sub=claims["sub"], federation=self.name)
-        if sub_users:
+        if sub_users or settings.FREEZE_ACCOUNTS:
             return sub_users
 
         email_q = self.email_lookup_q(claims["email"])
@@ -85,6 +89,27 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         return super().get_userinfo(access_token, id_token, payload) | {"id_token": id_token}
 
     def create_user(self, claims):
+        if settings.FREEZE_ACCOUNTS:
+            log = log_data(self.request)
+            log["email"] = claims["email"]
+            log["event"] = "register_error"
+            log["federation"] = self.name
+            transaction.on_commit(partial(logger.info, log))
+
+            messages.error(
+                self.request,
+                format_html(
+                    "La création de votre compte a échoué. Depuis le 1er octobre 2024, date du passage à ProConnect, "
+                    "vous ne pouvez plus créer de compte Inclusion Connect. "
+                    "Veuillez vous rapprocher de votre fournisseur de service pour plus d’informations sur la mise à "
+                    "disposition de ProConnect, qui doit intervenir dans les meilleurs délais. "
+                    '<a href="{}" target="_blank" rel="noopener">'
+                    "Besoin d’aide</a> ?",
+                    settings.MIGRATION_PAGE_URL,
+                ),
+            )
+            return
+
         user = self.UserModel.objects.create(
             email=claims["email"],
             first_name=claims["given_name"],
@@ -106,6 +131,20 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
         return user
 
     def update_user(self, user, claims):
+        if settings.FREEZE_ACCOUNTS:
+            log = log_data(self.request)
+            log["email"] = user.email
+            log["user"] = user.pk
+            log["event"] = LoginView.EVENT_NAME
+            log["federation"] = self.name
+            transaction.on_commit(partial(logger.info, log))
+
+            user.federation_id_token_hint = claims["id_token"]
+            user.federation_data = self.get_additional_data(claims)
+            user.save()
+            # No more user update either
+            return user
+
         if (
             user.federation
             and user.email != claims["email"]
