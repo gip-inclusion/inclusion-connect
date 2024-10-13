@@ -4,10 +4,12 @@
 
 {% block content %}
 
-    <div class="alert alert-info">
-        Courant novembre 2024, <strong>ProConnect</strong> remplacera Inclusion Connect sur les services numériques de l’inclusion !
-        Vous recevrez des e-mails d’information tout au long de l’été et à la rentrée.
-    </div>
+    {% if not FREEZE_ACCOUNTS %}
+        <div class="alert alert-info">
+            Courant novembre 2024, <strong>ProConnect</strong> remplacera Inclusion Connect sur les services numériques de l’inclusion !
+            Vous recevrez des e-mails d’information tout au long de l’été et à la rentrée.
+        </div>
+    {% endif %}
 
     <h1 class="h2">Connexion</h1>
 
@@ -38,10 +40,23 @@
         {% include "includes/pe_connect.html" %}
     {% endif %}
 
-    <hr class="my-3 my-lg-4">
-    <div class="text-center">
-        <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
-        <a href="{% url 'accounts:register' %}" class="btn btn-link matomo-event" data-matomo-category="authentification" data-matomo-action="clic" data-matomo-name="Créer mon compte">Créer mon compte</a>
-    </div>
+    {% if FREEZE_ACCOUNTS %}
+        <hr class="my-3 my-lg-4">
+        <div class="text-center">
+            <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
+            <div class="alert alert-warning">
+                <p>
+                    Inclusion Connect devient ProConnect ! Depuis le 1er octobre 2024 la création de compte Inclusion Connect n’est plus possible. Veuillez vous rapprocher de votre fournisseur de service pour plus d’informations sur la mise à disposition de ProConnect, qui doit intervenir dans les meilleurs délais.
+                </p>
+                <a href="{{ MIGRATION_PAGE_URL }}" target="_blank" rel="noopener">Besoin d’aide ?</a>
+            </div>
+        </div>
+    {% else %}
+        <hr class="my-3 my-lg-4">
+        <div class="text-center">
+            <h2 class="h5">Vous n’avez pas de compte Inclusion Connect ?</h2>
+            <a href="{% url 'accounts:register' %}" class="btn btn-link matomo-event" data-matomo-category="authentification" data-matomo-action="clic" data-matomo-name="Créer mon compte">Créer mon compte</a>
+        </div>
+    {% endif %}
 
 {% endblock %}

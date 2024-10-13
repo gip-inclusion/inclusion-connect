@@ -65,6 +65,14 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegisterForm
 
+    def get_template_names(self):
+        return "no_register.html" if settings.FREEZE_ACCOUNTS else super().get_template_names()
+
+    def post(self, request, *args, **kwargs):
+        if settings.FREEZE_ACCOUNTS:
+            return HttpResponseForbidden()
+        return super().post(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["log"] = log_data(self.request)
