@@ -63,6 +63,33 @@ class TestLoginView:
             ],
         )
 
+    @override_settings(FREEZE_ACCOUNTS=True)
+    def test_login_after_freeze(self, caplog, client):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory()
+
+        response = client.get(url)
+        assertContains(response, "Connexion")
+        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assert get_user(client).is_authenticated is True
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.pk, "event": "login"},
+                )
+            ],
+        )
+
     def test_no_next_url(self, caplog, client):
         user = UserFactory()
 
@@ -785,6 +812,38 @@ class TestRegisterView:
             "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
         )
 
+    @override_settings(FREEZE_ACCOUNTS=True)
+    def test_no_register_after_freeze(self, caplog, client):
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
+
+        response = client.get(url)
+        assertTemplateUsed(response, "no_register.html")
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
+        assertNotContains(response, 'type="submit"')
+
+        user_email = "user@mailinator.com"
+        response = client.post(
+            url,
+            data={
+                "email": user_email,
+                "first_name": "Jack",
+                "last_name": "Jackson",
+                "password1": DEFAULT_PASSWORD,
+                "password2": DEFAULT_PASSWORD,
+                "terms_accepted": "on",
+            },
+        )
+        assert response.status_code == 403
+        assert not User.objects.exists()
+        assert not EmailAddress.objects.exists()
+        assertRecords(
+            caplog,
+            [
+                ("django.request", logging.WARNING, "Forbidden: /accounts/register/"),
+            ],
+        )
+
 
 class TestActivateAccountView:
     def test_activate_account(self, caplog, client):
@@ -1039,6 +1098,55 @@ class TestActivateAccountView:
                         },
                     },
                 )
+            ],
+        )
+
+    @override_settings(FREEZE_ACCOUNTS=True)
+    def test_no_activation_after_freeze(self, caplog, client):
+        application = ApplicationFactory()
+        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
+        user = UserFactory.build(email="me@mailinator.com")
+
+        # If missing params in oidc session
+        response = client.get(url)
+        assert response.status_code == 400
+        assertRecords(
+            caplog,
+            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
+        )
+
+        client_session = client.session
+        client_session[OIDC_SESSION_KEY] = {
+            "login_hint": user.email,
+            "firstname": user.first_name,
+            "lastname": user.last_name,
+            "client_id": application.client_id,
+        }
+        client_session.save()
+        response = client.get(url)
+        assertTemplateUsed(response, "no_register.html")
+        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
+        assertNotContains(response, 'type="submit"')
+
+        response = client.post(
+            url,
+            data={
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "password1": DEFAULT_PASSWORD,
+                "password2": DEFAULT_PASSWORD,
+                "terms_accepted": "on",
+            },
+        )
+        assert response.status_code == 403
+        assert not User.objects.exists()
+        assert not EmailAddress.objects.exists()
+        assertRecords(
+            caplog,
+            [
+                ("django.request", logging.WARNING, "Forbidden: /accounts/activate/"),
             ],
         )
 

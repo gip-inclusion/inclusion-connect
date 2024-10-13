@@ -13,7 +13,13 @@ from django.db.models import F
 from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertNotContains, assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import (
+    assertContains,
+    assertNotContains,
+    assertQuerySetEqual,
+    assertRedirects,
+    assertTemplateUsed,
+)
 
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.oidc_federation.enums import Federation
@@ -456,6 +462,38 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
     assert user.next_redirect_uri is None
 
 
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_register_endpoint_after_freeze(caplog, client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
+    user = UserFactory.build(email="")
+
+    auth_complete_url = add_url_params(reverse("oauth2_provider:register"), oidc_params)
+    response = client.get(auth_complete_url, follow=True)
+    assertRedirects(response, reverse("accounts:register"))
+    assertTemplateUsed(response, "no_register.html")
+    assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
+    assertNotContains(response, 'type="submit"')
+    assertRecords(caplog, [])
+
+    user_email = "email@mailinator.com"
+    response = client.post(
+        reverse("accounts:register"),
+        data={
+            "email": user_email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assert response.status_code == 403
+    assertRecords(
+        caplog,
+        [("django.request", logging.WARNING, "Forbidden: /accounts/register/")],
+    )
+
+
 @freeze_time("2023-05-05 11:11:11")
 @pytest.mark.parametrize(
     "auth_url",
@@ -598,6 +636,42 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
+
+
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_activate_endpoint_after_freeze(caplog, client, oidc_params):
+    ApplicationFactory(client_id=oidc_params["client_id"])
+    user = UserFactory.build()
+
+    auth_params = oidc_params | {
+        "login_hint": user.email,
+        "firstname": "firstname",
+        "lastname": "lastname",
+    }
+    auth_complete_url = add_url_params(reverse("oauth2_provider:activate"), auth_params)
+    response = client.get(auth_complete_url, follow=True)
+    assertRedirects(response, reverse("accounts:activate"))
+    assertTemplateUsed(response, "no_register.html")
+    assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
+    assertNotContains(response, 'type="submit"')
+    assertRecords(caplog, [])
+
+    response = client.post(
+        reverse("accounts:activate"),
+        data={
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "password1": DEFAULT_PASSWORD,
+            "password2": DEFAULT_PASSWORD,
+            "terms_accepted": "on",
+        },
+    )
+    assert response.status_code == 403
+    assertRecords(
+        caplog,
+        [("django.request", logging.WARNING, "Forbidden: /accounts/activate/")],
+    )
 
 
 @freeze_time("2023-05-05 11:11:11")
