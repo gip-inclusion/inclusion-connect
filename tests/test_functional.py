@@ -10,7 +10,6 @@ from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.db.models import F
-from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
 from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
@@ -1792,7 +1791,6 @@ def test_use_peama(client, oidc_params, requests_mock, caplog):
     assertRedirects(response, reverse("accounts:login"))
 
 
-@override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
 @freeze_time("2023-05-05 11:11:11")
 def test_login_weak_password(caplog, client, oidc_params):
     auth_url = reverse("oauth2_provider:authorize")

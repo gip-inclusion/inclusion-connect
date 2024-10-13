@@ -2348,16 +2348,6 @@ class TestChangeTemporaryPasswordView:
 
 
 class TestChangeWeakPasswordView:
-    def test_feature_is_disabled(self, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(password=make_password("weak_password"))
-        response = client.post(url, data={"email": user.email, "password": "weak_password"})
-        user.refresh_from_db()
-        assert user.password_is_too_weak is False
-        assertRedirects(response, redirect_url)
-
-    @override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
     def test_view(self, caplog, client):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
@@ -2399,7 +2389,6 @@ class TestChangeWeakPasswordView:
             ],
         )
 
-    @override_settings(FORCE_WEAK_PASSWORD_UPDATE=True)
     def test_invalid_password(self, caplog, client):
         user = UserFactory(first_name="Manuel", last_name="Calavera", password=make_password("weak_password"))
 
