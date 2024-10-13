@@ -2094,6 +2094,26 @@ class TestConfirmEmailTokenView:
             ],
         )
 
+    @override_settings(FREEZE_ACCOUNTS=True)
+    @freeze_time("2023-04-26 11:11:11")
+    def test_no_confirm_email_after_freeze(self, caplog, client):
+        user = UserFactory(email="")
+        email = "me@mailinator.com"
+        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
+        token = email_verification_token(email)
+        session = client.session
+        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
+        session.save()
+        response = client.get(self.url(user, token))
+        assertTemplateUsed(response, "no_confirm_email.html")
+        email_address.refresh_from_db()
+        assert email_address.verified_at is None
+        user.refresh_from_db()
+        assert user.email == ""
+        assert get_user(client).is_authenticated is False
+        assert EMAIL_CONFIRM_KEY in client.session
+        assertRecords(caplog, [])
+
     @freeze_time("2023-04-26 11:11:11")
     def test_confirm_email_from_other_client(self, caplog, client, oidc_params):
         user = UserFactory(email="")

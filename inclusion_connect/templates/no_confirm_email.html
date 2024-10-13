@@ -1,0 +1,24 @@
+{% extends "layout/left_content.html" %}
+{% load django_bootstrap5 %}
+{% load inclusionconnect_fields %}
+
+{% block content %}
+
+    <h1 class="h2">Impossible de confirmer votre adresse e-mail</h1>
+
+    <div class="alert alert-warning">
+        <p>
+            Inclusion Connect devient ProConnect ! Depuis le 1er octobre 2024 la création de compte ou le changement d'adresse e-mail sur Inclusion Connect n’est plus possible.
+        </p>
+        <p>
+            Vous avez déjà un compte Inclusion Connect ?
+            <a href="{% url 'login' %}" class="btn btn-link matomo-event" data-matomo-category="inscription" data-matomo-action="clic" data-matomo-name="Connectez-vous">cliquez ici</a>
+            pour vous connecter.
+        </p>
+        <p>
+            Sinon, veuillez vous rapprocher de votre fournisseur de service pour plus d’informations sur la mise à disposition de ProConnect, qui doit intervenir dans les meilleurs délais.
+        </p>
+        <a href="{{ MIGRATION_PAGE_URL }}" target="_blank" rel="noopener">Besoin d’aide ?</a>
+    </div>
+
+{% endblock %}
