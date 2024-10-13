@@ -1661,6 +1661,37 @@ class TestEditUserInfoView:
             [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")],
         )
 
+    @override_settings(FREEZE_ACCOUNTS=True)
+    def test_edit_after_freeze(self, client, caplog):
+        application = ApplicationFactory()
+        user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
+        client.force_login(
+            user,
+            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
+        )
+        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
+        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+        response = client.get(edit_user_info_url)
+        assertRecords(caplog, [])
+        assertNotContains(response, 'type="submit"')
+        assertContains(response, "vous ne pouvez plus modifier vos informations personnelles")
+        response = client.post(
+            edit_user_info_url,
+            data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
+            follow=True,
+        )
+        assert response.status_code == 403
+        user.refresh_from_db()
+        assert user.first_name == "Jean"
+        assert user.last_name == "Dupond"
+        assert user.email == "jean.dupond@email.com"
+        assertRecords(
+            caplog,
+            [
+                ("django.request", logging.WARNING, "Forbidden: /accounts/my-account/"),
+            ],
+        )
+
 
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
