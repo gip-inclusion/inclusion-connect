@@ -423,3 +423,9 @@ PEAMA_USER_ENDPOINT = os.getenv("PEAMA_USER_ENDPOINT")
 PEAMA_SCOPES = os.getenv("PEAMA_SCOPES")
 PEAMA_JWKS_ENDPOINT = os.getenv("PEAMA_JWKS_ENDPOINT")
 PEAMA_LOGOUT_ENDPOINT = os.getenv("PEAMA_LOGOUT_ENDPOINT")
+
+# ProConect mirgation
+# -------------------
+
+FREEZE_ACCOUNTS = os.getenv("FREEZE_ACCOUNTS")
+MIGRATION_PAGE_URL = "https://gip-inclusion.notion.site/5cfeffaf5d634a1a8275cdcf757be2f8"

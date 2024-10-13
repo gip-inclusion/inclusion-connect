@@ -4,7 +4,28 @@
 {% block section_title %}Informations générales{% endblock %}
 
 {% block content %}
-    {% if user.federation %}
+    {% if FREEZE_ACCOUNTS %}
+        <div class="alert alert-warning">
+            {% if request.user.federation == "peama" %}
+                <p class="mb-0">
+                    <b>Compte agent France Travail</b>
+                </p>
+                <p class="mb-0">Vous ne pouvez pas modifier ces informations depuis votre espace Inclusion Connect.</p>
+            {% else %}
+                <p class="mb-0">
+                    Depuis le 1er octobre 2024, date du passage à ProConnect vous ne pouvez plus modifier vos informations personnelles (Prénom, Nom, E-mail) depuis votre espace Inclusion Connect.
+                </p>
+                <a href="{{ MIGRATION_PAGE_URL }}" target="_blank" rel="noopener">Besoin d’aide ?</a>
+            {% endif %}
+        </div>
+        <div>
+            Prénom : <strong>{{ request.user.first_name }}</strong>
+            <br>
+            Nom : <strong>{{ request.user.last_name }}</strong>
+            <br>
+            Adresse e-mail : <strong>{{ request.user.email }}</strong>
+        </div>
+    {% elif user.federation %}
         <div class="alert alert-warning">
             {% if user.federation == "peama" %}
                 <p class="mb-0">

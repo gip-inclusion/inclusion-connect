@@ -10,9 +10,10 @@ from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.db.models import F
+from django.test import override_settings
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertNotContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY
 from inclusion_connect.oidc_federation.enums import Federation
@@ -1428,6 +1429,118 @@ def test_edit_user_info_and_password(caplog, client, mailoutbox):  # noqa: PLR09
     response = client.post(
         reverse("accounts:login"),
         data={"email": "my@email.com", "password": "V€r¥--$3©®€7"},
+        follow=True,
+    )
+    assert get_user(client).is_authenticated is True
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
+    )
+
+
+@override_settings(FREEZE_ACCOUNTS=True)
+def test_no_edit_user_info_and_password_after_freeze(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
+    application = ApplicationFactory()
+    user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
+    verified_email = user.email
+    referrer_uri = "https://go/back/there"
+    params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
+    edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
+    change_password_url = add_url_params(reverse("accounts:change_password"), params)
+
+    # User is redirected to login
+    response = client.get(edit_user_info_url)
+    assertRedirects(
+        response,
+        add_url_params(reverse("accounts:login"), {"next": edit_user_info_url}),
+    )
+
+    response = client.post(
+        response.url,
+        data={"email": user.email, "password": DEFAULT_PASSWORD},
+        follow=True,
+    )
+    assertRedirects(response, edit_user_info_url)
+    assertContains(response, "<h1>\n                Informations générales\n            </h1>")
+
+    # The redirect cleans `next_url` from the session.
+    assert "next_url" not in client.session
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.pk, "event": "login"},
+            )
+        ],
+    )
+
+    # Page contains return to referrer link
+    assertContains(response, "Retour")
+    assertContains(response, referrer_uri)
+
+    # Cannot edit user info
+    assertContains(response, "vous ne pouvez plus modifier vos informations personnelles")
+    assertNotContains(response, 'type="submit"')
+    response = client.post(
+        edit_user_info_url,
+        data={"last_name": "Doe", "first_name": "John", "email": "my@email.com"},
+    )
+    assert response.status_code == 403
+
+    user.refresh_from_db()
+    assert user.first_name != "John"
+    assert user.last_name != "Doe"
+    assert user.email == verified_email
+    assertRecords(
+        caplog,
+        [
+            ("django.request", logging.WARNING, "Forbidden: /accounts/my-account/"),
+        ],
+    )
+    assert mailoutbox == []
+
+    # Go change password
+    response = client.get(change_password_url)
+    assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
+    response = client.post(
+        change_password_url,
+        data={
+            "old_password": DEFAULT_PASSWORD,
+            "new_password1": "V€r¥--$3©®€7",
+            "new_password2": "V€r¥--$3©®€7",
+        },
+    )
+    assert get_user(client).is_authenticated is True
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "event": "change_password",
+                    "user": user.pk,
+                    "application": application.client_id,
+                },
+            )
+        ],
+    )
+
+    client.logout()
+    assert get_user(client).is_authenticated is False
+
+    # User may login with new password
+    response = client.post(
+        reverse("accounts:login"),
+        data={"email": user.email, "password": "V€r¥--$3©®€7"},
         follow=True,
     )
     assert get_user(client).is_authenticated is True

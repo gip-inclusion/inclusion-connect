@@ -460,6 +460,8 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         return response
 
     def post(self, request, *args, **kwargs):
+        if settings.FREEZE_ACCOUNTS:
+            return HttpResponseForbidden()
         if self.get_object().federation:
             return HttpResponseForbidden()
         return super().post(request, *args, **kwargs)
