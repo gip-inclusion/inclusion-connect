@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.backends import ModelBackend
 from django.core.exceptions import ValidationError
@@ -26,6 +25,6 @@ class EmailAuthenticationBackend(ModelBackend):
                 try:
                     password_validation.validate_password(password)
                 except ValidationError:
-                    user.password_is_too_weak = settings.FORCE_WEAK_PASSWORD_UPDATE
-                    user.save()
+                    user.password_is_too_weak = True
+                    user.save(update_fields=["password_is_too_weak"])
                 return user

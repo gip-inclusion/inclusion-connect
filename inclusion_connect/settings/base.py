@@ -151,9 +151,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "inclusion_connect.utils.password_validation.CnilCompositionPasswordValidator"},
 ]
 
-FORCE_WEAK_PASSWORD_UPDATE = os.getenv("FORCE_WEAK_PASSWORD_UPDATE") == "True"
-
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
