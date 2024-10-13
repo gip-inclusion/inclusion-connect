@@ -1,3 +1,4 @@
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_safe
@@ -23,11 +24,5 @@ def accessibility(request, template_name="accessibility.html", **kwargs):
 
 
 @require_safe
-def security_txt(request, template_name="security.txt", **kwargs):
-    # https://www.rfc-editor.org/rfc/rfc9116
-    # https://securitytxt.org/ can be helpful in generating the document.
-    return render(
-        request,
-        template_name,
-        content_type="text/plain; charset=utf-8",
-    )
+def security_txt(request):
+    return HttpResponseRedirect("https://inclusion.beta.gouv.fr/.well-known/security.txt")
