@@ -54,6 +54,7 @@ class AdminPasswordChangeForm(forms.Form):
         super().__init__(*args, **kwargs)
 
     def clean_password(self):
+        self.cleaned_data["set_usable_password"] = True
         password = self.cleaned_data.get("password")
         password_validation.validate_password(password, self.user)
         return password

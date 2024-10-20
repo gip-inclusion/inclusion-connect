@@ -755,13 +755,15 @@ class TestUserAdmin:
         response = client.get(response.url)
         assertContains(
             response,
-            '<select name="groups" aria-describedby="id_groups_helptext" id="id_groups" multiple class="selectfilter" '
+            '<select name="groups" data-context="available-source" aria-describedby="id_groups_helptext" '
+            'id="id_groups" multiple class="selectfilter" '
             'data-field-name="groupes" data-is-stacked="0">',
             count=1,
         )
         assertContains(
             response,
-            '<select name="user_permissions" aria-describedby="id_user_permissions_helptext" id="id_user_permissions" '
+            '<select name="user_permissions" data-context="available-source" '
+            'aria-describedby="id_user_permissions_helptext" id="id_user_permissions" '
             'multiple class="selectfilter" data-field-name="permissions de l’utilisateur" data-is-stacked="0">',
             count=1,
         )
