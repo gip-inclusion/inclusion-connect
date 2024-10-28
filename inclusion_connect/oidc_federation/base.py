@@ -99,7 +99,7 @@ class OIDCAuthenticationBackend(ConfigMixin, auth.OIDCAuthenticationBackend):
             messages.error(
                 self.request,
                 format_html(
-                    "La création de votre compte a échoué. Depuis le 1er octobre 2024, date du passage à ProConnect, "
+                    "La création de votre compte a échoué. Depuis le 28 octobre 2024, date du passage à ProConnect, "
                     "vous ne pouvez plus créer de compte Inclusion Connect. "
                     "Veuillez vous rapprocher de votre fournisseur de service pour plus d’informations sur la mise à "
                     "disposition de ProConnect, qui doit intervenir dans les meilleurs délais. "
