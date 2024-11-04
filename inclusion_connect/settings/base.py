@@ -203,8 +203,8 @@ SESSION_COOKIE_NAME = "INCLUSION_CONNECT"
 # Force browser to end session when closing.
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Set django session ligespan to 30 minutes
-SESSION_COOKIE_AGE = 60 * 30
+# Set django session ligespan to 30 minute by default
+SESSION_COOKIE_AGE = int(60 * 60 * float(os.getenv("SESSION_DURATION", "0.5")))
 
 SESSION_COOKIE_SAMESITE = "None"
 
