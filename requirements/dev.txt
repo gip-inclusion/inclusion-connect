@@ -909,9 +909,9 @@ syrupy==4.7.2 \
     --hash=sha256:ea45e099f242de1bb53018c238f408a5bb6c82007bc687aefcbeaa0e1c2e935a \
     --hash=sha256:eae7ba6be5aed190237caa93be288e97ca1eec5ca58760e4818972a10c4acc64
     # via -r requirements/dev.in
-tqdm==4.66.6 \
-    --hash=sha256:223e8b5359c2efc4b30555531f09e9f2f3589bcd7fdd389271191031b49b7a63 \
-    --hash=sha256:4bdd694238bef1485ce839d67967ab50af8f9272aab687c0d7702a01da0be090
+tqdm==4.67.0 \
+    --hash=sha256:0cd8af9d56911acab92182e88d763100d4788bdf421d251616040cc4d44863be \
+    --hash=sha256:fe5a6f95e6fe0b9755e9469b77b9c3cf850048224ecaa8293d7d2d31f97d869a
     # via djlint
 traitlets==5.14.3 \
     --hash=sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7 \
