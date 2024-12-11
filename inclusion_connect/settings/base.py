@@ -388,7 +388,7 @@ CSP_SCRIPT_SRC = [
     "'self'",
     # https://docs.sentry.io/platforms/javascript/install/loader/#content-security-policy
     "https://browser.sentry-cdn.com",
-    "https://js.sentry-cdn.com",
+    "https://js-de.sentry-cdn.com",
 ]
 CSP_CONNECT_SRC = ["'self'", "*.sentry.io"]
 CSP_OBJECT_SRC = ["'none'"]
