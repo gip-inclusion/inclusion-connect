@@ -406,8 +406,9 @@ djlint==1.36.3 \
     --hash=sha256:e82266c28793cd15f97b93535d72bfbc77306eaaf6b210dd90910383a814ee6c \
     --hash=sha256:f65a80e0b5cb13d357ea51ca6570b34c2d9d18974c1e57142de760ea27d49ed0
     # via -r requirements/dev.in
-editorconfig==0.12.4 \
-    --hash=sha256:24857fa1793917dd9ccf0c7810a07e05404ce9b823521c7dce22a4fb5d125f80
+editorconfig==0.17.0 \
+    --hash=sha256:8739052279699840065d3a9f5c125d7d5a98daeefe53b0e5274261d77cb49aa2 \
+    --hash=sha256:fe491719c5f65959ec00b167d07740e7ffec9a3f362038c72b289330b9991dfc
     # via
     #   cssbeautifier
     #   jsbeautifier
