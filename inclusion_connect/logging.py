@@ -3,7 +3,7 @@ import threading
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 
 from inclusion_connect.utils.oidc import oidc_params
 
@@ -18,7 +18,7 @@ def log_data(request, next_url=None):
     return log_data
 
 
-class JsonFormatter(jsonlogger.JsonFormatter):
+class JsonFormatter(JsonFormatter):
     def parse(self):
         # Remove the empty key "message".
         return []
