@@ -420,9 +420,9 @@ elastic-transport==8.15.1 \
     # via
     #   -r requirements/base.txt
     #   elasticsearch
-elasticsearch==8.16.0 \
-    --hash=sha256:83d9fe09e8e95880559da43e44976c1e11cc63fe96bc0c0592f3d64f371772bf \
-    --hash=sha256:d2aaa92f44ebea3c4147389aeba038c0b42a017f8c52ff35b1e7ebc34c49adb7
+elasticsearch==8.17.0 \
+    --hash=sha256:15965240fe297279f0e68b260936d9ced9606aa7ef8910b9b56727f96ef00d5b \
+    --hash=sha256:c1069bf2204ba8fab29ff00b2ce6b37324b2cc6ff593283b97df43426ec13053
     # via -r requirements/base.txt
 execnet==2.1.1 \
     --hash=sha256:26dee51f1b80cebd6d0ca8e74dd8745419761d3bef34163928cbebbdc4749fdc \
