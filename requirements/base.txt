@@ -227,12 +227,12 @@ cryptography==44.0.0 \
 dj-database-url==2.3.0 \
     --hash=sha256:ae52e8e634186b57e5a45e445da5dc407a819c2ceed8a53d1fac004cc5288787 \
     --hash=sha256:bb0d414ba0ac5cd62773ec7f86f8cc378a9dbb00a80884c2fc08cc570452521e
-    # via -r requirements/base.in
-django==5.1.4 \
-    --hash=sha256:236e023f021f5ce7dee5779de7b286565fdea5f4ab86bae5338e3f7b69896cf0 \
-    --hash=sha256:de450c09e91879fa5a307f696e57c851955c910a438a35e6b4c895e86bedc82a
+    # via -r base.in
+django==5.1.5 \
+    --hash=sha256:19bbca786df50b9eca23cee79d495facf55c8f5c54c529d9bf1fe7b5ea086af3 \
+    --hash=sha256:c46eb936111fffe6ec4bc9930035524a8be98ec2f74d8a0ff351226a3e52f459
     # via
-    #   -r requirements/base.in
+    #   -r base.in
     #   dj-database-url
     #   django-anymail
     #   django-bootstrap5
@@ -244,27 +244,27 @@ django==5.1.4 \
 django-anymail==12.0 \
     --hash=sha256:65789c1b0f42915aa0450a4f173f77572d4c552979b748ddd8125af41972ad30 \
     --hash=sha256:de8458d713d0f9776da9ed04dcd3a0161be23e9ecbcb49dcf149219700ecd274
-    # via -r requirements/base.in
+    # via -r base.in
 django-bootstrap5==24.3 \
     --hash=sha256:98f7916f9f7f9c34dfe157f7c062a28ebf6d17ff95307bef260ba794ba34e2a0 \
     --hash=sha256:ca5ec5568fc2a3fc239f0cb8ce41a7df3802b8c4af930d7f64451784ec7ddc16
-    # via -r requirements/base.in
+    # via -r base.in
 django-citext==1.0.2 \
     --hash=sha256:375a2d6a06133ad9e375f0db62d4d606fa43428de14751d03856b9c702c0000f \
     --hash=sha256:6ae71eb36442a61f1b2df5355c8ead9722b283a7b726cdfabcf0ff873a6b7613
-    # via -r requirements/base.in
+    # via -r base.in
 django-cors-headers==4.6.0 \
     --hash=sha256:14d76b4b4c8d39375baeddd89e4f08899051eeaf177cb02a29bd6eae8cf63aa8 \
     --hash=sha256:8edbc0497e611c24d5150e0055d3b178c6534b8ed826fb6f53b21c63f5d48ba3
-    # via -r requirements/base.in
+    # via -r base.in
 django-csp==3.8 \
     --hash=sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719 \
     --hash=sha256:ef0f1a9f7d8da68ae6e169c02e9ac661c0ecf04db70e0d1d85640512a68471c0
-    # via -r requirements/base.in
+    # via -r base.in
 django-oauth-toolkit==3.0.1 \
     --hash=sha256:3ef00b062a284f2031b0732b32dc899e3bbf0eac221bbb1cffcb50b8932e55ed \
     --hash=sha256:7200e4a9fb229b145a6d808cbf0423b6d69a87f68557437733eec3c0cf71db02
-    # via -r requirements/base.in
+    # via -r base.in
 elastic-transport==8.15.1 \
     --hash=sha256:9cac4ab5cf9402668cf305ae0b7d93ddc0c7b61461d6d1027850db6da9cc5742 \
     --hash=sha256:b5e82ff1679d8c7705a03fd85c7f6ef85d6689721762d41228dd312e34f331fc
@@ -272,7 +272,7 @@ elastic-transport==8.15.1 \
 elasticsearch==8.17.0 \
     --hash=sha256:15965240fe297279f0e68b260936d9ced9606aa7ef8910b9b56727f96ef00d5b \
     --hash=sha256:c1069bf2204ba8fab29ff00b2ce6b37324b2cc6ff593283b97df43426ec13053
-    # via -r requirements/base.in
+    # via -r base.in
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
@@ -288,7 +288,7 @@ jwcrypto==1.5.6 \
 mozilla-django-oidc==4.0.1 \
     --hash=sha256:04ef58759be69f22cdc402d082480aaebf193466cad385dc9e4f8df2a0b187ca \
     --hash=sha256:4ff8c64069e3e05c539cecf9345e73225a99641a25e13b7a5f933ec897b58918
-    # via -r requirements/base.in
+    # via -r base.in
 oauthlib==3.2.2 \
     --hash=sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca \
     --hash=sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918
@@ -297,7 +297,7 @@ psycopg[binary]==3.2.3 \
     --hash=sha256:644d3973fe26908c73d4be746074f6e5224b03c1101d302d9a53bf565ad64907 \
     --hash=sha256:a5764f67c27bec8bfac85764d23c534af2c27b893550377e37ce59c12aac47a2
     # via
-    #   -r requirements/base.in
+    #   -r base.in
     #   django-citext
 psycopg-binary==3.2.3 \
     --hash=sha256:0463a11b1cace5a6aeffaf167920707b912b8986a9c7920341c75e3686277920 \
@@ -372,7 +372,7 @@ pycparser==2.22 \
 pyjwt==2.10.1 \
     --hash=sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953 \
     --hash=sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb
-    # via -r requirements/base.in
+    # via -r base.in
 pyopenssl==24.3.0 \
     --hash=sha256:49f7a019577d834746bc55c5fce6ecbcec0f2b4ec5ce1cf43a9a173b8138bb36 \
     --hash=sha256:e474f5a473cd7f92221cc04976e48f4d11502804657a08a989fb3be5514c904a
@@ -380,11 +380,11 @@ pyopenssl==24.3.0 \
 python-dotenv==1.0.1 \
     --hash=sha256:e324ee90a023d808f1959c46bcbc04446a10ced277783dc6ee09987c37ec10ca \
     --hash=sha256:f7b63ef50f1b690dddf550d03497b66d609393b40b564ed0d674909a68ebf16a
-    # via -r requirements/base.in
+    # via -r base.in
 python-json-logger==3.2.1 \
     --hash=sha256:8eb0554ea17cb75b05d2848bc14fb02fbdbd9d6972120781b974380bfa162008 \
     --hash=sha256:cdc17047eb5374bd311e748b42f99d71223f3b0e186f4206cc5d52aefe85b090
-    # via -r requirements/base.in
+    # via -r base.in
 requests==2.32.3 \
     --hash=sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760 \
     --hash=sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6
@@ -395,7 +395,7 @@ requests==2.32.3 \
 sentry-sdk==2.19.2 \
     --hash=sha256:467df6e126ba242d39952375dd816fbee0f217d119bf454a8ce74cf1e7909e8d \
     --hash=sha256:ebdc08228b4d131128e568d696c210d846e5b9d70aa0327dec6b1272d9d40b84
-    # via -r requirements/base.in
+    # via -r base.in
 sqlparse==0.5.3 \
     --hash=sha256:09f67787f56a0b16ecdbde1bfc7f5d9c3371ca683cfeaa8e6ff60b4807ec9272 \
     --hash=sha256:cf2196ed3418f3ba5de6af7e82c694a9fbdbfecccdfc72e281548517081f16ca
@@ -417,4 +417,4 @@ urllib3==2.3.0 \
     #   sentry-sdk
 uwsgi==2.0.28 \
     --hash=sha256:79ca1891ef2df14508ab0471ee8c0eb94bd2d51d03f32f90c4bbe557ab1e99d0
-    # via -r requirements/base.in
+    # via -r base.in
