@@ -277,9 +277,9 @@ idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
     --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
     # via requests
-josepy==1.14.0 \
-    --hash=sha256:308b3bf9ce825ad4d4bba76372cf19b5dc1c2ce96a9d298f9642975e64bd13dd \
-    --hash=sha256:d2b36a30f316269f3242f4c2e45e15890784178af5ec54fa3e49cf9234ee22e0
+josepy==1.15.0 \
+    --hash=sha256:46c9b13d1a5104ffbfa5853e555805c915dcde71c2cd91ce5386e84211281223 \
+    --hash=sha256:878c08cedd0a892c98c6d1a90b3cb869736f9c751f68ec8901e7b05a0c040fed
     # via mozilla-django-oidc
 jwcrypto==1.5.6 \
     --hash=sha256:150d2b0ebbdb8f40b77f543fb44ffd2baeff48788be71f67f03566692fd55789 \

@@ -478,9 +478,9 @@ jedi==0.19.2 \
     --hash=sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0 \
     --hash=sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9
     # via ipython
-josepy==1.14.0 \
-    --hash=sha256:308b3bf9ce825ad4d4bba76372cf19b5dc1c2ce96a9d298f9642975e64bd13dd \
-    --hash=sha256:d2b36a30f316269f3242f4c2e45e15890784178af5ec54fa3e49cf9234ee22e0
+josepy==1.15.0 \
+    --hash=sha256:46c9b13d1a5104ffbfa5853e555805c915dcde71c2cd91ce5386e84211281223 \
+    --hash=sha256:878c08cedd0a892c98c6d1a90b3cb869736f9c751f68ec8901e7b05a0c040fed
     # via
     #   -r requirements/base.txt
     #   mozilla-django-oidc
