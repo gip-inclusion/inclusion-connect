@@ -484,8 +484,9 @@ josepy==1.14.0 \
     # via
     #   -r requirements/base.txt
     #   mozilla-django-oidc
-jsbeautifier==1.15.1 \
-    --hash=sha256:ebd733b560704c602d744eafc839db60a1ee9326e30a2a80c4adb8718adc1b24
+jsbeautifier==1.15.3 \
+    --hash=sha256:5f1baf3d4ca6a615bb5417ee861b34b77609eeb12875555f8bbfabd9bf2f3457 \
+    --hash=sha256:b207a15ab7529eee4a35ae7790e9ec4e32a2b5026d51e2d0386c3a65e6ecfc91
     # via
     #   cssbeautifier
     #   djlint
@@ -920,10 +921,7 @@ typing-extensions==4.12.2 \
     #   -r requirements/base.txt
     #   dj-database-url
     #   faker
-    #   ipython
     #   jwcrypto
-    #   psycopg
-    #   pyopenssl
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
