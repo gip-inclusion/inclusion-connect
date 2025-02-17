@@ -315,8 +315,9 @@ cryptography==44.0.0 \
     #   jwcrypto
     #   mozilla-django-oidc
     #   pyopenssl
-cssbeautifier==1.15.1 \
-    --hash=sha256:9f7064362aedd559c55eeecf6b6bed65e05f33488dcbe39044f0403c26e1c006
+cssbeautifier==1.15.3 \
+    --hash=sha256:0dcaf5ce197743a79b3a160b84ea58fcbd9e3e767c96df1171e428125b16d410 \
+    --hash=sha256:406b04d09e7d62c0be084fbfa2cba5126fe37359ea0d8d9f7b963a6354fc8303
     # via djlint
 decorator==5.1.1 \
     --hash=sha256:637996211036b6385ef91435e4fae22989472f9d571faba8927ba8253acbc330 \
@@ -920,10 +921,7 @@ typing-extensions==4.12.2 \
     #   -r requirements/base.txt
     #   dj-database-url
     #   faker
-    #   ipython
     #   jwcrypto
-    #   psycopg
-    #   pyopenssl
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
