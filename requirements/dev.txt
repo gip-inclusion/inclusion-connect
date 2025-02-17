@@ -872,9 +872,9 @@ ruff==0.9.1 \
     --hash=sha256:f0c8b149e9c7353cace7d698e1656ffcf1e36e50f8ea3b5d5f7f87ff9986a7ca \
     --hash=sha256:fd2b25ecaf907d6458fa842675382c8597b3c746a2dde6717fe3415425df0c17
     # via -r requirements/dev.in
-sentry-sdk==2.19.2 \
-    --hash=sha256:467df6e126ba242d39952375dd816fbee0f217d119bf454a8ce74cf1e7909e8d \
-    --hash=sha256:ebdc08228b4d131128e568d696c210d846e5b9d70aa0327dec6b1272d9d40b84
+sentry-sdk==2.21.0 \
+    --hash=sha256:7623cfa9e2c8150948a81ca253b8e2bfe4ce0b96ab12f8cd78e3ac9c490fd92f \
+    --hash=sha256:a6d38e0fb35edda191acf80b188ec713c863aaa5ad8d5798decb8671d02077b6
     # via -r requirements/base.txt
 six==1.17.0 \
     --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
@@ -920,10 +920,7 @@ typing-extensions==4.12.2 \
     #   -r requirements/base.txt
     #   dj-database-url
     #   faker
-    #   ipython
     #   jwcrypto
-    #   psycopg
-    #   pyopenssl
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
