@@ -899,9 +899,9 @@ stack-data==0.6.3 \
     --hash=sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9 \
     --hash=sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695
     # via ipython
-syrupy==4.8.0 \
-    --hash=sha256:544f4ec6306f4b1c460fdab48fd60b2c7fe54a6c0a8243aeea15f9ad9c638c3f \
-    --hash=sha256:648f0e9303aaa8387c8365d7314784c09a6bab0a407455c6a01d6a4f5c6a8ede
+syrupy==4.8.2 \
+    --hash=sha256:1fee874d422cfb1342aa746a65936d6500178beeb6fe26cb3a970c626fbe6058 \
+    --hash=sha256:8418748be9cc050bf156d2e6c551dbc1768d591d36652e945a52ab3b0303a899
     # via -r requirements/dev.in
 tqdm==4.67.1 \
     --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2 \
@@ -920,10 +920,7 @@ typing-extensions==4.12.2 \
     #   -r requirements/base.txt
     #   dj-database-url
     #   faker
-    #   ipython
     #   jwcrypto
-    #   psycopg
-    #   pyopenssl
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
