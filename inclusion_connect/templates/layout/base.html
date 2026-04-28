@@ -41,30 +41,6 @@
         {% include "layout/_footer.html" %}
 
 
-        {% if MATOMO_BASE_URL %}
-            <script src="{% static "vendor/tarteaucitron.js-1.16.1/tarteaucitron.min.js" %}"></script>
-            <script nonce="{{ CSP_NONCE }}">
-                // Tarteaucitron's language is set according to the browser configuration
-                // but a lot of users don't know how to change it.
-                // This can be forced only by using a global `var` statement.
-                // https://github.com/AmauriC/tarteaucitron.js/blob/92352be63744a0a949e55b83d0f89324ce82b45f/tarteaucitron.js#L10C5-L10C31
-                var tarteaucitronForceLanguage = "fr";
-
-                tarteaucitron.init({
-                    "privacyUrl": "{% static PRIVACY_POLICY_PATH %}",
-                    "orientation": "bottom",
-                    "handleBrowserDNTRequest": true,
-                    "removeCredit": true,
-                    "useExternalCss": true,
-                    "readmoreLink": "{% static PRIVACY_POLICY_PATH %}",
-                    "mandatory": false,
-                });
-                tarteaucitron.user.matomoHost = "{{ MATOMO_BASE_URL }}";
-                tarteaucitron.user.matomoId = {{ MATOMO_SITE_ID }};
-                (tarteaucitron.job = tarteaucitron.job || []).push('matomo');
-            </script>
-        {% endif %}
-
         {# Add Je donne mon avis or NPS #}
 
         <script src="{% static "vendor/bootstrap-5.3.1/popper.min.js" %}"></script>

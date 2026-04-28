@@ -26,15 +26,12 @@
             </div>
         </fieldset>
         <div>
-            <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="inscription" data-matomo-action="clic" data-matomo-name="S'inscrire">
-                S'inscrire
-            </button>
+            <button class="btn btn-block btn-primary">S'inscrire</button>
         </div>
     </form>
-
     <hr class="my-3 my-lg-4">
     <div class="text-center">
-        Vous avez déjà un compte ?<a href="{% url 'login' %}" class="btn btn-link matomo-event" data-matomo-category="inscription" data-matomo-action="clic" data-matomo-name="Connectez-vous">Connectez-vous</a>
+        Vous avez déjà un compte ?<a href="{% url 'login' %}" class="btn btn-link">Connectez-vous</a>
     </div>
 
 {% endblock %}

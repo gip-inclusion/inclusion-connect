@@ -2,7 +2,6 @@ import datetime
 import logging
 from urllib.parse import quote
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
@@ -797,10 +796,7 @@ class TestPasswordResetView:
                     (
                         messages.SUCCESS,
                         "Si un compte existe avec cette adresse e-mail, "
-                        "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                        f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                        'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                        "J’ai besoin d’aide</a>",
+                        "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
                     ),
                 ],
             )
@@ -880,10 +876,7 @@ class TestPasswordResetView:
                 (
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                    "J’ai besoin d’aide</a>",
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
                 ),
             ],
         )
@@ -935,10 +928,7 @@ class TestPasswordResetView:
                 (
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                    "J’ai besoin d’aide</a>",
+                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
                 ),
             ],
         )

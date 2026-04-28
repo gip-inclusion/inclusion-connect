@@ -12,8 +12,4 @@ def expose_settings(*args):
         ]
     }
 
-    global_constants_settings_to_expose = {
-        "MATOMO_SITE_ID": settings.MATOMO_SITE_ID,
-        "MATOMO_BASE_URL": settings.MATOMO_BASE_URL,
-    }
-    return {**settings_to_expose, **global_constants_settings_to_expose}
+    return {**settings_to_expose}

@@ -12,7 +12,6 @@ from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http
-from django.utils.html import format_html
 from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
 
 from inclusion_connect.accounts import emails, forms
@@ -157,13 +156,8 @@ class PasswordResetView(auth_views.PasswordResetView):
     def get_success_url(self):
         messages.success(
             self.request,
-            format_html(
-                "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                '<br><a href="{}" class="matomo-event" data-matomo-category="aide" data-matomo-action="clic" '
-                "data-matomo-name=\"J'ai besoin d'aide (mdp reset)\">J’ai besoin d’aide</a>",
-                settings.FAQ_URL,
-            ),
+            "Si un compte existe avec cette adresse e-mail, "
+            "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
         )
         return reverse("accounts:login")
 
