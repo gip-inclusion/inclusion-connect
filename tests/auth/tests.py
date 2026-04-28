@@ -1,18 +1,19 @@
 from django.contrib.auth import get_user
 from django.urls import reverse
+from pytest_django.asserts import assertRedirects, assertTemplateUsed
 
 from inclusion_connect.auth.backends import EmailAuthenticationBackend
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 def test_admin_login(client):
-    user = UserFactory(is_superuser=True, is_staff=True)
-    admin_login_url = reverse("admin:login")
-    response = client.get(admin_login_url)
-    # Admin login form uses username
-    assert "username" in response.context["form"].fields
+    admin_login_url = reverse("admin_login")
+    response = client.get(reverse("admin:index"), follow=True)
+    assertRedirects(response, admin_login_url + "?next=/admin/")
+    assertTemplateUsed(response, "login.html")
 
-    response = client.post(admin_login_url, data={"username": user.email, "password": DEFAULT_PASSWORD})
+    user = UserFactory(is_superuser=True, is_staff=True)
+    response = client.post(admin_login_url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assert get_user(client).is_authenticated is True
 
 
