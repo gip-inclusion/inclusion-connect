@@ -1,14 +1,22 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      # https://github.com/dependabot/dependabot-core/issues/6345
+      - "/.github/actions/*"
+      - "/.github/actions/setup/*"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 5
 
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/requirements/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+    cooldown:
+      default-days: 5
     commit-message:
       prefix: "requirement"
       prefix-development: "dev requirement"
@@ -20,3 +28,7 @@ updates:
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: all
+    groups:
+      # All patch updates together, may be merged when CI is green.
+      patch-updates:
+        update-types: [ "patch" ]
