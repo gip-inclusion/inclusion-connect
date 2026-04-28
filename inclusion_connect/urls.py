@@ -19,10 +19,12 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from inclusion_connect import views
+from inclusion_connect.accounts.views import LoginView
 
 
 urlpatterns = [
     # Admin
+    path("admin/login/", LoginView.as_view(), name="admin_login"),
     path("admin/", admin.site.urls),
     # landing
     path("", views.home, name="homepage"),
