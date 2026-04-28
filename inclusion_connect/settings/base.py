@@ -347,12 +347,6 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
 
 
-# MATOMO
-# ------
-
-MATOMO_BASE_URL = os.getenv("MATOMO_BASE_URL")
-MATOMO_SITE_ID = os.getenv("MATOMO_SITE_ID")
-
 # Content Security Policy
 # -----------------------
 
@@ -378,13 +372,6 @@ CSP_OBJECT_SRC = ["'none'"]
 CSP_INCLUDE_NONCE_IN = ["script-src"]
 CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
 CSP_FRAME_ANCESTORS = os.getenv("CSP_FRAME_ANCESTORS", "").split(",")
-
-# CORS
-if MATOMO_BASE_URL:
-    CSP_IMG_SRC.append(MATOMO_BASE_URL)
-    CSP_SCRIPT_SRC.append(MATOMO_BASE_URL)
-    CSP_CONNECT_SRC.append(MATOMO_BASE_URL)
-# ----
 
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"
 

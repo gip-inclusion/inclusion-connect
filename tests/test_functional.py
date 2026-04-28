@@ -4,7 +4,6 @@ import logging
 import re
 
 import pytest
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
@@ -703,10 +702,7 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             (
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                "J’ai besoin d’aide</a>",
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
             )
         ],
     )
@@ -805,10 +801,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             (
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                "J’ai besoin d’aide</a>",
+                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
             )
         ],
     )

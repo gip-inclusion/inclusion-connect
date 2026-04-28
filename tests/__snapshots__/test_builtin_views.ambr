@@ -160,7 +160,7 @@
                   <div class="s-footer-legal__col col-12">
                       <ul>
                           <li>
-                              <a class="matomo-event" data-matomo-action="clic" data-matomo-category="aide" data-matomo-name="Aide (footer)" href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08" target="_blank">Aide</a>
+                              <a href="https://plateforme-inclusion.notion.site/Questions-fr-quentes-74a872c96637484f8a7dbfa6b44eeb08" target="_blank">Aide</a>
   
                           </li>
                           <li>
@@ -186,30 +186,6 @@
   </footer>
   
   
-  
-          
-              <script src="/static/vendor/tarteaucitron.js-1.16.1/tarteaucitron.min.js"></script>
-              <script nonce="NORMALIZED_CSP_NONCE">
-                  // Tarteaucitron's language is set according to the browser configuration
-                  // but a lot of users don't know how to change it.
-                  // This can be forced only by using a global `var` statement.
-                  // https://github.com/AmauriC/tarteaucitron.js/blob/92352be63744a0a949e55b83d0f89324ce82b45f/tarteaucitron.js#L10C5-L10C31
-                  var tarteaucitronForceLanguage = "fr";
-  
-                  tarteaucitron.init({
-                      "privacyUrl": "/static/terms/Politique_de_confidentialite_v7.pdf",
-                      "orientation": "bottom",
-                      "handleBrowserDNTRequest": true,
-                      "removeCredit": true,
-                      "useExternalCss": true,
-                      "readmoreLink": "/static/terms/Politique_de_confidentialite_v7.pdf",
-                      "mandatory": false,
-                  });
-                  tarteaucitron.user.matomoHost = "https://matomo.example.com";
-                  tarteaucitron.user.matomoId = 1;
-                  (tarteaucitron.job = tarteaucitron.job || []).push('matomo');
-              </script>
-          
   
           
   
