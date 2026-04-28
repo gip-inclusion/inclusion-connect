@@ -1,9 +1,6 @@
 from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
-from django.forms import HiddenInput
-from django.urls import reverse
-from django.utils.html import format_html
 
 from inclusion_connect.accounts.emails import send_verification_email
 from inclusion_connect.users.models import EmailAddress, User
@@ -45,11 +42,7 @@ class LoginForm(forms.Form):
                     email_address = EmailAddress.objects.get(email=email, verified_at=None)
                 except EmailAddress.DoesNotExist as e:
                     raise ValidationError(
-                        (
-                            "Adresse e-mail ou mot de passe invalide."
-                            "\nSi vous n’avez pas encore créé votre compte Inclusion Connect, "
-                            "rendez-vous en bas de page et cliquez sur créer mon compte."
-                        ),
+                        ("Adresse e-mail ou mot de passe invalide."),
                         code="invalid_login",
                     ) from e
                 else:
@@ -83,70 +76,6 @@ def verified_email_field():
     email_field = fields["email"]
     email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
     return email_field
-
-
-class RegisterForm(auth_forms.UserCreationForm):
-    class Meta:
-        model = User
-        fields = ("last_name", "first_name")
-
-    def __init__(self, *args, initial, log, request, **kwargs):
-        self.log = log
-        self.request = request
-        super().__init__(*args, initial=initial, **kwargs)
-        for key in ["password1", "password2"]:
-            self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
-        # Do not record the email field on the User instance, the email must be validated first.
-        email_field = verified_email_field()
-        email_field.disabled = "email" in initial
-        self.fields["email"] = email_field
-
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        try:
-            email_address = EmailAddress.objects.get(email=email)
-        except EmailAddress.DoesNotExist:
-            self.log["email"] = email
-        else:
-            self.log["user"] = email_address.user_id
-            if email_address.verified_at:
-                code = "existing_email"
-                msg = format_html(
-                    'Un compte avec cette adresse e-mail existe déjà, <a href="{}">se connecter</a> ?',
-                    reverse("accounts:login"),
-                )
-            else:
-                code = "unverified_email"
-                send_verification_email(self.request, email_address)
-                msg = (
-                    "Un compte inactif avec cette adresse e-mail existe déjà, "
-                    "l’email de vérification vient d’être envoyé à nouveau."
-                )
-            raise ValidationError(msg, code=code)
-        return email
-
-    def save(self, commit=True):
-        user = super().save(commit=commit)
-        self.log["user"] = user.pk
-        save_unverified_email(user, self.cleaned_data["email"])
-        return user
-
-
-class ActivateAccountForm(RegisterForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in ["first_name", "last_name", "email"]:
-            self.fields[field].widget = HiddenInput()
-
-    def clean(self):
-        super().clean()
-        try:
-            error = self.errors["email"]
-        except KeyError:
-            pass
-        else:
-            # The email field is hidden, users can’t see the error message on the field.
-            self.add_error(None, error)
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):

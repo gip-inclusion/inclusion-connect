@@ -12,14 +12,7 @@ OIDC_SESSION_KEY = "oidc_params"
 def oidc_params(request, next_url=None):
     session_params = request.session.get(OIDC_SESSION_KEY, {})
     if not session_params and next_url:
-        if any(
-            next_url.startswith(path)
-            for path in [
-                reverse("oauth2_provider:authorize"),
-                reverse("oauth2_provider:register"),
-                reverse("oauth2_provider:activate"),
-            ]
-        ):
+        if next_url.startswith(reverse("oauth2_provider:authorize")):
             return get_url_params(next_url)
     return session_params
 
