@@ -9,7 +9,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertRedirects
+from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
@@ -104,17 +104,6 @@ class TestLogoutView:
         with freeze_time("2023-05-05 14:59:21"):
             params = {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"}
             response = call_logout(client, "get", params)
-            assert response.status_code == 200
-            assert get_user(client).is_authenticated is False  # The session expired
-            assert has_ongoing_sessions(user) is False  # The session expired
-            assert token_are_revoked(user) is False  # But the refresh tokens are still valid
-            assertContains(
-                response,
-                '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
-            )
-
-            params["allow"] = True
-            response = call_logout(client, "post", params)
             assertRedirects(response, "http://callback/", fetch_redirect_response=False)
 
             assert get_user(client).is_authenticated is False

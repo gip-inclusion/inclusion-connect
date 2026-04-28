@@ -629,22 +629,6 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                 "post_logout_redirect_uri": "http://callback/",
             },
         )
-        assert response.status_code == 200
-        assertContains(
-            response,
-            '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
-        )
-        assertRecords(caplog, [])
-
-        response = call_logout(
-            client,
-            "post",
-            {
-                "client_id": oidc_params["client_id"],
-                "post_logout_redirect_uri": "http://callback/",
-                "allow": True,
-            },
-        )
         assertRecords(
             caplog,
             [

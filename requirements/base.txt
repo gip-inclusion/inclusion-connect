@@ -280,9 +280,9 @@ django-csp==3.8 \
     --hash=sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719 \
     --hash=sha256:ef0f1a9f7d8da68ae6e169c02e9ac661c0ecf04db70e0d1d85640512a68471c0
     # via -r requirements/base.in
-django-oauth-toolkit==3.0.1 \
-    --hash=sha256:3ef00b062a284f2031b0732b32dc899e3bbf0eac221bbb1cffcb50b8932e55ed \
-    --hash=sha256:7200e4a9fb229b145a6d808cbf0423b6d69a87f68557437733eec3c0cf71db02
+django-oauth-toolkit==3.2.0 \
+    --hash=sha256:bd2cd2719b010231a2f370f927dbcc740454fb1d0dd7e7f4138f36227363dc26 \
+    --hash=sha256:c36761ae6810083d95a652e9c820046cde0d45a2e2a5574bbe7202656ec20bb6
     # via -r requirements/base.in
 elastic-transport==8.17.0 \
     --hash=sha256:59f553300866750e67a38828fede000576562a0e66930c641adb75249e0c95af \
@@ -300,9 +300,9 @@ jwcrypto==1.5.7 \
     --hash=sha256:70204d7cca406eda8c82352e3c41ba2d946610dafd19e54403f0a1f4f18633c6 \
     --hash=sha256:729463fefe28b6de5cf1ebfda3e94f1a1b41d2799148ef98a01cb9678ebe2bb0
     # via django-oauth-toolkit
-oauthlib==3.2.2 \
-    --hash=sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca \
-    --hash=sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918
+oauthlib==3.3.1 \
+    --hash=sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9 \
+    --hash=sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1
     # via django-oauth-toolkit
 psycopg[binary]==3.2.3 \
     --hash=sha256:644d3973fe26908c73d4be746074f6e5224b03c1101d302d9a53bf565ad64907 \
