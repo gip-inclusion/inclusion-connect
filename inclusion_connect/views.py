@@ -1,5 +1,6 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_safe
 
 
@@ -8,6 +9,8 @@ def csrf_failure(request, template_name="403_csrf.html", **kwargs):
 
 
 def home(request, template_name="homepage.html", **kwargs):
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(reverse("accounts:change_password"))
     return render(request, template_name)
 
 
