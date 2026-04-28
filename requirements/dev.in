@@ -10,7 +10,6 @@ ipdb  # https://github.com/gotcha/ipdb
 
 # Code quality
 # ------------------------------------------------------------------------------
-coverage  # https://github.com/nedbat/coveragepy
 djlint  # https://www.djlint.com
 ruff  # https://github.com/charliermarsh/ruff
 pre-commit  # https://github.com/pre-commit/pre-commit
@@ -30,5 +29,6 @@ pytest  # https://github.com/pytest-dev/pytest
 pytest-django # https://github.com/pytest-dev/pytest-django/
 pytest-mock  # https://github.com/pytest-dev/pytest-mock/
 pytest-xdist  # https://pypi.org/project/pytest-xdist/
+pytest-cov # https://pypi.org/project/pytest-cov/
 syrupy  # https://github.com/tophat/syrupy
 requests-mock  #https://github.com/jamielennox/requests-mock
