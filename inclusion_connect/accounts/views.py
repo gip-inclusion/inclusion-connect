@@ -14,8 +14,6 @@ from inclusion_connect.accounts.helpers import login
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.stats import helpers as stats_helpers
-from inclusion_connect.stats.models import Actions
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint
 
@@ -47,11 +45,7 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         response = super().form_valid(form)
         log = form.log
         log["event"] = self.EVENT_NAME
-        if "application" not in log:
-            if application := stats_helpers.get_application(self.request, self.get_success_url()):
-                log["application"] = application.client_id
         transaction.on_commit(partial(logger.info, log))
-        stats_helpers.account_action(form.get_user(), Actions.LOGIN, self.request, self.get_success_url())
         return response
 
 
@@ -125,7 +119,6 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         response = super().form_valid(form)
         self.log(self.EVENT_NAME, form)
         self.log(LoginView.EVENT_NAME, form)  # Also log a login here
-        stats_helpers.account_action(form.user, Actions.LOGIN, self.request, self.get_success_url())
         return response
 
 

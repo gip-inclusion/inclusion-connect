@@ -1,5 +1,4 @@
 # Functional tests for all documented customer processes
-import datetime
 import logging
 import re
 
@@ -10,13 +9,8 @@ from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import (
-    assertContains,
-    assertQuerySetEqual,
-    assertRedirects,
-)
+from pytest_django.asserts import assertContains, assertRedirects
 
-from inclusion_connect.stats.models import Stats
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
@@ -46,7 +40,7 @@ def get_verification_link(body):
     ],
 )
 def test_login_endpoint(auth_url, caplog, client, oidc_params):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -97,17 +91,13 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
             )
         ],
     )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
-    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 @freeze_time("2023-05-05 11:11:11")
 def test_login_after_password_reset(caplog, client, oidc_params):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
@@ -196,17 +186,13 @@ def test_login_after_password_reset(caplog, client, oidc_params):
             )
         ],
     )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
-    )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 @freeze_time("2023-05-05 11:11:11")
 def test_login_after_password_reset_other_client(caplog, client, oidc_params):
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
 
     auth_url = reverse("oauth2_provider:authorize")
@@ -296,10 +282,6 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 },
             )
         ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
     )
 
     oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
@@ -819,20 +801,12 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
     application_2 = ApplicationFactory()
     oidc_params["client_id"] = application_2.client_id
     oidc_complete_flow(client, user, oidc_params, caplog, application=application_2)
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [
-            (datetime.date(2023, 5, 1), user.pk, application_1.pk, "login"),
-            (datetime.date(2023, 5, 1), user.pk, application_2.pk, "login"),
-        ],
-        ordered=False,
-    )
 
 
 @freeze_time("2023-05-05 11:11:11")
 def test_login_weak_password(caplog, client, oidc_params):
     auth_url = reverse("oauth2_provider:authorize")
-    application = ApplicationFactory(client_id=oidc_params["client_id"])
+    ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory(password=make_password("weak_password"))
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
@@ -906,10 +880,6 @@ def test_login_weak_password(caplog, client, oidc_params):
                 },
             )
         ],
-    )
-    assertQuerySetEqual(
-        Stats.objects.values_list("date", "user", "application", "action"),
-        [(datetime.date(2023, 5, 1), user.pk, application.pk, "login")],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
