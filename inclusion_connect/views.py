@@ -10,7 +10,7 @@ def csrf_failure(request, template_name="403_csrf.html", **kwargs):
 
 def home(request, template_name="homepage.html", **kwargs):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(reverse("accounts:change_password"))
+        return HttpResponseRedirect(reverse("accounts:home"))
     return render(request, template_name)
 
 

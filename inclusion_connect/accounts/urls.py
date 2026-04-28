@@ -12,6 +12,7 @@ urlpatterns = [
     re_path(
         r"^change-temporary-password/$", views.ChangeTemporaryPassword.as_view(), name="change_temporary_password"
     ),
+    re_path(r"^home/$", views.HomeView.as_view(), name="home"),
     re_path(r"^change-password/$", views.PasswordChangeView.as_view(), name="change_password"),
     re_path(r"^change-weak-password/$", views.ChangeWeakPassword.as_view(), name="change_weak_password"),
 ]
