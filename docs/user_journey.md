@@ -97,40 +97,6 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   <summary>6) L’utilisateur rentre un nouveau mot de passe et clique sur “Soumettre” et est redirigé vers la plateforme</summary>
 </details>
 
-## Parcours de migration de compte
-
-- <details>
-  <summary>1) La plateforme envoi l’utilisateur directement sur la page de création de compte en pré-remplissant les champs email / prénom / nom</summary>
-
-  ![image info](img/activate-1.jpg)
-
-  - <details>
-    <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
-
-    http://0.0.0.0:8080/auth/activate?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=mJGvp3qwBMkD%3AYedrAibh8pHw0yx3mY8-L2Zp-vhLe8D-rL2aClHm9zQ&nonce=CbBAoMxEUIJR&login_hint=mon%40email.com&lastname=Nom&firstname=Pr%C3%A9nom
-
-    L’url est celle de l’endpoint Registration: `https://{hostname}/auth/activate`
-
-    Les paramètres à renseigner sont:
-
-    - `**response_type**` : La valeur `code`
-    - `**client_id**` : Le `CLIENT_ID` qui vous été fourni
-    - `**redirect_uri**` : L’url à laquelle sera redirigée l’utilisateur à la fin du processus sur Inclusion Connect
-    - `**scope**` : La valeur `openid profile email`
-    - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
-    - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
-    - **`login_hint`** pour l’email
-    - **`firstname`** pour le prénom
-    - **`lastname`** pour le nom
-
-    Les paramètres **`login_hint` `firstname`** et **`lastname`** sont obligatoires (une erreur `Missing activation parameters` sera affichée dans le cas où l’un manque)
-
-  </details>
-
-</details>
-
-La suite du parcours est le même que pour le [Parcours de création de compte - Nouvel utilisateur](#Parcours-de-création-de-compte---Nouvel-utilisateur)
-
 ## Déconnexion en passant par la page Inclusion Connect
 
 La déconnexion peut être faite de deux manières:
