@@ -181,3 +181,9 @@ class TestUserAdmin:
         user.password_is_temporary = True
         user.save()
         assert get_password_form_field() == snapshot(name="temporary password")
+
+    def test_logout(self, client):
+        user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(user)
+        response = client.post(reverse("admin:logout"))
+        assertRedirects(response, reverse("accounts:login"))
