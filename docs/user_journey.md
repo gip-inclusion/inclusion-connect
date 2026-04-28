@@ -174,32 +174,3 @@ La déconnexion peut être faite de deux manières:
   </details>
 
 </details>
-
-## Modification des informations personnelles
-
-On peut accéder à l’espace « mon compte » pour modifier son email, nom, prénom et mot de passe.
-
-Il faut d’abord se connecter sur Inclusion Connect.
-
-Afin que les informations personnelles de l’utilisateur soient mises à jour sur la plateforme, il faut que la plateforme refasse une connexion à Inclusion Connect. Le mieux est donc de rediriger l’utilisateur vers le tunnel de connexion de la plateforme pour que la cinématique de connexion soit immédiatement refaite.
-
-Pour se faire, il faut passer les paramètres (`referrer` et `referrer_uri`, voir paramètres DEV plus bas)
-
-![image info](img/edit-user-info.jpg)
-
-- <details>
-  <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
-
-  http://0.0.0.0:8080/accounts/my-account/?referrer=local_inclusion_connect&referrer_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fauthorize%3Fnext_url%3Dhttp%253A%252F%252Flocalhost%253A8000%252Fdashboard%252Fedit_user_info%26user_kind%3Dprescriber
-
-  L’url est : `https://{hostname}/accounts/my-account/`
-
-  Les paramètres à renseigner :
-
-  - `**referrer**` : Le `CLIENT_ID` qui vous été fourni
-  - `**referrer_uri**` : L’url à laquelle sera redirigée l’utilisateur après avoir modifié ces informations personnelles.
-  - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail utilisé pour se connecter si l'utilisateur n'a plus de session en cours sur Inclusion Connect.
-
-  Vous **devez** renseigner ces deux paramètres pour que le bouton de renvoi vers l’application soit affiché.
-
-</details>

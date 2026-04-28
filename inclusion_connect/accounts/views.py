@@ -1,26 +1,22 @@
 import logging
-import uuid
 from functools import partial
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
-from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.urls import reverse
-from django.utils import http
-from django.views.generic import FormView, TemplateView, UpdateView, View
+from django.views.generic import FormView
 
-from inclusion_connect.accounts import emails, forms
+from inclusion_connect.accounts import forms
 from inclusion_connect.accounts.helpers import login
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.stats import helpers as stats_helpers
 from inclusion_connect.stats.models import Actions
-from inclusion_connect.users.models import EmailAddress, User
+from inclusion_connect.users.models import User
 from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint
 
 
@@ -84,8 +80,8 @@ class PasswordResetView(auth_views.PasswordResetView):
         log = log_data(self.request)
         log["event"] = event_name
         try:
-            log["user"] = EmailAddress.objects.get(email=email).user_id
-        except EmailAddress.DoesNotExist:
+            log["user"] = User.objects.get(email=email).pk
+        except User.DoesNotExist:
             log["email"] = email
         transaction.on_commit(partial(logger.info, log))
 
@@ -131,114 +127,6 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         self.log(LoginView.EVENT_NAME, form)  # Also log a login here
         stats_helpers.account_action(form.user, Actions.LOGIN, self.request, self.get_success_url())
         return response
-
-
-class ConfirmEmailView(TemplateView):
-    template_name = "email_confirmation.html"
-    EVENT_NAME = "send_verification_email"
-
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            self.email_address = EmailAddress.objects.get(email=request.session[EMAIL_CONFIRM_KEY], verified_at=None)
-        except (KeyError, EmailAddress.DoesNotExist):
-            return HttpResponseRedirect(reverse("accounts:edit_user_info") + "?" + self.request.GET.urlencode())
-        return super().dispatch(request, *args, **kwargs)
-
-    def post(self, request):
-        messages.success(request, "E-mail de vérification envoyé.")
-        emails.send_verification_email(request, self.email_address)
-        log = log_data(self.request)
-        log["event"] = self.EVENT_NAME
-        log["user"] = self.email_address.user_id
-        transaction.on_commit(partial(logger.info, log))
-        return HttpResponseRedirect(self.request.get_full_path())
-
-
-def handle_email_confirmation(request, user_id, email):
-    log = log_data(request)
-    log["email"] = email
-    try:
-        email_address = EmailAddress.objects.select_related("user").get(user_id=user_id, email=email)
-    except EmailAddress.DoesNotExist:
-        log["event"] = f"{ConfirmEmailTokenView.EVENT_NAME}_error"
-        log["error"] = "email not found"
-        transaction.on_commit(partial(logger.info, log))
-        return HttpResponseNotFound()
-    log["user"] = email_address.user_id
-    if email_address.verified_at:
-        # Monitored by support team. https://itou-inclusion.slack.com/archives/C052401846P/p1686578574136939
-        log["event"] = f"{ConfirmEmailTokenView.EVENT_NAME}_error"
-        log["error"] = "already verified"
-        transaction.on_commit(partial(logger.info, log))
-        messages.info(request, "Cette adresse e-mail est déjà vérifiée.")
-        if request.user.is_authenticated:
-            url = reverse("accounts:edit_user_info")
-        else:
-            url = reverse("accounts:login")
-        return HttpResponseRedirect(url)
-    log["event"] = ConfirmEmailTokenView.EVENT_NAME
-    email_address.verify()
-    login(request, email_address.user)
-    try:
-        del request.session[EMAIL_CONFIRM_KEY]
-    except KeyError:
-        pass
-    next_url = get_next_url(request)
-    if next_url.startswith(reverse("accounts:edit_user_info")):
-        messages.success(request, "Votre adresse e-mail a été mise à jour.")
-
-    application = stats_helpers.get_application(request, next_url)
-    if application and "application" not in log:
-        log["application"] = application.client_id
-    transaction.on_commit(partial(logger.info, log))
-
-    log = log.copy()
-    log["event"] = LoginView.EVENT_NAME  # Also log a login here
-    transaction.on_commit(partial(logger.info, log))
-    stats_helpers.account_action(email_address.user, Actions.LOGIN, request, next_url)
-    return HttpResponseRedirect(next_url)
-
-
-def handle_signature_expired(request, email):
-    log = log_data(request)
-    log["event"] = f"{ConfirmEmailTokenView.EVENT_NAME}_error"
-    log["error"] = "link expired"
-    log["email"] = email
-    try:
-        log["user"] = EmailAddress.objects.get(email=email).user_id
-    except EmailAddress.DoesNotExist:
-        pass
-    # Monitored by support team. https://itou-inclusion.slack.com/archives/C052401846P/p1686578574136939
-    transaction.on_commit(partial(logger.info, log))
-    request.session[EMAIL_CONFIRM_KEY] = email
-    messages.error(request, "Le lien de vérification d’adresse e-mail a expiré.")
-    return HttpResponseRedirect(reverse("accounts:confirm-email"))
-
-
-class ConfirmEmailTokenView(View):
-    EVENT_NAME = "confirm_email_address"
-
-    @staticmethod
-    def decode_email(encoded_email):
-        return http.urlsafe_base64_decode(encoded_email).decode()
-
-    def get(self, request, uidb64, token):
-        try:
-            uid = uuid.UUID(http.urlsafe_base64_decode(uidb64).decode())
-        except (TypeError, ValueError, OverflowError) as e:
-            raise Http404 from e
-        max_age = 24 * 60 * 60 * settings.EMAIL_LINKS_VALIDITY_DAYS
-        signer = TimestampSigner()
-        try:
-            encoded_email = signer.unsign(token, max_age=max_age)
-        except SignatureExpired:
-            encoded_email = signer.unsign(token)
-            email = self.decode_email(encoded_email)
-            return handle_signature_expired(request, email)
-        except BadSignature as e:
-            raise Http404 from e
-        email = self.decode_email(encoded_email)
-        return handle_email_confirmation(request, uid, email)
 
 
 class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
@@ -287,15 +175,10 @@ class MyAccountMixin(LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        edit_user_info_url = reverse("accounts:edit_user_info")
         edit_password_url = reverse("accounts:change_password")
 
         referrer_uri = self.request.GET.get("referrer_uri")
         return context | {
-            "edit_user_info": {
-                "url": edit_user_info_url + "?" + self.request.GET.urlencode(),
-                "active": False,
-            },
             "edit_password": {
                 "url": edit_password_url + "?" + self.request.GET.urlencode(),
                 "active": False,
@@ -309,53 +192,6 @@ class MyAccountMixin(LoginRequiredMixin):
     def get_success_url(self):
         # Stay on page
         return self.request.get_full_path()
-
-
-class EditUserInfoView(MyAccountMixin, UpdateView):
-    template_name = "edit_user_info.html"
-    form_class = forms.EditUserInfoForm
-    model = User
-    EVENT_NAME = "edit_user_info"
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        log = log_data(self.request)
-        log["event"] = f"{self.EVENT_NAME}_error"
-        log["user"] = self.request.user.pk
-        if self.application:
-            log["application"] = self.application.client_id
-        log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
-        return response
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["edit_user_info"]["active"] = True
-        return context
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        user = self.object
-        email = form.cleaned_data["email"]
-        log = log_data(self.request)
-        log["event"] = self.EVENT_NAME
-        log["user"] = self.request.user.pk
-        if self.application:
-            log["application"] = self.application.client_id
-        for key in form.changed_data:
-            log[f"old_{key}"] = form.initial[key]
-            log[f"new_{key}"] = form.cleaned_data[key]
-        transaction.on_commit(partial(logger.info, log))
-        if user.email != email and not form.email_case_changed(user):
-            # Do not hit the database again, we have all necessary information.
-            email_address = EmailAddress(user=user, email=email)
-            emails.send_verification_email(self.request, email_address, registration=False)
-            self.request.session[EMAIL_CONFIRM_KEY] = email
-            user.save_next_redirect_uri(self.request.get_full_path())
-            return HttpResponseRedirect(reverse("accounts:confirm-email") + "?" + self.request.GET.urlencode())
-        if form.changed_data:
-            messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
-        return response
 
 
 class PasswordChangeView(MyAccountMixin, FormView):

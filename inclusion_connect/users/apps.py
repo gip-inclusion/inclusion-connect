@@ -20,7 +20,6 @@ def ensure_support_group(*args, **kwargs):
             codename__in=[
                 "change_user",
                 "view_user",
-                "view_emailaddress",
                 "view_userapplicationlink",
             ]
         )

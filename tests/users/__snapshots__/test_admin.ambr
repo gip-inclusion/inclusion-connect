@@ -109,6 +109,115 @@
           </form>
   '''
 # ---
+# name: TestUserAdmin.test_search[b.b → only Bob]
+  '''
+  <table id="result_list">
+  <thead>
+  <tr>
+  
+  <th class="action-checkbox-column" scope="col">
+     
+     <div class="text"><span><input aria-label="Sélectionner tous les objets de cette page en vue d’une action" id="action-toggle" type="checkbox"/></span></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-username sorted ascending" scope="col">
+     
+         <div class="sortoptions">
+           <a class="sortremove" href="?o=&amp;q=b.b" title="Enlever du tri"></a>
+           
+           <a class="toggle ascending" href="?o=-1&amp;q=b.b" title="Inverser le tri"></a>
+         </div>
+     
+     <div class="text"><a href="?o=-1&amp;q=b.b">Username</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-email" scope="col">
+     
+     <div class="text"><a href="?o=2.1&amp;q=b.b">Adresse e-mail</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-first_name" scope="col">
+     
+     <div class="text"><a href="?o=3.1&amp;q=b.b">Prénom</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-last_name" scope="col">
+     
+     <div class="text"><a href="?o=4.1&amp;q=b.b">Nom</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-is_staff" scope="col">
+     
+     <div class="text"><a href="?o=5.1&amp;q=b.b">Statut équipe</a></div>
+     <div class="clear"></div>
+  </th>
+  </tr>
+  </thead>
+  <tbody>
+  
+  
+  <tr><td class="action-checkbox"><input aria-label="Choisir cet objet pour une action - Bob Bear — b.b@mailinator.com" class="action-select" name="_selected_action" type="checkbox" value="22222222-2222-2222-2222-222222222222"/></td><th class="field-username"><a href="/admin/users/user/22222222-2222-2222-2222-222222222222/change/?_changelist_filters=q%3Db.b">22222222-2222-2222-2222-222222222222</a></th><td class="field-email">b.b@mailinator.com</td><td class="field-first_name">Bob</td><td class="field-last_name">Bear</td><td class="field-is_staff"><img alt="False" src="/static/admin/img/icon-no.svg"/></td></tr>
+  
+  </tbody>
+  </table>
+  '''
+# ---
+# name: TestUserAdmin.test_search[mAiLiNaToR → all users, no duplicates, case insensitive]
+  '''
+  <table id="result_list">
+  <thead>
+  <tr>
+  
+  <th class="action-checkbox-column" scope="col">
+     
+     <div class="text"><span><input aria-label="Sélectionner tous les objets de cette page en vue d’une action" id="action-toggle" type="checkbox"/></span></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-username sorted ascending" scope="col">
+     
+         <div class="sortoptions">
+           <a class="sortremove" href="?o=&amp;q=mAiLiNaToR" title="Enlever du tri"></a>
+           
+           <a class="toggle ascending" href="?o=-1&amp;q=mAiLiNaToR" title="Inverser le tri"></a>
+         </div>
+     
+     <div class="text"><a href="?o=-1&amp;q=mAiLiNaToR">Username</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-email" scope="col">
+     
+     <div class="text"><a href="?o=2.1&amp;q=mAiLiNaToR">Adresse e-mail</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-first_name" scope="col">
+     
+     <div class="text"><a href="?o=3.1&amp;q=mAiLiNaToR">Prénom</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-last_name" scope="col">
+     
+     <div class="text"><a href="?o=4.1&amp;q=mAiLiNaToR">Nom</a></div>
+     <div class="clear"></div>
+  </th>
+  <th class="sortable column-is_staff" scope="col">
+     
+     <div class="text"><a href="?o=5.1&amp;q=mAiLiNaToR">Statut équipe</a></div>
+     <div class="clear"></div>
+  </th>
+  </tr>
+  </thead>
+  <tbody>
+  
+  
+  <tr><td class="action-checkbox"><input aria-label="Choisir cet objet pour une action - Bob Bear — b.b@mailinator.com" class="action-select" name="_selected_action" type="checkbox" value="22222222-2222-2222-2222-222222222222"/></td><th class="field-username"><a href="/admin/users/user/22222222-2222-2222-2222-222222222222/change/?_changelist_filters=q%3DmAiLiNaToR">22222222-2222-2222-2222-222222222222</a></th><td class="field-email">b.b@mailinator.com</td><td class="field-first_name">Bob</td><td class="field-last_name">Bear</td><td class="field-is_staff"><img alt="False" src="/static/admin/img/icon-no.svg"/></td></tr>
+  
+  
+  <tr><td class="action-checkbox"><input aria-label="Choisir cet objet pour une action - Charlie Dupont — c.dupont@mailinator.com" class="action-select" name="_selected_action" type="checkbox" value="44444444-4444-4444-4444-444444444444"/></td><th class="field-username"><a href="/admin/users/user/44444444-4444-4444-4444-444444444444/change/?_changelist_filters=q%3DmAiLiNaToR">44444444-4444-4444-4444-444444444444</a></th><td class="field-email">c.dupont@mailinator.com</td><td class="field-first_name">Charlie</td><td class="field-last_name">Dupont</td><td class="field-is_staff"><img alt="False" src="/static/admin/img/icon-no.svg"/></td></tr>
+  
+  </tbody>
+  </table>
+  '''
+# ---
 # name: TestUserAdmin.test_search_by_email_address[.chaplin → only Charlie Chaplin]
   '''
   <table id="result_list">
