@@ -93,10 +93,3 @@ coverage: $(VIRTUAL_ENV)
 
 shell_on_postgres_container:
 	docker exec -ti inclusion_connect_postgres /bin/bash
-
-# Deployment
-# =============================================================================
-
-.PHONY: deploy_prod
-deploy_prod:
-	./scripts/deploy_prod.sh
