@@ -12,7 +12,6 @@ from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
-from inclusion_connect.stats.models import Actions, Stats
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
 from inclusion_connect.utils.urls import get_url_params, is_inclusion_connect_url
@@ -108,12 +107,6 @@ class AuthorizationView(BaseAuthorizationView):
 
 
 def handle_app_authorized(sender, request, token, **kwargs):
-    Stats.objects.get_or_create(
-        user_id=token.user_id,
-        application_id=token.application_id,
-        date=timezone.localdate().replace(day=1),
-        action=Actions.LOGIN,
-    )
     log = log_data(request) | {
         "application": token.application.client_id,
         "event": "token",

@@ -57,7 +57,6 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "inclusion_connect.admin.apps.AdminConfig",
     "inclusion_connect.oidc_overrides",
-    "inclusion_connect.stats",
     "inclusion_connect.users",
     "inclusion_connect.utils",
 ]
