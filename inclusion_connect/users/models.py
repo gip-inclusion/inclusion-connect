@@ -21,7 +21,7 @@ class User(AbstractUser):
     # Change default id to uuid4 (used as sub in OIDC protocol) and use as pk
     username = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, primary_key=True)
 
-    email = CIEmailField(verbose_name="adresse e-mail", blank=True, db_index=True)
+    email = CIEmailField(verbose_name="adresse e-mail", db_index=True)
     password = models.CharField("mot de passe", max_length=256)  # allow compat with old keycloak passwords
 
     # Triggers for required actions

@@ -73,9 +73,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "email",
-                    citext.fields.CIEmailField(
-                        blank=True, db_index=True, max_length=254, verbose_name="adresse e-mail"
-                    ),
+                    citext.fields.CIEmailField(db_index=True, max_length=254, verbose_name="adresse e-mail"),
                 ),
                 ("password", models.CharField(max_length=256, verbose_name="mot de passe")),
                 ("password_is_temporary", models.BooleanField(default=False, verbose_name="mot de passe temporaire")),
