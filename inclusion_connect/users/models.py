@@ -21,7 +21,6 @@ class User(AbstractUser):
     # Change default id to uuid4 (used as sub in OIDC protocol) and use as pk
     username = models.UUIDField(unique=True, default=uuid.uuid4, editable=False, primary_key=True)
 
-    # Denormalized verified email. See EmailAddress.
     email = CIEmailField(verbose_name="adresse e-mail", blank=True, db_index=True)
     password = models.CharField("mot de passe", max_length=256)  # allow compat with old keycloak passwords
 
@@ -68,59 +67,6 @@ class User(AbstractUser):
         self.next_redirect_uri_stored_at = None
         self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
         return next_url
-
-
-class EmailAddress(models.Model):
-    """
-    Allows validating email adresses uniqueness regardless of their verified state.
-
-    Subscription: email address not verified, user.email is None
-    Email validation: email address verified, user.email == email
-
-    Upon email change: 2 email addresses, user.email == old_email:
-        - the old email address is verified
-        - the new email address is not verified
-    When the new email is verified, the old email address is deleted, user.email == new_email
-    """
-
-    email = CIEmailField("adresse e-mail", unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_addresses")
-    created_at = models.DateTimeField(editable=False, default=timezone.now, verbose_name="date de création")
-    verified_at = models.DateTimeField(null=True, blank=True, verbose_name="date de vérification")
-
-    class Meta:
-        verbose_name = "addresse e-mail"
-        verbose_name_plural = "addresses e-mail"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user"],
-                condition=models.Q(verified_at=None),
-                name="unique_email_not_verified_per_user",
-                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails non vérifiés.",
-            ),
-            models.UniqueConstraint(
-                fields=["user"],
-                condition=~models.Q(verified_at=None),
-                name="unique_email_verified_per_user",
-                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails vérifiés.",
-            ),
-        ]
-
-    def __str__(self):
-        verified = f"verified since {self.verified_at}" if self.verified_at else "not verified"
-        return f"{self.email}: {verified}"
-
-    def save(self, *args, **kwargs):
-        if self.verified_at:
-            self.user.email = self.email
-            self.user.save()
-        super().save(*args, **kwargs)
-
-    def verify(self, verified_at=None):
-        # Free unused email addresses for other users.
-        type(self).objects.filter(user_id=self.user_id).exclude(pk=self.pk).delete()
-        self.verified_at = verified_at or timezone.now()
-        self.save()
 
 
 class UserApplicationLink(models.Model):

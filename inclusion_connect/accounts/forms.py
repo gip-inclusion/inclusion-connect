@@ -2,9 +2,6 @@ from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 
-from inclusion_connect.accounts.emails import send_verification_email
-from inclusion_connect.users.models import EmailAddress, User
-
 
 EMAIL_FIELDS_WIDGET_ATTRS = {"placeholder": "nom@domaine.fr", "autocomplete": "email"}
 PASSWORD_PLACEHOLDER = "**********"
@@ -38,44 +35,14 @@ class LoginForm(forms.Form):
                 self.log["user"] = self.user_cache.pk
             else:
                 self.log["email"] = email
-                try:
-                    email_address = EmailAddress.objects.get(email=email, verified_at=None)
-                except EmailAddress.DoesNotExist as e:
-                    raise ValidationError(
-                        ("Adresse e-mail ou mot de passe invalide."),
-                        code="invalid_login",
-                    ) from e
-                else:
-                    send_verification_email(self.request, email_address)
-                    raise ValidationError(
-                        "Un compte inactif avec cette adresse e-mail existe déjà, "
-                        "l’email de vérification vient d’être envoyé à nouveau.",
-                        code="unverified_email",
-                    )
+                raise ValidationError(
+                    ("Adresse e-mail ou mot de passe invalide."),
+                    code="invalid_login",
+                )
         return self.cleaned_data
 
     def get_user(self):
         return self.user_cache
-
-
-def save_unverified_email(user, email):
-    """Maintain a single unverified email address per user."""
-    matched = EmailAddress.objects.filter(user=user, verified_at=None).update(email=email)
-    if not matched:
-        EmailAddress.objects.create(user=user, verified_at=None, email=email)
-
-
-def verified_email_field():
-    """
-    A forms.EmailField for email addresses that need verification
-
-    See :class:`inclusion_connect.models.EmailAddress` for an overview
-    of the email verification process.
-    """
-    fields = forms.fields_for_model(EmailAddress, fields=["email"])
-    email_field = fields["email"]
-    email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
-    return email_field
 
 
 class PasswordResetForm(auth_forms.PasswordResetForm):
@@ -105,39 +72,6 @@ class SetPasswordForm(auth_forms.SetPasswordForm):
     def save(self, commit=True):
         self.user.password_is_temporary = False
         return super().save(commit)
-
-
-class EditUserInfoForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ("last_name", "first_name")
-
-    def __init__(self, *args, initial, instance, **kwargs):
-        initial["email"] = instance.email
-        super().__init__(*args, initial=initial, instance=instance, **kwargs)
-        self.fields["email"] = verified_email_field()
-        self.fields["last_name"].widget.attrs["autofocus"] = True
-
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if EmailAddress.objects.exclude(user=self.instance).filter(email=email).exists():
-            raise ValidationError("Un compte avec cette adresse e-mail existe déjà.")
-        return email
-
-    def email_case_changed(self, user):
-        new_email = self.cleaned_data["email"]
-        return new_email.lower() == user.email.lower()
-
-    def save(self, commit=True):
-        user = super().save(commit=commit)
-        email = self.cleaned_data["email"]
-        if email != user.email:
-            if self.email_case_changed(user):
-                EmailAddress.objects.filter(user=user).update(email=email)
-                User.objects.filter(pk=user.pk).update(email=email)
-            else:
-                save_unverified_email(user, email)
-        return user
 
 
 class PasswordChangeForm(auth_forms.PasswordChangeForm):

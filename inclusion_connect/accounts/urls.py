@@ -12,9 +12,6 @@ urlpatterns = [
     re_path(
         r"^change-temporary-password/$", views.ChangeTemporaryPassword.as_view(), name="change_temporary_password"
     ),
-    re_path(r"^my-account/$", views.EditUserInfoView.as_view(), name="edit_user_info"),
     re_path(r"^change-password/$", views.PasswordChangeView.as_view(), name="change_password"),
-    path("confirm-email/", views.ConfirmEmailView.as_view(), name="confirm-email"),
-    path("confirm/<uidb64>/<token>/", views.ConfirmEmailTokenView.as_view(), name="confirm-email-token"),
     re_path(r"^change-weak-password/$", views.ChangeWeakPassword.as_view(), name="change_weak_password"),
 ]

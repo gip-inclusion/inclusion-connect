@@ -1,13 +1,10 @@
-import datetime
 import logging
 
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
-from django.db.models import F
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.html import escape
 from django.utils.http import urlsafe_base64_encode
@@ -19,13 +16,10 @@ from pytest_django.asserts import (
     assertTemplateUsed,
 )
 
-from inclusion_connect.accounts.tokens import email_verification_token
-from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY, PasswordResetView
-from inclusion_connect.users.models import EmailAddress
+from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages, assertRecords
-from tests.helpers import parse_response_to_soup
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -63,7 +57,7 @@ class TestLoginView:
             reverse("accounts:login"),
             data={"email": user.email, "password": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, reverse("accounts:edit_user_info"))
+        assertRedirects(response, reverse("accounts:change_password"))
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
@@ -154,55 +148,6 @@ class TestLoginView:
                                 {
                                     "message": "Adresse e-mail ou mot de passe invalide.",
                                     "code": "invalid_login",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_email_not_verified(self, caplog, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user_email = "me@mailinator.com"
-        user = UserFactory(email="")
-        EmailAddress.objects.create(user=user, email=user_email)
-
-        response = client.post(url, data={"email": user_email, "password": DEFAULT_PASSWORD})
-        assert response.status_code == 200
-        assert not get_user(client).is_authenticated
-        assertContains(
-            response,
-            """
-            <div class="alert alert-danger alert-dismissible" role="status">
-                <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="close"></button>
-                Un compte inactif avec cette adresse e-mail existe déjà, l’email de vérification vient d’être
-                envoyé à nouveau.
-            </div>
-            """,
-            html=True,
-            count=1,
-        )
-        [email] = mailoutbox
-        assert email.to == [user_email]
-        assert email.subject == "Vérification de l’adresse e-mail"
-        assert client.session["next_url"] == redirect_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "me@mailinator.com",
-                        "event": "login_error",
-                        "errors": {
-                            "__all__": [
-                                {
-                                    "message": "Un compte inactif avec cette adresse e-mail existe déjà, "
-                                    "l’email de vérification vient d’être envoyé à nouveau.",
-                                    "code": "unverified_email",
                                 }
                             ]
                         },
@@ -510,258 +455,6 @@ class TestPasswordResetConfirmView:
         )
 
 
-class TestEditUserInfoView:
-    def test_edit_name(self, caplog, client):
-        application = ApplicationFactory()
-        user = UserFactory(first_name="Manuel", last_name="Calavera")
-        verified_email = user.email
-        client.force_login(user)
-        referrer_uri = "https://go/back/there"
-        params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-        change_password_url = add_url_params(reverse("accounts:change_password"), params)
-
-        # Dont display return button without referrer_uri
-        response = client.get(reverse("accounts:edit_user_info"))
-        return_text = "Retour"
-        assertNotContains(response, return_text)
-        assertContains(
-            response,
-            f'<input type="email" name="email" value="{user.email}" placeholder="nom@domaine.fr" '
-            'autocomplete="email" class="form-control" required id="id_email">',
-            count=1,
-        )
-
-        # with referrer_uri
-        response = client.get(edit_user_info_url)
-        assertContains(response, "<h1>\n                Informations générales\n            </h1>")
-        # Left menu contains both pages
-        assertContains(response, escape(edit_user_info_url))
-        assertContains(response, escape(change_password_url))
-        # Page contains return to referrer link
-        assertContains(response, return_text)
-        assertContains(response, referrer_uri)
-
-        # Edit user info
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": user.email},
-            follow=True,
-        )
-        assertRedirects(response, edit_user_info_url)
-        assertContains(response, "Vos informations personnelles ont été mises à jour.")
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_last_name": "Calavera",
-                        "new_last_name": "Doe",
-                        "old_first_name": "Manuel",
-                        "new_first_name": "John",
-                    },
-                )
-            ],
-        )
-
-    def test_edit_email(self, caplog, client, mailoutbox):
-        application = ApplicationFactory()
-        verified_email = "oldjo@email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-
-        # Edit user info
-        response = client.post(
-            edit_user_info_url,
-            data={
-                "last_name": "Doe",
-                "first_name": "John",
-                "email": "jo-with-typo@email.com",
-            },
-        )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-        assert old.verified_at is not None
-        assert old.email == verified_email
-        assert new.verified_at is None
-        assert new.email == "jo-with-typo@email.com"
-        assert client.session[EMAIL_CONFIRM_KEY] == "jo-with-typo@email.com"
-        assert user.next_redirect_uri == edit_user_info_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": "jo-with-typo@email.com",
-                    },
-                )
-            ],
-        )
-
-        # Now, fix the typo.
-        user_email = "joe@email.com"
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": user_email},
-        )
-        assertRedirects(response, add_url_params(reverse("accounts:confirm-email"), params))
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        [old, new] = user.email_addresses.order_by(F("verified_at").asc(nulls_last=True))
-        assert old.verified_at is not None
-        assert old.email == verified_email
-        assert new.verified_at is None
-        assert new.email == user_email
-        assert client.session[EMAIL_CONFIRM_KEY] == user_email
-        assert user.next_redirect_uri == edit_user_info_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": user_email,
-                    },
-                )
-            ],
-        )
-
-        email = mailoutbox[1]  # Only check second emial, without the typo
-        assert email.to == [user_email]
-        assert email.subject == "Vérification de l’adresse e-mail"
-        uidb64 = urlsafe_base64_encode(str(user.pk).encode())
-        token = email_verification_token(user_email)
-        verify_path = reverse("accounts:confirm-email-token", kwargs={"uidb64": uidb64, "token": token})
-        verify_link = f"http://testserver{verify_path}"
-        assert email.body == (
-            "Bonjour,\n\n"
-            "Une demande de modification de compte a été effectuée avec votre adresse e-mail. Si\n"
-            "vous êtes à l’origine de cette requête, veuillez cliquer sur le lien ci-dessous\n"
-            "afin de vérifier votre adresse e-mail :\n\n"
-            f"{verify_link}\n\n"
-            "Ce lien expire dans 1 jour.\n\n"
-            "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
-            "---\n"
-            "L’équipe d’inclusion connect\n"
-        )
-        assert email.alternatives[0][0] == (
-            "<p>Bonjour,</p>\n\n    "
-            "<p>\n        Une demande de\n        \n            modification\n        \n        "
-            "de compte a été effectuée avec votre adresse\n"
-            "        e-mail. Si vous êtes à l’origine de cette requête&nbsp;:\n        <br>\n    </p>\n    <p>\n"
-            f'        <a href="{verify_link}">Vérifiez votre adresse email</a>.\n    </p>\n\n    '
-            "<p>Ce lien expire dans 1 jour.</p>\n\n    "
-            "<p>\n        <i>Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.</i>\n    "
-            "</p>\n\n<p>\n    ---\n    <br>\n    L’équipe d’inclusion connect\n</p>\n"
-        )
-
-    def test_edit_email_case(self, caplog, client):
-        application = ApplicationFactory()
-        verified_email = "ME@Email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-
-        new_email = "me@email.com"
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": new_email},
-        )
-
-        assertRedirects(response, edit_user_info_url)
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == "me@email.com"
-        email_address = user.email_addresses.get()
-        assert email_address.verified_at is not None
-        assert email_address.email == new_email
-        assert user.next_redirect_uri is None
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "old_email": verified_email,
-                        "new_email": new_email,
-                    },
-                )
-            ],
-        )
-
-    def test_edit_invalid(self, caplog, client):
-        application = ApplicationFactory()
-        verified_email = "verified@email.com"
-        user = UserFactory(first_name="John", last_name="Doe", email=verified_email)
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        response = client.post(add_url_params(reverse("accounts:edit_user_info"), params))
-        assert response.status_code == 200
-        user.refresh_from_db()
-        assert user.first_name == "John"
-        assert user.last_name == "Doe"
-        assert user.email == verified_email
-        emailaddress = user.email_addresses.get()
-        assert emailaddress.verified_at is not None
-        assert emailaddress.email == verified_email
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "edit_user_info_error",
-                        "user": user.pk,
-                        "application": application.client_id,
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
         application = ApplicationFactory()
@@ -769,7 +462,6 @@ class TestPasswordChangeView:
         client.force_login(user)
         referrer_uri = "https://go/back/there"
         params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
         change_password_url = add_url_params(reverse("accounts:change_password"), params)
 
         # Dont display return button without referrer_uri
@@ -784,7 +476,6 @@ class TestPasswordChangeView:
             "<h1>\n                Changer mon mot de passe\n            </h1>",
         )
         # Left menu contains both pages
-        assertContains(response, escape(edit_user_info_url))
         assertContains(response, escape(change_password_url))
         # Page contains return to referrer link
         assertContains(response, return_text)
@@ -881,378 +572,6 @@ class TestPasswordChangeView:
         )
 
 
-class TestConfirmEmailView:
-    def test_get_anonymous(self, client):
-        response = client.get(reverse("accounts:confirm-email"), follow=True)
-        assertRedirects(
-            response,
-            add_url_params(reverse("accounts:login"), {"next": reverse("accounts:edit_user_info")}),
-        )
-
-    def test_get_with_confirmed_email(self, client):
-        user = UserFactory()
-        client.force_login(user)
-        response = client.get(reverse("accounts:confirm-email"))
-        assertRedirects(response, reverse("accounts:edit_user_info"))
-
-    def test_get(self, client, snapshot):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        EmailAddress.objects.create(email=email, user=user)
-        session = client.session
-        session["email_to_confirm"] = email
-        session.save()
-        response = client.get(reverse("accounts:confirm-email"))
-        assert response.status_code == 200
-        assert str(parse_response_to_soup(response, selector="main")) == snapshot(
-            name="me@mailinator.com is present in page output"
-        )
-
-    def test_post(self, client, mailoutbox):
-        user = UserFactory(email="")
-        user_email = "me@mailinator.com"
-        EmailAddress.objects.create(email=user_email, user=user)
-        session = client.session
-        session["email_to_confirm"] = user_email
-        session.save()
-        email_confirmation_url = reverse("accounts:confirm-email")
-        response = client.post(email_confirmation_url)
-        assertRedirects(response, email_confirmation_url)
-        [email] = mailoutbox
-        assert email.to == [user_email]
-        assert email.subject == "Vérification de l’adresse e-mail"
-
-
-class TestConfirmEmailTokenView:
-    @staticmethod
-    def url(user, token):
-        return reverse(
-            "accounts:confirm-email-token",
-            kwargs={
-                "uidb64": urlsafe_base64_encode(str(user.pk).encode()),
-                "token": token,
-            },
-        )
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_confirm_email(self, caplog, client):
-        email_updated_msg = "Votre adresse e-mail a été mise à jour."
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        session = client.session
-        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
-        session.save()
-        response = client.get(self.url(user, token), follow=True)
-        assertRedirects(response, reverse("accounts:edit_user_info"))
-        assertContains(response, email_updated_msg)
-        email_address.refresh_from_db()
-        assert email_address.verified_at == timezone.now()
-        user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
-        assert client.session["_auth_user_id"] == str(user.pk)
-        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
-        assert EMAIL_CONFIRM_KEY not in client.session
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "me@mailinator.com",
-                        "user": user.pk,
-                        "event": "confirm_email_address",
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"email": "me@mailinator.com", "user": user.pk, "event": "login"},
-                ),
-            ],
-        )
-
-        client.logout()
-        with freeze_time(timezone.now() + datetime.timedelta(days=1)):
-            response = client.get(self.url(user, token), follow=True)
-        assertMessages(response, [(messages.INFO, "Cette adresse e-mail est déjà vérifiée.")])
-        assertRedirects(response, reverse("accounts:login"))
-        assertNotContains(response, email_updated_msg)
-        user.refresh_from_db()
-        assert user.email == "me@mailinator.com"
-        email_address.refresh_from_db()
-        assert email_address.verified_at == datetime.datetime(2023, 4, 26, 11, 11, 11, tzinfo=datetime.timezone.utc)
-        assert "_auth_user_id" not in client.session
-        assert "_auth_user_backend" not in client.session
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "me@mailinator.com",
-                        "user": user.pk,
-                        "event": "confirm_email_address_error",
-                        "error": "already verified",
-                    },
-                )
-            ],
-        )
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_invalidates_previous_email(self, client):
-        user = UserFactory(email="old@mailinator.com")
-        email = "new@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        response = client.get(self.url(user, token), follow=True)
-        assertRedirects(response, reverse("accounts:edit_user_info"))
-        assertContains(response, "Votre adresse e-mail a été mise à jour.")
-        # Previous and unused emails were deleted.
-        email_address = EmailAddress.objects.get()
-        assert email_address.verified_at == timezone.now()
-        assert email_address.email == "new@mailinator.com"
-        user.refresh_from_db()
-        assert user.email == "new@mailinator.com"
-        assert client.session["_auth_user_id"] == str(user.pk)
-        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
-
-    def test_expired_token(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        with freeze_time(timezone.now() - datetime.timedelta(days=1)):
-            token = email_verification_token(email)
-        response = client.get(self.url(user, token))
-        assertMessages(
-            response,
-            [(messages.ERROR, "Le lien de vérification d’adresse e-mail a expiré.")],
-        )
-        assert client.session[EMAIL_CONFIRM_KEY] == "me@mailinator.com"
-        assertRedirects(response, reverse("accounts:confirm-email"))
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert "_auth_user_id" not in client.session
-        assert "_auth_user_backend" not in client.session
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "confirm_email_address_error",
-                        "error": "link expired",
-                        "email": "me@mailinator.com",
-                        "user": user.pk,
-                    },
-                )
-            ],
-        )
-
-    def test_forged_uidb64(self, caplog, client):
-        user = UserFactory(email="")
-        other_user = UserFactory()
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        url = self.url(other_user, token)
-        response = client.get(url)
-        assert response.status_code == 404
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert "_auth_user_id" not in client.session
-        assert "_auth_user_backend" not in client.session
-        assertRecords(
-            caplog,
-            [
-                ("django.request", logging.WARNING, f"Not Found: {url}"),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "me@mailinator.com",
-                        "event": "confirm_email_address_error",
-                        "error": "email not found",
-                    },
-                ),
-            ],
-        )
-
-    def test_forged_token_bad_user_pk(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        response = client.get(
-            reverse(
-                "accounts:confirm-email-token",
-                kwargs={
-                    "uidb64": urlsafe_base64_encode(b"1234abc"),
-                    "token": token,
-                },
-            )
-        )
-        assert response.status_code == 404
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert "_auth_user_id" not in client.session
-        assert "_auth_user_backend" not in client.session
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
-
-    def test_forged_token_bad_email(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        bad_email = "evil@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        encoded_evil_email = urlsafe_base64_encode(bad_email.encode())
-        _encoded_email, timestamp, signature = token.split(":")
-        token = f"{encoded_evil_email}:{timestamp}:{signature}"
-        response = client.get(self.url(user, token))
-        assert response.status_code == 404
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert "_auth_user_id" not in client.session
-        assert "_auth_user_backend" not in client.session
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_forged_token(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        session = client.session
-        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
-        session.save()
-        token = "forged"
-        response = client.get(self.url(user, token))
-        assert response.status_code == 404
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert not get_user(client).is_authenticated
-        assert all(logger == "django.request" for logger, _level, _msg in caplog.record_tuples)
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_token_invalidated_by_email_change(self, caplog, client):
-        user = UserFactory(email="me@mailinator.com")
-        email = "new@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token1 = email_verification_token(email)
-        token2 = email_verification_token(email)
-        response = client.get(self.url(user, token2))
-        assertRedirects(response, reverse("accounts:edit_user_info"))
-        # Confirming the email address deletes old verified emails and pending verifications.
-        email_address = EmailAddress.objects.get()
-        assert email_address.email == email
-        assert email_address.verified_at == timezone.now()
-        user.refresh_from_db()
-        assert user.email == email
-        assert client.session["_auth_user_id"] == str(user.pk)
-        assert client.session["_auth_user_backend"] == "inclusion_connect.auth.backends.EmailAuthenticationBackend"
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "new@mailinator.com",
-                        "user": user.pk,
-                        "event": "confirm_email_address",
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"email": "new@mailinator.com", "user": user.pk, "event": "login"},
-                ),
-            ],
-        )
-
-        # token1 is invalidated, even if user is currently logged in.
-        response = client.get(self.url(user, token1))
-        assertMessages(response, [("INFO", "Cette adresse e-mail est déjà vérifiée.")])
-        assertRedirects(response, reverse("accounts:edit_user_info"))
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "new@mailinator.com",
-                        "user": user.pk,
-                        "event": "confirm_email_address_error",
-                        "error": "already verified",
-                    },
-                )
-            ],
-        )
-
-        # token1 is invalidated.
-        client.session.flush()
-        response = client.get(self.url(user, token1))
-        assertMessages(response, [("INFO", "Cette adresse e-mail est déjà vérifiée.")])
-        assertRedirects(response, reverse("accounts:login"))
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "new@mailinator.com",
-                        "user": user.pk,
-                        "event": "confirm_email_address_error",
-                        "error": "already verified",
-                    },
-                )
-            ],
-        )
-
-    @freeze_time("2023-04-26 11:11:11")
-    def test_unknown_email(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        # No email_address record, maybe an admin removed it.
-        token = email_verification_token(email)
-        session = client.session
-        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
-        session.save()
-        url = self.url(user, token)
-        response = client.get(url)
-        assert response.status_code == 404
-        assertRecords(
-            caplog,
-            [
-                ("django.request", logging.WARNING, f"Not Found: {url}"),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "me@mailinator.com",
-                        "event": "confirm_email_address_error",
-                        "error": "email not found",
-                    },
-                ),
-            ],
-        )
-
-
 class TestChangeTemporaryPasswordView:
     def test_view(self, caplog, client):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
@@ -1302,7 +621,7 @@ class TestChangeTemporaryPasswordView:
             reverse("accounts:change_temporary_password"),
             data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, reverse("accounts:edit_user_info"), fetch_redirect_response=False)
+        assertRedirects(response, reverse("accounts:change_password"), fetch_redirect_response=False)
 
         user.refresh_from_db()
         assert user.password_is_temporary is False
@@ -1441,7 +760,7 @@ class TestMiddleware:
         )
         client.force_login(user)
 
-        response = client.get(reverse("accounts:edit_user_info"))
+        response = client.get(reverse("accounts:change_password"))
         assertRedirects(response, reverse("accounts:change_temporary_password"))
 
         client.post(
@@ -1454,7 +773,7 @@ class TestMiddleware:
             reverse("accounts:change_weak_password"),
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
-        response = client.get(reverse("accounts:edit_user_info"))
+        response = client.get(reverse("accounts:change_password"))
         assert response.status_code == 200
 
     def test_staff_users_are_not_concerned(self, client):

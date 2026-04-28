@@ -5,7 +5,6 @@ import uuid
 import citext
 import django.contrib.auth.models
 import django.utils.timezone
-from django.conf import settings
 from django.contrib.postgres.operations import BtreeGistExtension, CITextExtension, TrigramExtension, UnaccentExtension
 from django.db import migrations, models
 
@@ -114,32 +113,6 @@ class Migration(migrations.Migration):
                 ("objects", django.contrib.auth.models.UserManager()),
             ],
         ),
-        migrations.CreateModel(
-            name="EmailAddress",
-            fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("email", citext.fields.CIEmailField(max_length=254, unique=True, verbose_name="adresse e-mail")),
-                (
-                    "created_at",
-                    models.DateTimeField(
-                        default=django.utils.timezone.now, editable=False, verbose_name="date de création"
-                    ),
-                ),
-                ("verified_at", models.DateTimeField(blank=True, null=True, verbose_name="date de vérification")),
-                (
-                    "user",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="email_addresses",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-            ],
-            options={
-                "verbose_name": "addresse e-mail",
-                "verbose_name_plural": "addresses e-mail",
-            },
-        ),
         migrations.AddConstraint(
             model_name="user",
             constraint=models.UniqueConstraint(
@@ -147,24 +120,6 @@ class Migration(migrations.Migration):
                 condition=models.Q(("email", ""), _negated=True),
                 name="unique_email_if_not_empty",
                 violation_error_message="Cet email est déjà associé à un autre utilisateur.",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="emailaddress",
-            constraint=models.UniqueConstraint(
-                condition=models.Q(("verified_at", None)),
-                fields=("user",),
-                name="unique_email_not_verified_per_user",
-                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails non vérifiés.",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="emailaddress",
-            constraint=models.UniqueConstraint(
-                condition=models.Q(("verified_at", None), _negated=True),
-                fields=("user",),
-                name="unique_email_verified_per_user",
-                violation_error_message="Un utilisateur ne peut pas avoir plusieurs e-mails vérifiés.",
             ),
         ),
     ]
