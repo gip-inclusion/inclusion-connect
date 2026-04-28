@@ -168,15 +168,11 @@ class MyAccountMixin(LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        edit_password_url = reverse("accounts:change_password")
-
-        referrer_uri = self.request.GET.get("referrer_uri")
         return context | {
             "edit_password": {
-                "url": edit_password_url + "?" + self.request.GET.urlencode(),
+                "url": reverse("accounts:change_password"),
                 "active": False,
             },
-            "referrer_uri": self.application and referrer_uri,
         }
 
     def get_object(self, queryset=None):

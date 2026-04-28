@@ -11,7 +11,6 @@ from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 from pytest_django.asserts import (
     assertContains,
-    assertNotContains,
     assertRedirects,
     assertTemplateUsed,
 )
@@ -20,7 +19,6 @@ from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages, assertRecords
-from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -457,19 +455,10 @@ class TestPasswordResetConfirmView:
 
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
-        application = ApplicationFactory()
         user = UserFactory()
         client.force_login(user)
-        referrer_uri = "https://go/back/there"
-        params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-        change_password_url = add_url_params(reverse("accounts:change_password"), params)
+        change_password_url = reverse("accounts:change_password")
 
-        # Dont display return button without referrer_uri
-        response = client.get(reverse("accounts:change_password"))
-        return_text = "Retour"
-        assertNotContains(response, return_text)
-
-        # with referrer_uri
         response = client.get(change_password_url)
         assertContains(
             response,
@@ -477,9 +466,6 @@ class TestPasswordChangeView:
         )
         # Left menu contains both pages
         assertContains(response, escape(change_password_url))
-        # Page contains return to referrer link
-        assertContains(response, return_text)
-        assertContains(response, referrer_uri)
 
         # Go change password
         response = client.post(
@@ -501,7 +487,6 @@ class TestPasswordChangeView:
                     {
                         "event": "change_password",
                         "user": user.pk,
-                        "application": application.client_id,
                     },
                 )
             ],
