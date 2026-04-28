@@ -2,7 +2,6 @@ import datetime
 import logging
 from urllib.parse import quote
 
-import pytest
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user
@@ -330,14 +329,12 @@ class TestRegisterView:
                 "last_name": "Jackson",
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
         assert client.session["next_url"] == redirect_url
         user_from_db = User.objects.get()
-        assert user_from_db.terms_accepted_at == user_from_db.date_joined
         assert user_from_db.first_name == "Jack"
         assert user_from_db.last_name == "Jackson"
         assert user_from_db.email == ""
@@ -402,7 +399,6 @@ class TestRegisterView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assert client.session["next_url"] == redirect_url
@@ -454,7 +450,6 @@ class TestRegisterView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assert client.session["next_url"] == redirect_url
@@ -505,7 +500,6 @@ class TestRegisterView:
                 "last_name": "Calavera",
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assert client.session["next_url"] == redirect_url
@@ -531,47 +525,6 @@ class TestRegisterView:
                                     "message": "Un compte avec cette adresse e-mail existe déjà, "
                                     '<a href="/accounts/login/">se connecter</a> ?',
                                     "code": "existing_email",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-    def test_terms_are_required(self, caplog, client, mailoutbox):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-        user = UserFactory.build()
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assert client.session["next_url"] == redirect_url
-        assertTemplateUsed(response, "register.html")
-        assert "terms_accepted" in response.context["form"].errors
-        assert mailoutbox == []
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": user.email,
-                        "event": "register_error",
-                        "errors": {
-                            "terms_accepted": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
                                 }
                             ]
                         },
@@ -612,14 +565,12 @@ class TestRegisterView:
                 "last_name": "Backy",
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
         assert client.session["next_url"] == redirect_url
         user_from_db = User.objects.get()
-        assert user_from_db.terms_accepted_at == user_from_db.date_joined
         assert user_from_db.first_name == "John"
         assert user_from_db.last_name == "Backy"
         assert user_from_db.email == ""
@@ -666,7 +617,6 @@ class TestRegisterView:
                 "last_name": "Jackson",
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assert response.status_code == 403
@@ -714,14 +664,12 @@ class TestActivateAccountView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assertRedirects(response, reverse("accounts:confirm-email"))
         assert get_user(client).is_authenticated is False
         assert client.session["next_url"] == redirect_url
         user = User.objects.get()  # Previous instance was a built factory, so refresh_from_db won't work
-        assert user.terms_accepted_at == user.date_joined
         email_address = EmailAddress.objects.get()
         assert email_address.email == email_address.email
         assert email_address.user_id == email_address.user.pk
@@ -775,7 +723,6 @@ class TestActivateAccountView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assertContains(
@@ -842,7 +789,6 @@ class TestActivateAccountView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
             follow=True,
         )
@@ -885,57 +831,6 @@ class TestActivateAccountView:
             ],
         )
 
-    def test_terms_are_required(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory.build()
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assertTemplateUsed(response, "activate_account.html")
-        assert "terms_accepted" in response.context["form"].errors
-        assert client.session["next_url"] == redirect_url
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": application.client_id,
-                        "email": user.email,
-                        "event": "activate_error",
-                        "errors": {
-                            "terms_accepted": [
-                                {
-                                    "message": "Ce champ est obligatoire.",
-                                    "code": "required",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
     @override_settings(FREEZE_ACCOUNTS=True)
     def test_no_activation_after_freeze(self, caplog, client):
         application = ApplicationFactory()
@@ -972,7 +867,6 @@ class TestActivateAccountView:
                 "last_name": user.last_name,
                 "password1": DEFAULT_PASSWORD,
                 "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
             },
         )
         assert response.status_code == 403
@@ -1636,47 +1530,6 @@ class TestPasswordChangeView:
         )
 
 
-@pytest.mark.parametrize("terms_accepted_at", (None, datetime.datetime(2022, 1, 1, tzinfo=datetime.UTC)))
-@freeze_time("2023-05-09 14:01:56")
-def test_new_terms(caplog, client, terms_accepted_at):
-    redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-    url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-    user = UserFactory(terms_accepted_at=terms_accepted_at)
-
-    response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-    assertRedirects(response, reverse("accounts:accept_terms"))
-    assert get_user(client).is_authenticated is True
-    assert client.session["next_url"] == redirect_url
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"user": user.pk, "event": "login"},
-            )
-        ],
-    )
-
-    response = client.post(reverse("accounts:accept_terms"))
-    assertRedirects(response, redirect_url, fetch_redirect_response=False)
-    # The redirect cleans `next_url` from the session.
-    assert "next_url" not in client.session
-
-    user.refresh_from_db()
-    assert user.terms_accepted_at == timezone.now()
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"event": "accept_terms", "user": user.pk},
-            )
-        ],
-    )
-
-
 class TestConfirmEmailView:
     def test_get_anonymous(self, client):
         response = client.get(reverse("accounts:confirm-email"), follow=True)
@@ -2297,15 +2150,11 @@ class TestChangeWeakPasswordView:
 class TestMiddleware:
     def test_post_login_actions(self, client):
         user = UserFactory(
-            terms_accepted_at=None,
             password_is_temporary=True,
             password_is_too_weak=True,
         )
         client.force_login(user)
-        response = client.get(reverse("accounts:edit_user_info"))
-        assertRedirects(response, reverse("accounts:accept_terms"))
 
-        client.post(reverse("accounts:accept_terms"))
         response = client.get(reverse("accounts:edit_user_info"))
         assertRedirects(response, reverse("accounts:change_temporary_password"))
 
@@ -2324,7 +2173,6 @@ class TestMiddleware:
 
     def test_staff_users_are_not_concerned(self, client):
         user = UserFactory(
-            terms_accepted_at=None,
             password_is_temporary=True,
             is_staff=True,
         )
@@ -2334,7 +2182,6 @@ class TestMiddleware:
 
     def test_logout_is_whitelisted(self, client):
         user = UserFactory(
-            terms_accepted_at=None,
             password_is_temporary=True,
         )
         client.force_login(user)

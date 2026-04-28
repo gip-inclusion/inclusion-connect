@@ -199,7 +199,6 @@ class UserAdmin(auth_admin.UserAdmin):
     form = UserChangeForm
     readonly_fields = [
         "username",
-        "terms_accepted_at",
         "date_joined",
         "last_login",
     ]
@@ -261,8 +260,6 @@ class UserAdmin(auth_admin.UserAdmin):
 
             assert fieldsets[1] == ("Informations personnelles", {"fields": ("first_name", "last_name", "email")})
             fieldsets[1][1]["fields"] += ("confirm_email",)
-
-            fieldsets.append(("CGU", {"fields": ["terms_accepted_at"]}))
 
             assert fieldsets[2][0] == "Permissions"
             if request.user.is_superuser:

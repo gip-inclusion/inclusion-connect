@@ -67,11 +67,6 @@
               La requête a été interrompue pour votre sécurité (mécanisme <abbr>CSRF</abbr>).
               Peut-être vous êtes-vous connecté depuis un autre onglet ?
           </p>
-          <p class="mb-0">
-              
-                  <a href="/">Aller à la page d'accueil</a>
-              
-          </p>
       </div>
   
           </div>

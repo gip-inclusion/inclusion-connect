@@ -11,7 +11,7 @@ from django.db import transaction
 from django.http import Http404, HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils import http, timezone
+from django.utils import http
 from django.utils.html import format_html
 from django.views.generic import CreateView, FormView, TemplateView, UpdateView, View
 
@@ -226,20 +226,6 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         self.log(LoginView.EVENT_NAME, form)  # Also log a login here
         stats_helpers.account_action(form.user, Actions.LOGIN, self.request, self.get_success_url())
         return response
-
-
-class AcceptTermsView(LoginRequiredMixin, TemplateView):
-    template_name = "accept_terms.html"
-    EVENT_NAME = "accept_terms"
-
-    def post(self, request, *args, **kwargs):
-        request.user.terms_accepted_at = timezone.now()
-        request.user.save()
-        log = log_data(self.request)
-        log["event"] = self.EVENT_NAME
-        log["user"] = request.user.pk
-        transaction.on_commit(partial(logger.info, log))
-        return HttpResponseRedirect(get_next_url(request))
 
 
 class ConfirmEmailView(TemplateView):

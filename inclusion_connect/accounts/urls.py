@@ -11,7 +11,6 @@ urlpatterns = [
     re_path(r"^activate/$", views.ActivateAccountView.as_view(), name="activate"),
     re_path(r"^password_reset/$", views.PasswordResetView.as_view(), name="password_reset"),
     path("reset/<uidb64>/<token>/", views.PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
-    re_path(r"^accept-terms/$", views.AcceptTermsView.as_view(), name="accept_terms"),
     re_path(
         r"^change-temporary-password/$", views.ChangeTemporaryPassword.as_view(), name="change_temporary_password"
     ),

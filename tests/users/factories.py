@@ -42,7 +42,6 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker("last_name")
     email = factory.Sequence("email{}@domain.com".format)
     password = factory.LazyFunction(default_password)
-    terms_accepted_at = factory.LazyFunction(timezone.now)
 
     @factory.post_generation
     def email_address(obj, create, extracted, **kwargs):

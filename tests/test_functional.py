@@ -69,7 +69,6 @@ def test_register_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assertRedirects(response, reverse("accounts:confirm-email"))
@@ -189,7 +188,6 @@ def test_register_endpoint_confirm_email_from_other_client(caplog, client, oidc_
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assertRedirects(response, reverse("accounts:confirm-email"))
@@ -311,7 +309,6 @@ def test_register_endpoint_email_not_received(caplog, client, oidc_params, use_o
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assertRedirects(response, reverse("accounts:confirm-email"))
@@ -482,7 +479,6 @@ def test_register_endpoint_after_freeze(caplog, client, oidc_params):
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assert response.status_code == 403
@@ -535,7 +531,6 @@ def test_activate_endpoint(auth_url, caplog, client, oidc_params, mailoutbox):
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assertRedirects(response, reverse("accounts:confirm-email"))
@@ -662,7 +657,6 @@ def test_activate_endpoint_after_freeze(caplog, client, oidc_params):
             "last_name": user.last_name,
             "password1": DEFAULT_PASSWORD,
             "password2": DEFAULT_PASSWORD,
-            "terms_accepted": "on",
         },
     )
     assert response.status_code == 403

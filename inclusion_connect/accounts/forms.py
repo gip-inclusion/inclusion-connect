@@ -1,9 +1,7 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django.forms import HiddenInput
-from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 
@@ -88,15 +86,6 @@ def verified_email_field():
 
 
 class RegisterForm(auth_forms.UserCreationForm):
-    terms_accepted = forms.BooleanField(
-        label=format_html(
-            "J'ai lu et j'accepte les <a href='{}' target='_blank'>conditions générales d’utilisation du service</a> "
-            "ainsi que la <a href='{}' target='_blank'>politique de confidentialité</a>.",
-            static(settings.TERMS_PATH),
-            static(settings.PRIVACY_POLICY_PATH),
-        )
-    )
-
     class Meta:
         model = User
         fields = ("last_name", "first_name")
@@ -137,7 +126,6 @@ class RegisterForm(auth_forms.UserCreationForm):
         return email
 
     def save(self, commit=True):
-        self.instance.terms_accepted_at = self.instance.date_joined
         user = super().save(commit=commit)
         self.log["user"] = user.pk
         save_unverified_email(user, self.cleaned_data["email"])
