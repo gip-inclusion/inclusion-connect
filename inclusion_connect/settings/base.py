@@ -58,7 +58,6 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "inclusion_connect.admin.apps.AdminConfig",
-    "inclusion_connect.keycloak_compat",
     "inclusion_connect.oidc_overrides",
     "inclusion_connect.stats",
     "inclusion_connect.users",
@@ -354,14 +353,6 @@ OAUTH2_PROVIDER = {
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 
 ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
-
-# Keycloak Compatibility
-# ----------------------
-
-PASSWORD_HASHERS = [
-    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
-    "inclusion_connect.keycloak_compat.hashers.KeycloakPasswordHasher",
-]
 
 
 # MATOMO
