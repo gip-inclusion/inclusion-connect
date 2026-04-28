@@ -1,7 +1,7 @@
 from django.urls import reverse
 
 from tests.conftest import Client
-from tests.helpers import parse_response_to_soup
+from tests.helpers import parse_response_to_soup, pretty_indented
 
 
 def test_csrf_view(snapshot):
@@ -10,5 +10,4 @@ def test_csrf_view(snapshot):
         reverse("accounts:login"),
         {"username": "doesnot", "password": "matter"},
     )
-    script_content = parse_response_to_soup(response)
-    assert str(script_content) == snapshot
+    assert pretty_indented(parse_response_to_soup(response)) == snapshot

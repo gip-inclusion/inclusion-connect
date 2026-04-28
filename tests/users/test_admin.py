@@ -5,7 +5,7 @@ from freezegun import freeze_time
 from pytest_django.asserts import assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.users.models import User
-from tests.helpers import assertRecords, parse_response_to_soup
+from tests.helpers import assertRecords, parse_response_to_soup, pretty_indented
 from tests.users.factories import UserFactory
 
 
@@ -136,7 +136,7 @@ class TestUserAdmin:
             username="11111111-1111-1111-1111-111111111111",
         )
         response = client.get(reverse("admin:auth_user_password_change", args=(user.pk,)))
-        assert str(parse_response_to_soup(response, selector="#user_form")) == snapshot
+        assert pretty_indented(parse_response_to_soup(response, selector="#user_form")) == snapshot
 
         password = "V€r¥--$3©®€7"
         response = client.post(
@@ -173,7 +173,7 @@ class TestUserAdmin:
         def get_password_form_field():
             response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
             assert response.status_code == 200
-            return str(parse_response_to_soup(response, selector=result_id))
+            return pretty_indented(parse_response_to_soup(response, selector=result_id))
 
         client.force_login(user)
         assert get_password_form_field() == snapshot(name="normal password")
