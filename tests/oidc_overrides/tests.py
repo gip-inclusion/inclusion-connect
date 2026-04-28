@@ -167,7 +167,7 @@ class TestLogoutView:
             "get",
             {"id_token_hint": 111, "post_logout_redirect_uri": None},
         )
-        assertRedirects(response, "http://testserver/")
+        assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False

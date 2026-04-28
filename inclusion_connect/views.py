@@ -8,10 +8,10 @@ def csrf_failure(request, template_name="403_csrf.html", **kwargs):
     return render(request, template_name, status=403)
 
 
-def home(request, template_name="homepage.html", **kwargs):
+def index(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect(reverse("accounts:home"))
-    return render(request, template_name)
+    return HttpResponseRedirect(reverse("accounts:login"))
 
 
 @require_safe

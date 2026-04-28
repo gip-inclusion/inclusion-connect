@@ -14,7 +14,7 @@ def post_login_actions(get_response):
     def middleware(request):
         user = request.user
 
-        whitelisted_urls = [reverse("homepage"), reverse("oauth2_provider:rp-initiated-logout")]
+        whitelisted_urls = [reverse("index"), reverse("oauth2_provider:rp-initiated-logout")]
 
         path_is_whitelisted = request.path in whitelisted_urls
 

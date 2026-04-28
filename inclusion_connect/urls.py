@@ -27,7 +27,7 @@ urlpatterns = [
     path("admin/login/", LoginView.as_view(), name="admin_login"),
     path("admin/", admin.site.urls),
     # landing
-    path("", views.home, name="homepage"),
+    path("", views.index, name="index"),
     # Login urls
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
