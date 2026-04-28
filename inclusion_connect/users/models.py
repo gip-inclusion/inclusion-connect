@@ -27,7 +27,6 @@ class User(AbstractUser):
 
     # Triggers for required actions
     password_is_temporary = models.BooleanField("mot de passe temporaire", default=False)
-    terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
     password_is_too_weak = models.BooleanField("mot de passe trop faible", default=False)
 
     # Allow to redirect user correctly even when using a link from another browser (without session data)
@@ -55,10 +54,6 @@ class User(AbstractUser):
     def id(self):
         # Required by some third party libraries that use user.id (django-oauth-toolkit)
         return self.pk
-
-    @property
-    def must_accept_terms(self):
-        return self.terms_accepted_at is None or self.terms_accepted_at < settings.NEW_TERMS_DATE
 
     def save_next_redirect_uri(self, next_redirect_uri):
         self.next_redirect_uri = next_redirect_uri

@@ -1,5 +1,3 @@
-import datetime
-
 from .test import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position # noqa: E402,F403
 
 
@@ -23,8 +21,6 @@ INSTALLED_APPS.extend(  # noqa: F405
 )
 
 INTERNAL_IPS = ["127.0.0.1"]
-
-NEW_TERMS_DATE = datetime.datetime.fromisoformat("2023-01-01T00:00:00+00:00")
 
 MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # noqa F405
 DEBUG_TOOLBAR_CONFIG = {

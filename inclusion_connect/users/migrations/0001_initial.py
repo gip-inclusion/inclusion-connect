@@ -80,10 +80,6 @@ class Migration(migrations.Migration):
                 ),
                 ("password", models.CharField(max_length=256, verbose_name="mot de passe")),
                 ("password_is_temporary", models.BooleanField(default=False, verbose_name="mot de passe temporaire")),
-                (
-                    "terms_accepted_at",
-                    models.DateTimeField(blank=True, null=True, verbose_name="date de validation des CGUs"),
-                ),
                 ("password_is_too_weak", models.BooleanField(default=False, verbose_name="mot de passe trop faible")),
                 ("next_redirect_uri", models.TextField(blank=True, null=True)),
                 ("next_redirect_uri_stored_at", models.DateTimeField(blank=True, null=True)),
