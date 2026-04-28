@@ -11,10 +11,6 @@ def home(request, template_name="homepage.html", **kwargs):
     return render(request, template_name)
 
 
-def accessibility(request, template_name="accessibility.html", **kwargs):
-    return render(request, template_name)
-
-
 @require_safe
 def security_txt(request):
     return HttpResponseRedirect("https://inclusion.beta.gouv.fr/.well-known/security.txt")
