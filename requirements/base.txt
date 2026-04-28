@@ -268,9 +268,9 @@ django-bootstrap5==24.3 \
     --hash=sha256:98f7916f9f7f9c34dfe157f7c062a28ebf6d17ff95307bef260ba794ba34e2a0 \
     --hash=sha256:ca5ec5568fc2a3fc239f0cb8ce41a7df3802b8c4af930d7f64451784ec7ddc16
     # via -r requirements/base.in
-django-citext==1.0.2 \
-    --hash=sha256:375a2d6a06133ad9e375f0db62d4d606fa43428de14751d03856b9c702c0000f \
-    --hash=sha256:6ae71eb36442a61f1b2df5355c8ead9722b283a7b726cdfabcf0ff873a6b7613
+django-citext==1.0.3 \
+    --hash=sha256:30167d71369438ee27b76643466cf0d35a9dad43b3f4c8d1924efd9ba2f88dcd \
+    --hash=sha256:aaec55853c84cd48de1668fb059acba98bef4e343a4420b0e670773498e0aedd
     # via -r requirements/base.in
 django-cors-headers==4.6.0 \
     --hash=sha256:14d76b4b4c8d39375baeddd89e4f08899051eeaf177cb02a29bd6eae8cf63aa8 \
