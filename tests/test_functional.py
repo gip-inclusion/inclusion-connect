@@ -657,11 +657,8 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
 
 
 def test_change_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
-    application = ApplicationFactory()
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
-    referrer_uri = "https://go/back/there"
-    params = {"referrer_uri": referrer_uri, "referrer": application.client_id}
-    change_password_url = add_url_params(reverse("accounts:change_password"), params)
+    change_password_url = reverse("accounts:change_password")
 
     # User is redirected to login
     response = client.get(change_password_url)
@@ -689,10 +686,6 @@ def test_change_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many 
         ],
     )
 
-    # Page contains return to referrer link
-    assertContains(response, "Retour")
-    assertContains(response, referrer_uri)
-
     response = client.post(
         change_password_url,
         data={
@@ -711,7 +704,6 @@ def test_change_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many 
                 {
                     "event": "change_password",
                     "user": user.pk,
-                    "application": application.client_id,
                 },
             )
         ],
