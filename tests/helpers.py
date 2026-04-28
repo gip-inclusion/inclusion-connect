@@ -5,6 +5,7 @@ import uuid
 
 import jwt
 from bs4 import BeautifulSoup
+from bs4.formatter import HTMLFormatter
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
 from django.utils import timezone
@@ -174,6 +175,12 @@ def token_are_revoked(user):
         and not get_access_token_model().objects.filter(user=user).exists()
         and not get_refresh_token_model().objects.filter(revoked=None).exists()
     )
+
+
+def pretty_indented(soup, indent=4):
+    if isinstance(soup, str):
+        soup = BeautifulSoup(soup, "html5lib")
+    return soup.prettify(formatter=HTMLFormatter(indent=indent))
 
 
 def parse_response_to_soup(response, selector=None, no_html_body=False, status_code=200):

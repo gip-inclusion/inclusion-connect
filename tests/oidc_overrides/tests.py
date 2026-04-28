@@ -21,6 +21,7 @@ from tests.helpers import (
     has_ongoing_sessions,
     oidc_complete_flow,
     parse_response_to_soup,
+    pretty_indented,
     token_are_revoked,
 )
 from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory
@@ -334,7 +335,7 @@ class TestAuthorizeView:
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
-        assert str(parse_response_to_soup(response, selector="main")) == snapshot
+        assert pretty_indented(parse_response_to_soup(response, selector="main")) == snapshot
 
         assertRecords(
             caplog,

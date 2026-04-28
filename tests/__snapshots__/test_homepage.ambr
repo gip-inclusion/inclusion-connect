@@ -2,100 +2,76 @@
 # name: test_homepage
   '''
   <!DOCTYPE html>
-  <html lang="fr"><head>
+  <html lang="fr">
+      <head>
           <meta charset="utf-8"/>
-          <title>Inclusion Connect</title>
+          <title>
+              Inclusion Connect
+          </title>
           <meta content="noindex, nofollow" name="robots"/>
           <meta content="width=device-width, initial-scale=1" name="viewport"/>
-  
           <link href="/static/img/illustration-bg-ic.svg" rel="icon" type="image/svg+xml"/>
           <link href="/static/img/favicon.ico" rel="icon" type="image/ico"/>
           <link href="/static/vendor/theme-inclusion/stylesheets/app.css" rel="stylesheet"/>
           <link href="/static/css/inclusion_connect.css" rel="stylesheet"/>
-  
-          
-              <script crossorigin="anonymous" src="https://js-de.sentry-cdn.com/2e783f79f9df11a617ac43719eee20bf.min.js"></script>
-          
-  
-          
+          <script crossorigin="anonymous" src="https://js-de.sentry-cdn.com/2e783f79f9df11a617ac43719eee20bf.min.js">
+          </script>
       </head>
       <body>
-          
-  
-  
-  
-  <header id="header" role="banner">
-      <section class="s-header">
-          <div class="s-header__container container">
-              <div class="s-header__row row">
-                  <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center pe-0">
-                      <img alt="République Française" src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg"/>
-                  </div>
-                  <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center">
-                      <a href="/">
-                          <img alt="Inclusion Connect" height="90" src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg"/>
-                      </a>
-                  </div>
-                  <div class="s-header__col s-header__col--nav col d-none d-xl-inline-flex d-xl-flex align-items-center justify-content-end">
-                  </div>
-              </div>
-          </div>
-      </section>
-  </header>
-  
-  
-          <main class="s-main" id="main" role="main">
-  
-              <section class="s-section pt-lg-3">
-                  <div class="container">
-                      <div class="row g-0 bg-white">
-                          
-                              
-      <div class="col-12 col-lg-6 bg-lg-white">
-          <div class="bg-white p-3 py-lg-7 px-lg-8">
-              <div class="container container-messages">
-                  
-                      
-  
-  
-                  
-              </div>
-  
-              
-  
-      <h1 class="h2">Inclusion Connect</h1>
-  
-      <p>
-          Inclusion Connect est une solution de connexion unique à plusieurs services publics pour les professionnels de l'inclusion.
-      </p>
-  
-      <a aria-label="En savoir plus sur Inclusion Connect(lien externe)" class="has-external-link" href="https://inclusion.beta.gouv.fr/nos-services/inclusion-connect/" target="_blank">En savoir plus</a>
-  
-  
-          </div>
-      </div>
-  
-                              
-      <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
-          <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
-      </div>
-  
-                          
+          <header id="header" role="banner">
+              <section class="s-header">
+                  <div class="s-header__container container">
+                      <div class="s-header__row row">
+                          <div class="s-header__col s-header__col--logo-ministere col col-md-auto d-flex align-items-center pe-0">
+                              <img alt="République Française" src="/static/vendor/theme-inclusion/images/logo-republique-francaise.svg"/>
+                          </div>
+                          <div class="s-header__col s-header__col--logo-service col-auto d-flex align-items-center">
+                              <a href="/">
+                                  <img alt="Inclusion Connect" height="90" src="/static/vendor/theme-inclusion/images/logo-inclusion-connect.svg"/>
+                              </a>
+                          </div>
+                          <div class="s-header__col s-header__col--nav col d-none d-xl-inline-flex d-xl-flex align-items-center justify-content-end">
+                          </div>
                       </div>
                   </div>
               </section>
-  
+          </header>
+          <main class="s-main" id="main" role="main">
+              <section class="s-section pt-lg-3">
+                  <div class="container">
+                      <div class="row g-0 bg-white">
+                          <div class="col-12 col-lg-6 bg-lg-white">
+                              <div class="bg-white p-3 py-lg-7 px-lg-8">
+                                  <div class="container container-messages">
+                                  </div>
+                                  <h1 class="h2">
+                                      Inclusion Connect
+                                  </h1>
+                                  <p>
+                                      Inclusion Connect est une solution de connexion unique à plusieurs services publics pour les professionnels de l'inclusion.
+                                  </p>
+                                  <a aria-label="En savoir plus sur Inclusion Connect(lien externe)" class="has-external-link" href="https://inclusion.beta.gouv.fr/nos-services/inclusion-connect/" target="_blank">
+                                      En savoir plus
+                                  </a>
+                              </div>
+                          </div>
+                          <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                              <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                          </div>
+                      </div>
+                  </div>
+              </section>
           </main>
+          <script src="/static/vendor/bootstrap-5.3.1/popper.min.js">
+          </script>
+          <script src="/static/vendor/bootstrap-5.3.1/bootstrap.min.js">
+          </script>
+          <script src="/static/vendor/theme-inclusion/javascripts/app.js">
+          </script>
+          <script src="/static/js/index.js">
+          </script>
+      </body>
+  </html>
   
-          <script src="/static/vendor/bootstrap-5.3.1/popper.min.js"></script>
-          <script src="/static/vendor/bootstrap-5.3.1/bootstrap.min.js"></script>
-          <script src="/static/vendor/theme-inclusion/javascripts/app.js"></script>
-  
-          
-              <script src="/static/js/index.js"></script>
-          
-      
-  
-  </body></html>
   '''
 # ---
