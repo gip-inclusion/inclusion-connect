@@ -369,3 +369,6 @@ CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"
 cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
 if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
     CORS_ALLOWED_ORIGINS = cors_allowed_origins.split(",")
+
+
+LOGOUT_REDIRECT_URL = "/accounts/login/"
