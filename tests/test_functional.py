@@ -814,3 +814,12 @@ def test_login_weak_password(caplog, client, oidc_params):
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
+
+
+def test_base_url_redirect(client):
+    response = client.get(reverse("index"))
+    assertRedirects(response, reverse("accounts:login"))
+
+    client.force_login(UserFactory())
+    response = client.get(reverse("index"))
+    assertRedirects(response, reverse("accounts:home"))
