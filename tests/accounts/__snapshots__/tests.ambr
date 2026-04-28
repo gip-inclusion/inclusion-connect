@@ -54,3 +54,399 @@
           </main>
   '''
 # ---
+# name: TestLoginView.test_empty_login_hint
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <h1 class="h2">
+                              Connexion
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_email">
+                                                  Adresse e-mail
+                                              </label>
+                                              <input autocomplete="email" class="form-control" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email"/>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_password">
+                                                  Mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" class="form-control" id="id_password" name="password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="form-group">
+                                              <a class="btn-link fs-sm" href="/accounts/password_reset/">
+                                                  Mot de passe oublié ?
+                                              </a>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Connexion
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: TestLoginView.test_login
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <h1 class="h2">
+                              Connexion
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_email">
+                                                  Adresse e-mail
+                                              </label>
+                                              <input autocomplete="email" class="form-control" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email"/>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_password">
+                                                  Mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" class="form-control" id="id_password" name="password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="form-group">
+                                              <a class="btn-link fs-sm" href="/accounts/password_reset/">
+                                                  Mot de passe oublié ?
+                                              </a>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Connexion
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: TestLoginView.test_login_hint
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <h1 class="h2">
+                              Connexion
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_email">
+                                                  Adresse e-mail
+                                              </label>
+                                              <input autocomplete="email" class="form-control" disabled="" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email" value="me@mailinator.com"/>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_password">
+                                                  Mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" class="form-control" id="id_password" name="password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="form-group">
+                                              <a class="btn-link fs-sm" href="/accounts/password_reset/">
+                                                  Mot de passe oublié ?
+                                              </a>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Connexion
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: TestPasswordChangeView.test_change_password
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Mon compte
+                          </h1>
+                          <ul class="nav nav-tabs flex-column">
+                              <li class="nav-item">
+                                  <a class="nav-link active" href="/accounts/change-password/">
+                                      Mot de passe
+                                  </a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Changer mon mot de passe
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_old_password">
+                                                  Mot de passe actuel
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" autofocus="" class="form-control" id="id_old_password" name="old_password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_new_password1">
+                                                  Nouveau mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input aria-describedby="id_new_password1_helptext" autocomplete="new-password" class="form-control password-with-instructions" id="id_new_password1" name="new_password1" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <small class="form-text text-muted">
+                                              <ul class="list-unstyled">
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-length">
+                                                      </i>
+                                                      12 caractères minimum
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-digit">
+                                                      </i>
+                                                      1 chiffre
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-lower">
+                                                      </i>
+                                                      1 minuscule
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-upper">
+                                                      </i>
+                                                      1 majuscule
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-special-char">
+                                                      </i>
+                                                      1 caractère spécial (ex: & é @ -)
+                                                  </li>
+                                              </ul>
+                                          </small>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_new_password2">
+                                                  Confirmation du nouveau mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input aria-describedby="id_new_password2_helptext" autocomplete="new-password" class="form-control" id="id_new_password2" name="new_password2" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Modifier mon mot de passe
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: TestPasswordResetView.test_login_hint
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <h1 class="h2">
+                              Connexion
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_email">
+                                                  Adresse e-mail
+                                              </label>
+                                              <input autocomplete="email" class="form-control" disabled="" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email" value="me@mailinator.com"/>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_password">
+                                                  Mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" class="form-control" id="id_password" name="password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="form-group">
+                                              <a class="btn-link fs-sm" href="/accounts/password_reset/">
+                                                  Mot de passe oublié ?
+                                              </a>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Connexion
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---

@@ -15,7 +15,14 @@ from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertMessages, assertRecords
 from tests.conftest import Client
-from tests.helpers import call_logout, oidc_complete_flow, oidc_flow_followup, token_are_revoked
+from tests.helpers import (
+    call_logout,
+    oidc_complete_flow,
+    oidc_flow_followup,
+    parse_response_to_soup,
+    pretty_indented,
+    token_are_revoked,
+)
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -288,7 +295,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_login_hint_is_preserved(caplog, client, oidc_params):
+def test_login_hint_is_preserved(caplog, client, oidc_params, snapshot):
     ApplicationFactory(client_id=oidc_params["client_id"])
 
     user_email = "email@mailinator.com"
@@ -297,25 +304,12 @@ def test_login_hint_is_preserved(caplog, client, oidc_params):
     auth_complete_url = add_url_params(auth_url, auth_params)
     response = client.get(auth_complete_url, follow=True)
     assertRedirects(response, reverse("accounts:login"))
-    assertContains(
-        response,
-        # Pre-filled with email address from login_hint.
-        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        # Disabled, users cannot change data passed by the RP.
-        'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
-        count=1,
-    )
+    assert pretty_indented(parse_response_to_soup(response, "#id_email")) == snapshot(name="login_email_field")
 
     response = client.get(reverse("accounts:password_reset"))
-    assertContains(
-        response,
-        # Pre-filled with email address from login_hint.
-        # Disabled, users cannot change data passed by the RP.
-        '<input type="email" name="email" value="email@mailinator.com" placeholder="nom@domaine.fr" '
-        'autocomplete="email" class="form-control" required disabled id="id_email">',
-        count=1,
+    assert pretty_indented(parse_response_to_soup(response, "#id_email")) == snapshot(
+        name="password_reset_email_field"
     )
-
     assertRecords(caplog, [])
 
 
@@ -477,7 +471,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         assertRecords(caplog, [])
 
 
-def test_logout_with_confirmation(caplog, client, oidc_params):
+def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
     user = UserFactory()
     ApplicationFactory(client_id=oidc_params["client_id"])
 
@@ -530,10 +524,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params):
         },
     )
     assert response.status_code == 200
-    assertContains(
-        response,
-        '<input type="submit" class="btn btn-block btn-primary" name="allow" value="Se déconnecter" />',
-    )
+    assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
     assertRecords(caplog, [])
 
     response = call_logout(
@@ -656,7 +647,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         assertRecords(caplog, [])
 
 
-def test_change_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many statements
+def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many statements
     user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
     change_password_url = reverse("accounts:change_password")
 
@@ -672,7 +663,8 @@ def test_change_password(caplog, client, mailoutbox):  # noqa: PLR0915 Too many 
         follow=True,
     )
     assertRedirects(response, change_password_url)
-    assertContains(response, "<h1>\n                Changer mon mot de passe\n            </h1>")
+    assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
+
     # The redirect cleans `next_url` from the session.
     assert "next_url" not in client.session
     assertRecords(
