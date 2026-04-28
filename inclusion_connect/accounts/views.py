@@ -8,7 +8,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
-from django.http import Http404, HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
+from django.http import Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import http
@@ -63,14 +63,6 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
 
 class BaseUserCreationView(OIDCSessionMixin, CreateView):
     form_class = forms.RegisterForm
-
-    def get_template_names(self):
-        return "no_register.html" if settings.FREEZE_ACCOUNTS else super().get_template_names()
-
-    def post(self, request, *args, **kwargs):
-        if settings.FREEZE_ACCOUNTS:
-            return HttpResponseForbidden()
-        return super().post(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -318,8 +310,6 @@ class ConfirmEmailTokenView(View):
         return http.urlsafe_base64_decode(encoded_email).decode()
 
     def get(self, request, uidb64, token):
-        if settings.FREEZE_ACCOUNTS:
-            return render(request, "no_confirm_email.html")
         try:
             uid = uuid.UUID(http.urlsafe_base64_decode(uidb64).decode())
         except (TypeError, ValueError, OverflowError) as e:
@@ -453,11 +443,6 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
         if form.changed_data:
             messages.success(self.request, "Vos informations personnelles ont été mises à jour.")
         return response
-
-    def post(self, request, *args, **kwargs):
-        if settings.FREEZE_ACCOUNTS:
-            return HttpResponseForbidden()
-        return super().post(request, *args, **kwargs)
 
 
 class PasswordChangeView(MyAccountMixin, FormView):

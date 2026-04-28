@@ -391,9 +391,3 @@ CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"
 cors_allowed_origins = os.getenv("CORS_ALLOWED_ORIGINS")
 if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
     CORS_ALLOWED_ORIGINS = cors_allowed_origins.split(",")
-
-# ProConect mirgation
-# -------------------
-
-FREEZE_ACCOUNTS = os.getenv("FREEZE_ACCOUNTS")
-MIGRATION_PAGE_URL = "https://gip-inclusion.notion.site/5cfeffaf5d634a1a8275cdcf757be2f8"
