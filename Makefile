@@ -6,7 +6,7 @@
 
 # Global tasks.
 # =============================================================================
-PYTHON_VERSION := python3.11
+PYTHON_VERSION := python3.13
 PGDATABASE ?= inclusion_connect
 
 ifeq ($(shell uname -s),Linux)
