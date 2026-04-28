@@ -202,11 +202,8 @@ class UserAdmin(auth_admin.UserAdmin):
         "terms_accepted_at",
         "date_joined",
         "last_login",
-        "federation_sub",
-        "federation",
-        "federation_data",
     ]
-    list_filter = auth_admin.UserAdmin.list_filter + ("password_is_temporary", "federation")
+    list_filter = auth_admin.UserAdmin.list_filter + ("password_is_temporary",)
     inlines = [EmailAddressInline, UserApplicationLinkInline]
     change_password_form = AdminPasswordChangeForm
     search_fields = auth_admin.UserAdmin.search_fields + ("email_addresses__email",)
@@ -216,7 +213,6 @@ class UserAdmin(auth_admin.UserAdmin):
         "email_to_validate",
         "first_name",
         "last_name",
-        "federation",
         "is_staff",
     )
 
@@ -258,7 +254,7 @@ class UserAdmin(auth_admin.UserAdmin):
         if is_change_form:
             fieldsets = list(copy.deepcopy(fieldsets))
             assert fieldsets[0] == (None, {"fields": ("username", "password")})
-            if obj.federation or not self.has_change_permission(request, obj):
+            if not self.has_change_permission(request, obj):
                 fieldsets[0][1]["fields"] = ("username",)
             else:
                 fieldsets[0][1]["fields"] = ("username", "password_is_temporary")
@@ -276,18 +272,12 @@ class UserAdmin(auth_admin.UserAdmin):
             else:
                 del fieldsets[2]
 
-            fieldsets.insert(
-                2, ("Fédération d'identité", {"fields": ["federation", "federation_sub", "federation_data"]})
-            )
-
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
         rof = super().get_readonly_fields(request, obj)
         if not request.user.is_superuser:
             rof = [*rof, "is_staff", "is_superuser", "groups", "user_permissions"]
-        if obj and obj.federation:
-            rof = [*rof, "first_name", "last_name", "email"]
         return rof
 
     def get_queryset(self, request):

@@ -20,4 +20,4 @@ class CustomOAuth2Validator(OAuth2Validator):
             "given_name": request.user.first_name,
             "family_name": request.user.last_name,
             "email": request.user.email,
-        } | (request.user.federation_data or {})
+        }

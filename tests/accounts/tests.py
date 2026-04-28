@@ -26,7 +26,6 @@ from pytest_django.asserts import (
 
 from inclusion_connect.accounts.tokens import email_verification_token
 from inclusion_connect.accounts.views import EMAIL_CONFIRM_KEY, PasswordResetView
-from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import EmailAddress, User
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
@@ -308,114 +307,6 @@ class TestLoginView:
             'autocomplete="email" maxlength="320" class="form-control" required id="id_email">',
             count=1,
         )
-
-    def test_federated_user_cannot_use_login_password(self, client, caplog):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(
-            email="michel@not-pole-emploi.fr",
-            first_name="old_first_name",
-            last_name="old_last_name",
-            federation=Federation.PEAMA,
-            federation_sub="sub",
-        )
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
-
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assert get_user(client).is_authenticated is False
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "login_error",
-                        "errors": {
-                            "__all__": [
-                                {
-                                    "message": "Votre compte est relié à France Travail. Merci de vous connecter avec "
-                                    "ce service.",
-                                    "code": "",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-        assertContains(
-            response,
-            "Votre compte est relié à France Travail. Merci de vous connecter avec ce service.",
-        )
-
-    @pytest.mark.parametrize("email", ["michel@pole-emploi.fr", "michel@francetravail.fr"])
-    def test_pole_emploi_user_cannot_use_login_password(self, client, caplog, email):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(
-            email=email,
-            first_name="old_first_name",
-            last_name="old_last_name",
-        )
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
-
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assert get_user(client).is_authenticated is False
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "user": user.pk,
-                        "event": "login_error",
-                        "errors": {
-                            "__all__": [
-                                {
-                                    "message": "Votre compte est un compte agent France Travail. Vous devez "
-                                    "utiliser le bouton de connexion France Travail pour accéder au service.",
-                                    "code": "",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-        assertContains(
-            response,
-            "Votre compte est un compte agent France Travail. "
-            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
-        )
-
-    @override_settings(PEAMA_STAGING=True)
-    def test_pole_emploi_user_can_use_login_password_if_staging(self, client, caplog):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(
-            email="michel@pole-emploi.fr",
-            first_name="old_first_name",
-            last_name="old_last_name",
-        )
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:register"))  # Link to register page
-
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assert get_user(client).is_authenticated is True
 
 
 class TestRegisterView:
@@ -754,62 +645,6 @@ class TestRegisterView:
             "Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer ce message.\n\n"
             "---\n"
             "L’équipe d’inclusion connect\n"
-        )
-
-    @pytest.mark.parametrize(
-        "email,suffix",
-        [
-            ("michel@pole-emploi.fr", "@pole-emploi.fr"),
-            ("michel@francetravail.fr", "@francetravail.fr"),
-        ],
-    )
-    def test_pole_emploi_user_register_with_django(self, client, caplog, email, suffix):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, reverse("accounts:login"))  # Link to register page
-
-        response = client.post(
-            url,
-            data={
-                "email": email,
-                "first_name": "John",
-                "last_name": "Backy",
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-                "terms_accepted": "on",
-            },
-        )
-        assert get_user(client).is_authenticated is False
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": email,
-                        "event": "register_error",
-                        "errors": {
-                            "email": [
-                                {
-                                    "message": f"Vous utilisez une adresse e-mail en {suffix}. Vous devez "
-                                    "utiliser le bouton de connexion France Travail pour accéder au service.",
-                                    "code": "",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-        assertContains(
-            response,
-            f"Vous utilisez une adresse e-mail en {suffix}. "
-            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
         )
 
     @override_settings(FREEZE_ACCOUNTS=True)
@@ -1239,91 +1074,6 @@ class TestPasswordResetView:
                 ],
             )
 
-    def test_password_reset_federated_user(self, caplog, client):
-        user = UserFactory(federation=Federation.PEAMA)
-
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        response = client.get(url)
-        password_reset_url = reverse("accounts:password_reset")
-        assertContains(response, password_reset_url)
-
-        response = client.get(password_reset_url)
-        assertTemplateUsed(response, "password_reset.html")
-
-        response = client.post(password_reset_url, data={"email": user.email})
-        assertRedirects(response, reverse("accounts:login"))
-        assert client.session["next_url"] == redirect_url
-        assertMessages(
-            response,
-            [
-                (
-                    messages.SUCCESS,
-                    "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe."
-                    f'<br><a href="{settings.FAQ_URL}" class="matomo-event" data-matomo-category="aide" '
-                    'data-matomo-action="clic" data-matomo-name="J\'ai besoin d\'aide (mdp reset)">'
-                    "J’ai besoin d’aide</a>",
-                ),
-            ],
-        )
-
-        # Check sent email
-        [email] = mail.outbox
-        assert "Comme votre compte utilise France Travail vous devez vous connecter avec ce service." in email.body
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "forgot_password", "user": user.pk},
-                )
-            ],
-        )
-
-    @pytest.mark.parametrize(
-        "email,suffix",
-        [
-            ("michel@pole-emploi.fr", "@pole-emploi.fr"),
-            ("michel@francetravail.fr", "@francetravail.fr"),
-        ],
-    )
-    def test_pole_emploi_user(self, client, caplog, email, suffix):
-        user = UserFactory(email=email)
-
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        response = client.get(url)
-        password_reset_url = reverse("accounts:password_reset")
-        assertContains(response, password_reset_url)
-
-        response = client.get(password_reset_url)
-        assertTemplateUsed(response, "password_reset.html")
-
-        response = client.post(password_reset_url, data={"email": user.email})
-        assert response.status_code == 200
-
-        assert "email" in response.context["form"].errors
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "event": "forgot_password_error",
-                        "user": user.pk,
-                    },
-                )
-            ],
-        )
-        assertContains(
-            response,
-            f"Vous utilisez une adresse e-mail en {suffix}. "
-            "Vous devez utiliser le bouton de connexion France Travail pour accéder au service",
-        )
-
     def test_password_reset_unknown_email(self, caplog, client):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
@@ -1738,45 +1488,11 @@ class TestEditUserInfoView:
             ],
         )
 
-    def test_edit_federated(self, caplog, client):
-        BUTTON_HTML_STR = 'type="submit"'
-        application = ApplicationFactory()
-        user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
-        client.force_login(
-            user,
-            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
-        )
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-        response = client.get(edit_user_info_url)
-        assertContains(response, BUTTON_HTML_STR)
-        user.federation = Federation.PEAMA
-        user.save()
-        response = client.get(edit_user_info_url)
-        assertNotContains(response, BUTTON_HTML_STR)
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
-            follow=True,
-        )
-        assert response.status_code == 403
-        user.refresh_from_db()
-        assert user.first_name == "Jean"
-        assert user.last_name == "Dupond"
-        assert user.email == "jean.dupond@email.com"
-        assertRecords(
-            caplog,
-            [("django.request", logging.WARNING, "Forbidden: /accounts/my-account/")],
-        )
-
     @override_settings(FREEZE_ACCOUNTS=True)
     def test_edit_after_freeze(self, client, caplog):
         application = ApplicationFactory()
         user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
-        client.force_login(
-            user,
-            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
-        )
+        client.force_login(user)
         params = {"referrer_uri": "rp_url", "referrer": application.client_id}
         edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
         response = client.get(edit_user_info_url)
@@ -1918,18 +1634,6 @@ class TestPasswordChangeView:
                 )
             ],
         )
-
-    def test_federated(self, caplog, client):
-        application = ApplicationFactory()
-        user = UserFactory(federation=Federation.PEAMA)
-        client.force_login(
-            user,
-            backend="inclusion_connect.oidc_federation.peama.OIDCAuthenticationBackend",
-        )
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        change_password_url = add_url_params(reverse("accounts:change_password"), params)
-        response = client.get(change_password_url)
-        assert response.status_code == 403
 
 
 @pytest.mark.parametrize("terms_accepted_at", (None, datetime.datetime(2022, 1, 1, tzinfo=datetime.UTC)))
