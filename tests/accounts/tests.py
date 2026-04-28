@@ -6,7 +6,6 @@ from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.urls import reverse
 from django.utils.encoding import force_bytes
-from django.utils.html import escape
 from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 from pytest_django.asserts import (
@@ -19,18 +18,18 @@ from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertMessages, assertRecords
+from tests.helpers import parse_response_to_soup, pretty_indented
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 class TestLoginView:
-    def test_login(self, caplog, client):
+    def test_login(self, caplog, client, snapshot):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory()
 
         response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -154,7 +153,7 @@ class TestLoginView:
             ],
         )
 
-    def test_login_hint(self, caplog, client):
+    def test_login_hint(self, caplog, client, snapshot):
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(email="me@mailinator.com")
@@ -167,16 +166,7 @@ class TestLoginView:
         client_session.save()
 
         response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(
-            response,
-            # Pre-filled with email address from login_hint.
-            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
-            # Disabled, users cannot change data passed by the RP.
-            'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
-            count=1,
-        )
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         # Email is simply ignored.
         response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
@@ -195,20 +185,11 @@ class TestLoginView:
             ],
         )
 
-    def test_empty_login_hint(self, client):
+    def test_empty_login_hint(self, client, snapshot):
         url = add_url_params(reverse("accounts:login"), {"login_hint": ""})
 
         response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(
-            response,
-            # Not pre-filled with email address since login_hint is empty
-            '<input type="email" name="email" placeholder="nom@domaine.fr" '
-            # Not disabled.
-            'autocomplete="email" maxlength="320" class="form-control" required id="id_email">',
-            count=1,
-        )
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
 
 class TestPasswordResetView:
@@ -333,7 +314,7 @@ class TestPasswordResetView:
         )
 
     @freeze_time("2023-06-08 09:10:03")
-    def test_login_hint(self, caplog, client, mailoutbox):
+    def test_login_hint(self, caplog, client, mailoutbox, snapshot):
         user = UserFactory(email="me@mailinator.com")
 
         redirect_url = reverse("oauth2_provider:rp-initiated-logout")
@@ -345,15 +326,7 @@ class TestPasswordResetView:
 
         response = client.get(url)
         password_reset_url = reverse("accounts:password_reset")
-        assertContains(response, password_reset_url)
-        assertContains(
-            response,
-            # Pre-filled with email address from login_hint.
-            '<input type="email" name="email" value="me@mailinator.com" placeholder="nom@domaine.fr" '
-            # Disabled, users cannot change data passed by the RP.
-            'autocomplete="email" maxlength="320" class="form-control" required disabled id="id_email">',
-            count=1,
-        )
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         response = client.get(password_reset_url)
         assertTemplateUsed(response, "password_reset.html")
@@ -454,18 +427,13 @@ class TestPasswordResetConfirmView:
 
 
 class TestPasswordChangeView:
-    def test_change_password(self, caplog, client):
+    def test_change_password(self, caplog, client, snapshot):
         user = UserFactory()
         client.force_login(user)
         change_password_url = reverse("accounts:change_password")
 
         response = client.get(change_password_url)
-        assertContains(
-            response,
-            "<h1>\n                Changer mon mot de passe\n            </h1>",
-        )
-        # Left menu contains both pages
-        assertContains(response, escape(change_password_url))
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         # Go change password
         response = client.post(

@@ -1,0 +1,185 @@
+# serializer version: 1
+# name: test_change_password
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Mon compte
+                          </h1>
+                          <ul class="nav nav-tabs flex-column">
+                              <li class="nav-item">
+                                  <a class="nav-link active" href="/accounts/change-password/">
+                                      Mot de passe
+                                  </a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Changer mon mot de passe
+                          </h1>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <div class="row">
+                                      <div class="col-12">
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_old_password">
+                                                  Mot de passe actuel
+                                              </label>
+                                              <div class="input-group">
+                                                  <input autocomplete="current-password" autofocus="" class="form-control" id="id_old_password" name="old_password" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_new_password1">
+                                                  Nouveau mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input aria-describedby="id_new_password1_helptext" autocomplete="new-password" class="form-control password-with-instructions" id="id_new_password1" name="new_password1" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                          <small class="form-text text-muted">
+                                              <ul class="list-unstyled">
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-length">
+                                                      </i>
+                                                      12 caractères minimum
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-digit">
+                                                      </i>
+                                                      1 chiffre
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-lower">
+                                                      </i>
+                                                      1 minuscule
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-upper">
+                                                      </i>
+                                                      1 majuscule
+                                                  </li>
+                                                  <li>
+                                                      <i class="ri-close-circle-line text-warning" id="pw-special-char">
+                                                      </i>
+                                                      1 caractère spécial (ex: & é @ -)
+                                                  </li>
+                                              </ul>
+                                          </small>
+                                          <div class="mb-3 form-group-required">
+                                              <label class="form-label" for="id_new_password2">
+                                                  Confirmation du nouveau mot de passe
+                                              </label>
+                                              <div class="input-group">
+                                                  <input aria-describedby="id_new_password2_helptext" autocomplete="new-password" class="form-control" id="id_new_password2" name="new_password2" placeholder="**********" required="" type="password"/>
+                                                  <span class="input-group-text p-0">
+                                                      <button class="btn btn-sm btn-link btn-ico" data-it-password="toggle" type="button">
+                                                          <i class="ri-eye-line">
+                                                          </i>
+                                                          <span>
+                                                              Afficher
+                                                          </span>
+                                                      </button>
+                                                  </span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Modifier mon mot de passe
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: test_login_hint_is_preserved[login_email_field]
+  '''
+  <input autocomplete="email" class="form-control" disabled="" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email" value="email@mailinator.com"/>
+  
+  '''
+# ---
+# name: test_login_hint_is_preserved[password_reset_email_field]
+  '''
+  <input autocomplete="email" class="form-control" disabled="" id="id_email" name="email" placeholder="nom@domaine.fr" required="" type="email" value="email@mailinator.com"/>
+  
+  '''
+# ---
+# name: test_logout_with_confirmation
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <div class="block-center">
+                              <h3>
+                                  Déconnexion
+                              </h3>
+                              <p>
+                                  Êtes-vous sûr de vouloir vous déconnecter ?
+                              </p>
+                              <form method="post">
+                                  <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                                  <input id="id_id_token_hint" name="id_token_hint" type="hidden"/>
+                                  <input id="id_logout_hint" name="logout_hint" type="hidden"/>
+                                  <input id="id_client_id" name="client_id" type="hidden" value="my_application"/>
+                                  <input id="id_post_logout_redirect_uri" name="post_logout_redirect_uri" type="hidden" value="http://callback/"/>
+                                  <input id="id_state" name="state" type="hidden"/>
+                                  <input id="id_ui_locales" name="ui_locales" type="hidden"/>
+                                  <div class="control-group">
+                                      <div class="controls">
+                                          <input class="btn btn-block btn-primary" name="allow" type="submit" value="Se déconnecter"/>
+                                      </div>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
