@@ -54,7 +54,7 @@ class TestLoginView:
             reverse("accounts:login"),
             data={"email": user.email, "password": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, reverse("accounts:change_password"))
+        assertRedirects(response, reverse("accounts:home"))
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
@@ -574,7 +574,7 @@ class TestChangeTemporaryPasswordView:
             reverse("accounts:change_temporary_password"),
             data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, reverse("accounts:change_password"), fetch_redirect_response=False)
+        assertRedirects(response, reverse("accounts:home"), fetch_redirect_response=False)
 
         user.refresh_from_db()
         assert user.password_is_temporary is False

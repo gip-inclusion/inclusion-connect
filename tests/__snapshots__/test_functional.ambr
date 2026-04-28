@@ -12,6 +12,11 @@
                           </h1>
                           <ul class="nav nav-tabs flex-column">
                               <li class="nav-item">
+                                  <a class="nav-link" href="/accounts/home/">
+                                      Accueil
+                                  </a>
+                              </li>
+                              <li class="nav-item">
                                   <a class="nav-link active" href="/accounts/change-password/">
                                       Mot de passe
                                   </a>

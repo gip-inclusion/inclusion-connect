@@ -7,7 +7,7 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.urls import reverse
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 
 from inclusion_connect.accounts import forms
 from inclusion_connect.accounts.helpers import login
@@ -169,6 +169,10 @@ class MyAccountMixin(LoginRequiredMixin):
         context = super().get_context_data(**kwargs)
 
         return context | {
+            "home": {
+                "url": reverse("accounts:home"),
+                "active": False,
+            },
             "edit_password": {
                 "url": reverse("accounts:change_password"),
                 "active": False,
@@ -181,6 +185,15 @@ class MyAccountMixin(LoginRequiredMixin):
     def get_success_url(self):
         # Stay on page
         return self.request.get_full_path()
+
+
+class HomeView(MyAccountMixin, TemplateView):
+    template_name = "account_home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["home"]["active"] = True
+        return context
 
 
 class PasswordChangeView(MyAccountMixin, FormView):

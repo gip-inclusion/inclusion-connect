@@ -1,0 +1,15 @@
+{% extends "layout/account.html" %}
+
+{% block section_title %}Accueil{% endblock %}
+
+{% block content %}
+    <p>
+        Nom de famille : <strong>{{ user.last_name }}</strong>
+    </p>
+    <p>
+        Prénom : <strong>{{ user.first_name }}</strong>
+    </p>
+    <p>
+        Adresse e-mail : <strong>{{ user.email }}</strong>
+    </p>
+{% endblock %}
