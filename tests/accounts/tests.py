@@ -8,7 +8,6 @@ from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.db.models import F
-from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -44,33 +43,6 @@ class TestLoginView:
         assertContains(response, "Connexion")
         assertContains(response, "Adresse e-mail")  # Ask for email, not username
         assertContains(response, reverse("accounts:register"))  # Link to register page
-
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
-        assert get_user(client).is_authenticated is True
-        # The redirect cleans `next_url` from the session.
-        assert "next_url" not in client.session
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"user": user.pk, "event": "login"},
-                )
-            ],
-        )
-
-    @override_settings(FREEZE_ACCOUNTS=True)
-    def test_login_after_freeze(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory()
-
-        response = client.get(url)
-        assertContains(response, "Connexion")
-        assertContains(response, "Adresse e-mail")  # Ask for email, not username
-        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assertRedirects(response, redirect_url, fetch_redirect_response=False)
@@ -598,37 +570,6 @@ class TestRegisterView:
             "L’équipe d’inclusion connect\n"
         )
 
-    @override_settings(FREEZE_ACCOUNTS=True)
-    def test_no_register_after_freeze(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:register"), {"next": redirect_url})
-
-        response = client.get(url)
-        assertTemplateUsed(response, "no_register.html")
-        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
-        assertNotContains(response, 'type="submit"')
-
-        user_email = "user@mailinator.com"
-        response = client.post(
-            url,
-            data={
-                "email": user_email,
-                "first_name": "Jack",
-                "last_name": "Jackson",
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assert response.status_code == 403
-        assert not User.objects.exists()
-        assert not EmailAddress.objects.exists()
-        assertRecords(
-            caplog,
-            [
-                ("django.request", logging.WARNING, "Forbidden: /accounts/register/"),
-            ],
-        )
-
 
 class TestActivateAccountView:
     def test_activate_account(self, caplog, client):
@@ -828,54 +769,6 @@ class TestActivateAccountView:
                         },
                     },
                 )
-            ],
-        )
-
-    @override_settings(FREEZE_ACCOUNTS=True)
-    def test_no_activation_after_freeze(self, caplog, client):
-        application = ApplicationFactory()
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
-        url = add_url_params(reverse("accounts:activate"), {"next": redirect_url})
-        user = UserFactory.build(email="me@mailinator.com")
-
-        # If missing params in oidc session
-        response = client.get(url)
-        assert response.status_code == 400
-        assertRecords(
-            caplog,
-            [("django.request", logging.WARNING, "Bad Request: /accounts/activate/")],
-        )
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {
-            "login_hint": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-            "client_id": application.client_id,
-        }
-        client_session.save()
-        response = client.get(url)
-        assertTemplateUsed(response, "no_register.html")
-        assertContains(response, "la création de compte Inclusion Connect n’est plus possible")
-        assertNotContains(response, 'type="submit"')
-
-        response = client.post(
-            url,
-            data={
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "password1": DEFAULT_PASSWORD,
-                "password2": DEFAULT_PASSWORD,
-            },
-        )
-        assert response.status_code == 403
-        assert not User.objects.exists()
-        assert not EmailAddress.objects.exists()
-        assertRecords(
-            caplog,
-            [
-                ("django.request", logging.WARNING, "Forbidden: /accounts/activate/"),
             ],
         )
 
@@ -1382,34 +1275,6 @@ class TestEditUserInfoView:
             ],
         )
 
-    @override_settings(FREEZE_ACCOUNTS=True)
-    def test_edit_after_freeze(self, client, caplog):
-        application = ApplicationFactory()
-        user = UserFactory(first_name="Jean", last_name="Dupond", email="jean.dupond@email.com")
-        client.force_login(user)
-        params = {"referrer_uri": "rp_url", "referrer": application.client_id}
-        edit_user_info_url = add_url_params(reverse("accounts:edit_user_info"), params)
-        response = client.get(edit_user_info_url)
-        assertRecords(caplog, [])
-        assertNotContains(response, 'type="submit"')
-        assertContains(response, "vous ne pouvez plus modifier vos informations personnelles")
-        response = client.post(
-            edit_user_info_url,
-            data={"last_name": "Doe", "first_name": "John", "email": "jo@email.com"},
-            follow=True,
-        )
-        assert response.status_code == 403
-        user.refresh_from_db()
-        assert user.first_name == "Jean"
-        assert user.last_name == "Dupond"
-        assert user.email == "jean.dupond@email.com"
-        assertRecords(
-            caplog,
-            [
-                ("django.request", logging.WARNING, "Forbidden: /accounts/my-account/"),
-            ],
-        )
-
 
 class TestPasswordChangeView:
     def test_change_password(self, caplog, client):
@@ -1650,26 +1515,6 @@ class TestConfirmEmailTokenView:
                 )
             ],
         )
-
-    @override_settings(FREEZE_ACCOUNTS=True)
-    @freeze_time("2023-04-26 11:11:11")
-    def test_no_confirm_email_after_freeze(self, caplog, client):
-        user = UserFactory(email="")
-        email = "me@mailinator.com"
-        email_address = EmailAddress.objects.create(email=email, user_id=user.pk)
-        token = email_verification_token(email)
-        session = client.session
-        session[EMAIL_CONFIRM_KEY] = "me@mailinator.com"
-        session.save()
-        response = client.get(self.url(user, token))
-        assertTemplateUsed(response, "no_confirm_email.html")
-        email_address.refresh_from_db()
-        assert email_address.verified_at is None
-        user.refresh_from_db()
-        assert user.email == ""
-        assert get_user(client).is_authenticated is False
-        assert EMAIL_CONFIRM_KEY in client.session
-        assertRecords(caplog, [])
 
     @freeze_time("2023-04-26 11:11:11")
     def test_confirm_email_from_other_client(self, caplog, client, oidc_params):

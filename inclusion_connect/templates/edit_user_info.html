@@ -4,33 +4,17 @@
 {% block section_title %}Informations générales{% endblock %}
 
 {% block content %}
-    {% if FREEZE_ACCOUNTS %}
-        <div class="alert alert-warning">
-            <p class="mb-0">
-                Depuis le 28 octobre 2024, date du passage à ProConnect vous ne pouvez plus modifier vos informations personnelles (Prénom, Nom, E-mail) depuis votre espace Inclusion Connect.
-            </p>
-            <a href="{{ MIGRATION_PAGE_URL }}" target="_blank" rel="noopener">Besoin d’aide ?</a>
-        </div>
-        <div>
-            Prénom : <strong>{{ request.user.first_name }}</strong>
-            <br>
-            Nom : <strong>{{ request.user.last_name }}</strong>
-            <br>
-            Adresse e-mail : <strong>{{ request.user.email }}</strong>
-        </div>
-    {% else %}
-        <form method="post" class="js-prevent-multiple-submit">
-            {% csrf_token %}
-            <fieldset>
-                <div class="row">
-                    <div class="col-12">{% bootstrap_form form %}</div>
-                </div>
-            </fieldset>
-            <div>
-                <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="compte" data-matomo-action="clic" data-matomo-name="Enregistrer les modifications">
-                    Enregistrer les modifications
-                </button>
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <fieldset>
+            <div class="row">
+                <div class="col-12">{% bootstrap_form form %}</div>
             </div>
-        </form>
-    {% endif %}
+        </fieldset>
+        <div>
+            <button class="btn btn-block btn-primary matomo-event" type="submit" data-matomo-category="compte" data-matomo-action="clic" data-matomo-name="Enregistrer les modifications">
+                Enregistrer les modifications
+            </button>
+        </div>
+    </form>
 {% endblock %}
