@@ -272,9 +272,9 @@ django-citext==1.0.3 \
     --hash=sha256:30167d71369438ee27b76643466cf0d35a9dad43b3f4c8d1924efd9ba2f88dcd \
     --hash=sha256:aaec55853c84cd48de1668fb059acba98bef4e343a4420b0e670773498e0aedd
     # via -r requirements/base.in
-django-cors-headers==4.6.0 \
-    --hash=sha256:14d76b4b4c8d39375baeddd89e4f08899051eeaf177cb02a29bd6eae8cf63aa8 \
-    --hash=sha256:8edbc0497e611c24d5150e0055d3b178c6534b8ed826fb6f53b21c63f5d48ba3
+django-cors-headers==4.9.0 \
+    --hash=sha256:15c7f20727f90044dcee2216a9fd7303741a864865f0c3657e28b7056f61b449 \
+    --hash=sha256:fe5d7cb59fdc2c8c646ce84b727ac2bca8912a247e6e68e1fb507372178e59e8
     # via -r requirements/base.in
 django-csp==3.8 \
     --hash=sha256:19b2978b03fcd73517d7d67acbc04fbbcaec0facc3e83baa502965892d1e0719 \
