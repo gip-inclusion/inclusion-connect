@@ -4,7 +4,7 @@ from functools import partial
 from django.contrib.sessions.models import Session
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.utils import timezone
 from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
@@ -105,14 +105,6 @@ class AuthorizationView(BaseAuthorizationView):
     @property
     def login_url(self):
         return reverse("accounts:login")
-
-
-class RegistrationView(BaseAuthorizationView):
-    login_url = reverse_lazy("accounts:register")
-
-
-class ActivationView(BaseAuthorizationView):
-    login_url = reverse_lazy("accounts:activate")
 
 
 def handle_app_authorized(sender, request, token, **kwargs):
