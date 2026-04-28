@@ -4,11 +4,8 @@ import uuid
 from citext import CIEmailField
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
-
-from inclusion_connect.oidc_federation.enums import Federation
 
 
 class User(AbstractUser):
@@ -31,25 +28,11 @@ class User(AbstractUser):
     # Triggers for required actions
     password_is_temporary = models.BooleanField("mot de passe temporaire", default=False)
     terms_accepted_at = models.DateTimeField("date de validation des CGUs", blank=True, null=True)
-    new_email_already_used = models.TextField(null=True)
     password_is_too_weak = models.BooleanField("mot de passe trop faible", default=False)
 
     # Allow to redirect user correctly even when using a link from another browser (without session data)
     next_redirect_uri = models.TextField(blank=True, null=True)
     next_redirect_uri_stored_at = models.DateTimeField(blank=True, null=True)
-
-    # Federation
-    federation_sub = models.TextField(verbose_name="identifiant (sub)", null=True)
-    federation = models.TextField(verbose_name="Fournisseur d'identité", choices=Federation.choices, null=True)
-    federation_data = models.JSONField(
-        verbose_name="informations complémentaires",
-        blank=True,
-        null=True,
-        encoder=DjangoJSONEncoder,
-    )
-    federation_id_token_hint = models.TextField(
-        verbose_name="IdToken", null=True
-    )  # Used to logout from federation even is session expired
 
     class Meta:
         verbose_name = "utilisateur"
@@ -59,12 +42,6 @@ class User(AbstractUser):
                 name="unique_email_if_not_empty",
                 condition=~models.Q(email=""),
                 violation_error_message="Cet email est déjà associé à un autre utilisateur.",
-            ),
-            models.UniqueConstraint(
-                fields=["federation", "federation_sub"],
-                name="unique_sub_per_federation",
-                condition=~models.Q(federation=None),
-                violation_error_message="L’identifiant de fédération (sub) est associé à un autre utilisateur.",
             ),
         ]
 

@@ -1,5 +1,3 @@
-import pytest
-from django.db import IntegrityError
 from django.utils import timezone
 from freezegun import freeze_time
 
@@ -45,13 +43,3 @@ def test_pop_next_redirect_uri():
     user.refresh_from_db()
     assert user.next_redirect_uri is None
     assert user.next_redirect_uri_stored_at is None
-
-
-def test_federation_sub_is_unique():
-    kwargs = {"federation": "peama", "federation_sub": "uniq"}
-    UserFactory(**kwargs)
-    with pytest.raises(
-        IntegrityError,
-        match=r'^duplicate key value violates unique constraint "unique_sub_per_federation"',
-    ):
-        UserFactory(**kwargs)

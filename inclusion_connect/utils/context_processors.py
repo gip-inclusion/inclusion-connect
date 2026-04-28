@@ -11,8 +11,6 @@ def expose_settings(*args):
             "PRIVACY_POLICY_PATH",
             "TERMS_PATH",
             "LEGAL_NOTICES_PATH",
-            "PEAMA_STAGING",
-            "PEAMA_ENABLED",
         ]
     }
 

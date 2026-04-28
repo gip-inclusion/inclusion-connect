@@ -24,18 +24,6 @@ STORAGES = {
     },
 }
 
-# PEAMA Federation
-# ----------------
-
-PEAMA_CLIENT_ID = "PEAMA_CLIENT_ID"
-PEAMA_ENABLED = True
-PEAMA_CLIENT_SECRET = "PEAMA_CLIENT_SECRET"
-PEAMA_AUTH_ENDPOINT = "https://peama/auth"
-PEAMA_TOKEN_ENDPOINT = "https://peama/token?realm=/agent"
-PEAMA_USER_ENDPOINT = "https://peama/user?realm=/agent"
-PEAMA_SCOPES = "openid email profile siteAgent"
-PEAMA_JWKS_ENDPOINT = "https://peama/jwks"
-PEAMA_LOGOUT_ENDPOINT = "https://peama/logout?realm=/agent"
 
 # OIDC Config
 # -----------

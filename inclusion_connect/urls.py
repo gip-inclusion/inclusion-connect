@@ -31,8 +31,6 @@ urlpatterns = [
     re_path(r"^accounts/", include("django.contrib.auth.urls")),
     # OIDC provider urls
     re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls", namespace="oauth2_provider")),
-    # OIDC Client urls
-    path("federation/", include("inclusion_connect.oidc_federation.urls", "oidc_federation")),
     # Mandatory accesibilty page
     path("accessibility/", views.accessibility, name="accessibility"),
     # security.txt page

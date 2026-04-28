@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db import transaction
 from django.http import Http404, HttpResponseForbidden, HttpResponseNotFound, HttpResponseRedirect
@@ -472,8 +471,6 @@ class EditUserInfoView(MyAccountMixin, UpdateView):
     def post(self, request, *args, **kwargs):
         if settings.FREEZE_ACCOUNTS:
             return HttpResponseForbidden()
-        if self.get_object().federation:
-            return HttpResponseForbidden()
         return super().post(request, *args, **kwargs)
 
 
@@ -481,11 +478,6 @@ class PasswordChangeView(MyAccountMixin, FormView):
     template_name = "change_password.html"
     form_class = forms.PasswordChangeForm
     EVENT_NAME = "change_password"
-
-    def dispatch(self, request, *args, **kwargs):
-        if getattr(request.user, "federation", None):
-            raise PermissionDenied("Un compte fédéré ne peut pas modifier son mot de passe.")
-        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         return super().get_form_kwargs() | {"user": self.get_object()}
@@ -516,15 +508,6 @@ class PasswordChangeView(MyAccountMixin, FormView):
         self.log(self.EVENT_NAME, form)
         messages.success(self.request, "Votre mot de passe a été mis à jour.")
         return super().form_valid(form)
-
-
-class NewEmailAlreadyUsed(LoginRequiredMixin, TemplateView):
-    template_name = "new_email_already_used.html"
-
-    def post(self, request, *args, **kwargs):
-        request.user.new_email_already_used = None
-        request.user.save()
-        return HttpResponseRedirect(get_next_url(request))
 
 
 class ChangeWeakPassword(ChangeTemporaryPassword):

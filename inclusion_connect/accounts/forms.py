@@ -8,7 +8,6 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from inclusion_connect.accounts.emails import send_verification_email
-from inclusion_connect.oidc_federation.enums import Federation
 from inclusion_connect.users.models import EmailAddress, User
 
 
@@ -39,28 +38,6 @@ class LoginForm(forms.Form):
         password = self.cleaned_data.get("password")
 
         if email is not None and password:
-            # Don't allow federated users
-            user = User.objects.filter(email=email).first()
-            if (
-                user
-                and user.email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX)
-                and settings.PEAMA_ENABLED
-                and not settings.PEAMA_STAGING
-            ):
-                error_message = (
-                    "Votre compte est un compte agent France Travail. "
-                    "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
-                )
-                self.log["user"] = user.pk
-                raise forms.ValidationError(error_message)
-            if user and user.federation:
-                identity_provider = user.get_federation_display()
-                error_message = (
-                    f"Votre compte est relié à {identity_provider}. Merci de vous connecter avec ce service."
-                )
-                self.log["user"] = user.pk
-                raise forms.ValidationError(error_message)
-
             self.user_cache = authenticate(self.request, email=email, password=password)
             if self.user_cache:
                 self.log["user"] = self.user_cache.pk
@@ -137,14 +114,6 @@ class RegisterForm(auth_forms.UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data["email"]
-        if email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX) and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
-            suffix = email.rsplit("@", maxsplit=1)[-1]
-            error_message = (
-                f"Vous utilisez une adresse e-mail en @{suffix}. "
-                "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
-            )
-            self.log["email"] = email
-            raise forms.ValidationError(error_message)
         try:
             email_address = EmailAddress.objects.get(email=email)
         except EmailAddress.DoesNotExist:
@@ -200,11 +169,7 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
         email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
         email_field.disabled = "email" in initial
 
-    def get_users(self, email, is_federated=False):
-        users = super().get_users(email)
-        return [user for user in users if bool(user.federation) == is_federated]
-
-    def save(self, *args, request=None, from_email=None, **kwargs):
+    def save(self, *args, request=None, **kwargs):
         super().save(*args, request=request, **kwargs)
         email = self.cleaned_data["email"]
         if next_url := request.session.get("next_url"):
@@ -212,26 +177,6 @@ class PasswordResetForm(auth_forms.PasswordResetForm):
             if users:
                 [user] = users
                 user.save_next_redirect_uri(next_url)
-        for user in self.get_users(email, is_federated=True):
-            self.send_mail(
-                "registration/password_reset_subject.txt",
-                "registration/password_reset_body_federation.txt",
-                {"federation": Federation(user.federation).label},
-                from_email,
-                user.email,
-                html_email_template_name="registration/password_reset_body_federation.html",
-            )
-
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if email.endswith(FRANCETRAVAIL_EMAIL_SUFFIX) and settings.PEAMA_ENABLED and not settings.PEAMA_STAGING:
-            suffix = email.rsplit("@", maxsplit=1)[-1]
-            error_message = (
-                f"Vous utilisez une adresse e-mail en @{suffix}. "
-                "Vous devez utiliser le bouton de connexion France Travail pour accéder au service."
-            )
-            raise ValidationError(error_message)
-        return email
 
 
 class SetPasswordForm(auth_forms.SetPasswordForm):
