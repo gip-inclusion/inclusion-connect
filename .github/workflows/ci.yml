@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions: {}
     env:
       DJANGO_SETTINGS_MODULE: inclusion_connect.settings.test
       PYTHONPATH: .
