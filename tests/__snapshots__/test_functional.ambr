@@ -143,12 +143,6 @@
   
   '''
 # ---
-# name: test_login_hint_is_preserved[password_reset_email_field]
-  '''
-  <input autocomplete="email" class="form-control" disabled="" id="id_email" name="email" placeholder="nom@domaine.fr" required="" type="email" value="email@mailinator.com"/>
-  
-  '''
-# ---
 # name: test_logout_with_confirmation
   '''
   <main class="s-main" id="main" role="main">
