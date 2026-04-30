@@ -446,9 +446,11 @@ django==5.2.13 \
     #   django-citext
     #   django-cors-headers
     #   django-csp
+    #   django-datadog-logger
     #   django-debug-toolbar
     #   django-extensions
     #   django-oauth-toolkit
+    #   djangorestframework
 django-admin-logs==1.5.0 \
     --hash=sha256:2b9a19ee59b60712a5005a27c0a060b5280ac2192607aa34757edfa5b3abc1c5 \
     --hash=sha256:ce87010b09447ed6ce39ac5d5e7d5c7d19ca3363bf2518499ceb81b9c2ef45c9
@@ -473,6 +475,10 @@ django-csp==4.0 \
     --hash=sha256:b27010bb702eb20a3dad329178df2b61a2b82d338b70fbdc13c3a3bd28712833 \
     --hash=sha256:d5a0a05463a6b75a4f1fc1828c58c89af8db9364d09fc6e12f122b4d7f3d00dc
     # via -r requirements/base.txt
+django-datadog-logger==0.9.0 \
+    --hash=sha256:502ccdf7684f29f4ca40c52ed1d03484236760abc71568f032d766aee42bc9bb \
+    --hash=sha256:8bdb40f5dc7c7a8095e301bbaf623dbdad4c141dadb4b9cdccfebc68df130f3a
+    # via -r requirements/base.txt
 django-debug-toolbar==6.3.0 \
     --hash=sha256:a199ce3d0f884739a9096835ad417479fede05f3b3c4824bc8b354721ba8f629 \
     --hash=sha256:f830a86fe02e17f625a22cfbed24a5bd1500762e201ec959c50efb0f9327282b
@@ -485,6 +491,12 @@ django-oauth-toolkit==3.2.0 \
     --hash=sha256:bd2cd2719b010231a2f370f927dbcc740454fb1d0dd7e7f4138f36227363dc26 \
     --hash=sha256:c36761ae6810083d95a652e9c820046cde0d45a2e2a5574bbe7202656ec20bb6
     # via -r requirements/base.txt
+djangorestframework==3.17.1 \
+    --hash=sha256:a6def5f447fe78ff853bff1d47a3c59bf38f5434b031780b351b0c73a62db1a5 \
+    --hash=sha256:c3c74dd3e83a5a3efc37b3c18d92bd6f86a6791c7b7d4dff62bb068500e76457
+    # via
+    #   -r requirements/base.txt
+    #   django-datadog-logger
 djlint==1.36.4 \
     --hash=sha256:16ce37e085afe5a30953b2bd87cbe34c37843d94c701fc68a2dda06c1e428ff4 \
     --hash=sha256:17254f218b46fe5a714b224c85074c099bcb74e3b2e1f15c2ddc2cf415a408a1 \
@@ -582,6 +594,11 @@ jsbeautifier==1.15.4 \
     # via
     #   cssbeautifier
     #   djlint
+json-log-formatter==1.1.1 \
+    --hash=sha256:0815e3b4469e5c79cf3f6dc8a0613ba6601f4a7464f85ba03655cfa6e3e17d10
+    # via
+    #   -r requirements/base.txt
+    #   django-datadog-logger
 json5==0.14.0 \
     --hash=sha256:56cf861bab076b1178eb8c92e1311d273a9b9acea2ccc82c276abf839ebaef3a \
     --hash=sha256:b3f492fad9f6cdbced8b7d40b28b9b1c9701c5f561bef0d33b81c2ff433fefcb

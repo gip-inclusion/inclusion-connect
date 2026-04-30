@@ -23,6 +23,8 @@ django-csp  # https://github.com/mozilla/django-csp
 
 PyJWT  # https://github.com/jpadilla/pyjwt
 
+# Datadog logger
+django-datadog-logger
 
 # Front-end
 # ------------------------------------------------------------------------------
