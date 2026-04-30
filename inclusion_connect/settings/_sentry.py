@@ -53,3 +53,4 @@ def sentry_init(dsn, traces_sample_rate):
         # and is silently ignored when used in `context_processors.py` to get access to `request.user`.
     )
     ignore_logger("django.security.DisallowedHost")
+    ignore_logger("django_datadog_logger.middleware.request_log")
