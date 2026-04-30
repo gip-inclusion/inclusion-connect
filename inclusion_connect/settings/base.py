@@ -277,8 +277,8 @@ if SENTRY_DSN:
     sentry_init(dsn=SENTRY_DSN, traces_sample_rate=_sentry_traces_sample_rate)
 
 # email link validity
-EMAIL_LINKS_VALIDITY_DAYS = 1
-PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
+# EMAIL_LINKS_VALIDITY_DAYS = 1
+# PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
 
 # Email
 # -----

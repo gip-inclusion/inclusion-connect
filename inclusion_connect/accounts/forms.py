@@ -45,24 +45,6 @@ class LoginForm(forms.Form):
         return self.user_cache
 
 
-class PasswordResetForm(auth_forms.PasswordResetForm):
-    def __init__(self, *args, initial, **kwargs):
-        super().__init__(*args, initial=initial, **kwargs)
-        email_field = self.fields["email"]
-        email_field.label = "Adresse e-mail"
-        email_field.widget.attrs = EMAIL_FIELDS_WIDGET_ATTRS.copy()
-        email_field.disabled = "email" in initial
-
-    def save(self, *args, request=None, **kwargs):
-        super().save(*args, request=request, **kwargs)
-        email = self.cleaned_data["email"]
-        if next_url := request.session.get("next_url"):
-            users = list(self.get_users(email))
-            if users:
-                [user] = users
-                user.save_next_redirect_uri(next_url)
-
-
 class SetPasswordForm(auth_forms.SetPasswordForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
