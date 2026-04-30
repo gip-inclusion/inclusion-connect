@@ -41,7 +41,7 @@ class TestUserAdmin:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "admin_add", "acting_user": admin_user.pk, "user": user.pk},
+                    {"event": "admin_add", "acting_user": admin_user.email, "user": user.email},
                 )
             ],
         )
@@ -77,8 +77,8 @@ class TestUserAdmin:
                     logging.INFO,
                     {
                         "event": "admin_change",
-                        "acting_user": admin_user.pk,
-                        "user": user.pk,
+                        "acting_user": admin_user.email,
+                        "user": user.email,
                         "old_first_name": "",
                         "new_first_name": "Manuel",
                         "old_last_name": "",
@@ -118,8 +118,8 @@ class TestUserAdmin:
                     logging.INFO,
                     {
                         "event": "admin_change",
-                        "acting_user": admin_user.pk,
-                        "user": user.pk,
+                        "acting_user": admin_user.email,
+                        "user": user.email,
                     },
                 )
             ],
@@ -152,7 +152,7 @@ class TestUserAdmin:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "admin_change_password", "acting_user": staff_user.pk, "user": user.pk},
+                    {"event": "admin_change_password", "acting_user": staff_user.email, "user": user.email},
                 )
             ],
         )

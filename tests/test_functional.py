@@ -72,7 +72,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "user": user.pk, "event": "login"},
+                {"application": "my_application", "user": user.email, "event": "login"},
             )
         ],
     )
@@ -92,7 +92,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
@@ -127,7 +127,7 @@ def test_login_after_password_reset(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "forgot_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -162,13 +162,13 @@ def test_login_after_password_reset(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "reset_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             ),
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "login", "user": user.pk},
+                {"application": "my_application", "event": "login", "user": user.email},
             ),
         ],
     )
@@ -187,7 +187,7 @@ def test_login_after_password_reset(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
@@ -222,7 +222,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "forgot_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -259,13 +259,13 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "reset_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             ),
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "login", "user": user.pk},
+                {"application": "my_application", "event": "login", "user": user.email},
             ),
         ],
     )
@@ -284,7 +284,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
@@ -331,7 +331,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "user": user.pk, "event": "login"},
+                {"application": "my_application", "user": user.email, "event": "login"},
             )
         ],
     )
@@ -348,7 +348,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
@@ -376,7 +376,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
                     "event": "logout",
                     "id_token_hint": id_token,
                     "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -409,7 +409,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                     logging.INFO,
                     {
                         "application": "my_application",
-                        "user": user.pk,
+                        "user": user.email,
                         "event": "login",
                     },
                 )
@@ -428,7 +428,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                     {
                         "application": "my_application",
                         "event": "redirect",
-                        "user": user.pk,
+                        "user": user.email,
                         "url": f"http://localhost/callback?code={code}&state=state",
                     },
                 )
@@ -456,7 +456,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                         "event": "logout",
                         "id_token_hint": id_token,
                         "post_logout_redirect_uri": "http://callback/",
-                        "user": user.pk,
+                        "user": user.email,
                     },
                 ),
             ],
@@ -489,7 +489,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "user": user.pk, "event": "login"},
+                {"application": "my_application", "user": user.email, "event": "login"},
             )
         ],
     )
@@ -506,7 +506,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
@@ -550,7 +550,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
                     "event": "logout",
                     "client_id": "my_application",
                     "post_logout_redirect_uri": "http://callback/",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             ),
         ],
@@ -582,7 +582,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                     logging.INFO,
                     {
                         "application": "my_application",
-                        "user": user.pk,
+                        "user": user.email,
                         "event": "login",
                     },
                 )
@@ -600,7 +600,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                     {
                         "application": "my_application",
                         "event": "redirect",
-                        "user": user.pk,
+                        "user": user.email,
                         "url": f"http://localhost/callback?code={code}&state=state",
                     },
                 )
@@ -673,7 +673,7 @@ def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many st
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"user": user.pk, "event": "login"},
+                {"user": user.email, "event": "login"},
             )
         ],
     )
@@ -695,7 +695,7 @@ def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many st
                 logging.INFO,
                 {
                     "event": "change_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -717,7 +717,7 @@ def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many st
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"user": user.pk, "event": "login"},
+                {"user": user.email, "event": "login"},
             )
         ],
     )
@@ -763,7 +763,7 @@ def test_login_weak_password(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "user": user.pk, "event": "login"},
+                {"application": "my_application", "user": user.email, "event": "login"},
             )
         ],
     )
@@ -785,7 +785,7 @@ def test_login_weak_password(caplog, client, oidc_params):
                 logging.INFO,
                 {
                     "event": "change_weak_password",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -806,7 +806,7 @@ def test_login_weak_password(caplog, client, oidc_params):
                 {
                     "application": "my_application",
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )

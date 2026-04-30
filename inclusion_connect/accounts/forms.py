@@ -32,7 +32,7 @@ class LoginForm(forms.Form):
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
             if self.user_cache:
-                self.log["user"] = self.user_cache.pk
+                self.log["user"] = self.user_cache.email
             else:
                 self.log["email"] = email
                 raise ValidationError(

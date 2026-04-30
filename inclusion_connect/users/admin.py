@@ -87,8 +87,8 @@ class UserChangeForm(auth_forms.UserChangeForm):
     def log_changes(self, request):
         log = log_data(request)
         log["event"] = "admin_change"
-        log["acting_user"] = request.user.pk
-        log["user"] = self.instance.pk
+        log["acting_user"] = request.user.email
+        log["user"] = self.instance.email
         tracked_changed_fields = set(self.changed_data) & {"first_name", "last_name"}
         for field in sorted(tracked_changed_fields):
             log[f"old_{field}"] = self.initial[field]
@@ -138,8 +138,8 @@ class UserAdmin(auth_admin.UserAdmin):
         else:
             log = log_data(request)
             log["event"] = "admin_add"
-            log["acting_user"] = request.user.pk
-            log["user"] = form.instance.pk
+            log["acting_user"] = request.user.email
+            log["user"] = form.instance.email
             transaction.on_commit(partial(logger.info, log))
 
     def construct_change_message(self, request, form, formsets, add=False):
@@ -150,8 +150,8 @@ class UserAdmin(auth_admin.UserAdmin):
         if isinstance(form, self.change_password_form):
             log = log_data(request)
             log["event"] = "admin_change_password"
-            log["acting_user"] = request.user.pk
-            log["user"] = form.user.pk
+            log["acting_user"] = request.user.email
+            log["user"] = form.user.email
             transaction.on_commit(partial(logger.info, log))
         return change_message
 

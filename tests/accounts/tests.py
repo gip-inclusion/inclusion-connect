@@ -42,7 +42,7 @@ class TestLoginView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -62,7 +62,7 @@ class TestLoginView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -180,7 +180,7 @@ class TestLoginView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -233,7 +233,7 @@ class TestPasswordResetView:
                     (
                         "inclusion_connect.auth",
                         logging.INFO,
-                        {"event": "forgot_password", "user": user.pk},
+                        {"event": "forgot_password", "user": user.email},
                     )
                 ],
             )
@@ -267,12 +267,12 @@ class TestPasswordResetView:
                     (
                         "inclusion_connect.auth",
                         logging.INFO,
-                        {"event": "reset_password", "user": user.pk},
+                        {"event": "reset_password", "user": user.email},
                     ),
                     (
                         "inclusion_connect.auth",
                         logging.INFO,
-                        {"event": "login", "user": user.pk},
+                        {"event": "login", "user": user.email},
                     ),
                 ],
             )
@@ -358,7 +358,7 @@ class TestPasswordResetView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "forgot_password", "user": user.pk},
+                    {"event": "forgot_password", "user": user.email},
                 )
             ],
         )
@@ -379,12 +379,12 @@ class TestPasswordResetView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "reset_password", "user": user.pk},
+                    {"event": "reset_password", "user": user.email},
                 ),
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "login", "user": user.pk},
+                    {"event": "login", "user": user.email},
                 ),
             ],
         )
@@ -411,7 +411,7 @@ class TestPasswordResetConfirmView:
                     logging.INFO,
                     {
                         "event": "reset_password_error",
-                        "user": None,
+                        "user": user.email,
                         "errors": {
                             "new_password2": [
                                 {
@@ -454,7 +454,7 @@ class TestPasswordChangeView:
                     logging.INFO,
                     {
                         "event": "change_password",
-                        "user": user.pk,
+                        "user": user.email,
                     },
                 )
             ],
@@ -475,7 +475,7 @@ class TestPasswordChangeView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -501,7 +501,7 @@ class TestPasswordChangeView:
                     logging.INFO,
                     {
                         "event": "change_password_error",
-                        "user": user.pk,
+                        "user": user.email,
                         "errors": {
                             "new_password2": [
                                 {
@@ -541,7 +541,7 @@ class TestChangeTemporaryPasswordView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -561,7 +561,7 @@ class TestChangeTemporaryPasswordView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "change_temporary_password", "user": user.pk},
+                    {"event": "change_temporary_password", "user": user.email},
                 )
             ],
         )
@@ -597,7 +597,7 @@ class TestChangeTemporaryPasswordView:
                     logging.INFO,
                     {
                         "event": "change_temporary_password_error",
-                        "user": user.pk,
+                        "user": user.email,
                         "errors": {
                             "new_password2": [
                                 {
@@ -637,7 +637,7 @@ class TestChangeWeakPasswordView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.pk, "event": "login"},
+                    {"user": user.email, "event": "login"},
                 )
             ],
         )
@@ -658,7 +658,7 @@ class TestChangeWeakPasswordView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "change_weak_password", "user": user.pk},
+                    {"event": "change_weak_password", "user": user.email},
                 )
             ],
         )
@@ -681,7 +681,7 @@ class TestChangeWeakPasswordView:
                     logging.INFO,
                     {
                         "event": "change_weak_password_error",
-                        "user": user.pk,
+                        "user": user.email,
                         "errors": {
                             "new_password2": [
                                 {

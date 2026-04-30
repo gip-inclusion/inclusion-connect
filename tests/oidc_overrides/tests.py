@@ -89,7 +89,7 @@ class TestLogoutView:
                         "event": "logout",
                         "id_token_hint": id_token,
                         "post_logout_redirect_uri": "http://callback/",
-                        "user": user.pk,
+                        "user": user.email,
                     },
                 )
             ],
@@ -121,7 +121,7 @@ class TestLogoutView:
                             "event": "logout",
                             "id_token_hint": id_token,
                             "post_logout_redirect_uri": "http://callback/",
-                            "user": user.pk,
+                            "user": user.email,
                         },
                     )
                 ],
@@ -151,6 +151,7 @@ class TestLogoutView:
                     {
                         "event": "logout_error",
                         "id_token_hint": "111",
+                        "user": None,
                         "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise "
                         "invalid.",
                     },
@@ -166,7 +167,7 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": 111, "post_logout_redirect_uri": None},
+            {"id_token_hint": 111, "post_logout_redirect_uri": None, "user": None},
         )
         assertRedirects(response, "http://testserver/", fetch_redirect_response=False)
 
@@ -219,6 +220,7 @@ class TestLogoutView:
                         "event": "logout_error",
                         "id_token_hint": "111",
                         "post_logout_redirect_uri": "http://callback/",
+                        "user": None,
                         "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise "
                         "invalid.",
                     },
@@ -256,7 +258,7 @@ class TestLogoutView:
                         "event": "logout",
                         "id_token_hint": id_token,
                         "post_logout_redirect_uri": "http://callback/",
-                        "user": user.pk,
+                        "user": user.email,
                     },
                 )
             ],
@@ -296,7 +298,7 @@ class TestLogoutView:
                         "event": "logout",
                         "id_token_hint": id_token_1,
                         "post_logout_redirect_uri": "http://callback/",
-                        "user": user.pk,
+                        "user": user.email,
                     },
                 )
             ],
@@ -337,7 +339,7 @@ class TestAuthorizeView:
         auth_complete_url = add_url_params(auth_url, oidc_params)
         response = client.get(auth_complete_url)
         assert response.status_code == 400
-        assert pretty_indented(parse_response_to_soup(response, selector="main")) == snapshot
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         assertRecords(
             caplog,

@@ -74,7 +74,7 @@ class PasswordResetView(auth_views.PasswordResetView):
         log = log_data(self.request)
         log["event"] = event_name
         try:
-            log["user"] = User.objects.get(email=email).pk
+            log["user"] = User.objects.get(email=email).email
         except User.DoesNotExist:
             log["email"] = email
         transaction.on_commit(partial(logger.info, log))
@@ -105,7 +105,7 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         next_url = self.get_success_url()
         log = log_data(self.request, next_url=next_url)
         log["event"] = event_name
-        log["user"] = self.request.user.pk
+        log["user"] = self.user.email
         if form.errors:
             log["errors"] = form.errors.get_json_data()
         transaction.on_commit(partial(logger.info, log))
@@ -139,7 +139,7 @@ class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
     def log(self, event_name, form):
         log = log_data(self.request)
         log["event"] = event_name
-        log["user"] = self.request.user.pk
+        log["user"] = self.request.user.email
         if form.errors:
             log["errors"] = form.errors.get_json_data()
         transaction.on_commit(partial(logger.info, log))
@@ -212,7 +212,7 @@ class PasswordChangeView(MyAccountMixin, FormView):
     def log(self, event_name, form):
         log = log_data(self.request)
         log["event"] = event_name
-        log["user"] = self.request.user.pk
+        log["user"] = self.request.user.email
         if self.application:
             log["application"] = self.application.client_id
         if form.errors:

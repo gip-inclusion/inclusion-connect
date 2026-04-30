@@ -94,7 +94,10 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             # Fallback on oidc_params client_id
             log["application"] = client_id
         log["event"] = "redirect"
-        log["user"] = self.request.user.pk
+        if self.request.user.is_authenticated:
+            log["user"] = self.request.user.email
+        else:
+            log["user"] = None
         log["url"] = redirect_to
         transaction.on_commit(partial(logger.info, log))
         return super().redirect(redirect_to, application)
@@ -110,7 +113,7 @@ def handle_app_authorized(sender, request, token, **kwargs):
     log = log_data(request) | {
         "application": token.application.client_id,
         "event": "token",
-        "user": token.user_id,
+        "user": token.user.email,
     }
     transaction.on_commit(partial(logger.info, log))
 
@@ -134,8 +137,10 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
                 log[param] = request_data[param]
             except KeyError:
                 pass
-        if user:
-            log["user"] = user.pk
+        if user and user.is_authenticated:
+            log["user"] = user.email
+        else:
+            log["user"] = None
         log.update(extra)
         transaction.on_commit(partial(logger.info, log))
 

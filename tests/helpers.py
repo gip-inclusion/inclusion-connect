@@ -49,7 +49,7 @@ def oidc_flow_followup(
                 {
                     "application": oidc_params["client_id"],
                     "event": "token",
-                    "user": user.pk,
+                    "user": user.email,
                 },
             )
         ],
@@ -126,7 +126,7 @@ def oidc_complete_flow(
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"application": application.client_id, "user": user.pk, "event": "login"},
+                    {"application": application.client_id, "user": user.email, "event": "login"},
                 )
             ],
         )
@@ -142,7 +142,7 @@ def oidc_complete_flow(
                 {
                     "application": application.client_id,
                     "event": "redirect",
-                    "user": user.pk,
+                    "user": user.email,
                     "url": f"http://localhost/callback?code={code}&state=state",
                 },
             )
