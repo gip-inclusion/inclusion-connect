@@ -38,6 +38,5 @@ python-dotenv  # https://github.com/theskumar/python-dotenv
 
 # Production requirements
 # ------------------------------------------------------------------------------
-elasticsearch==8.*
 sentry-sdk  # https://github.com/getsentry/sentry-python
 python-json-logger  # https://github.com/madzak/python-json-logger
