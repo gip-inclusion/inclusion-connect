@@ -63,6 +63,8 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    # Generate request Id
+    "django_datadog_logger.middleware.request_id.RequestIdMiddleware",
     "csp.middleware.CSPMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.gzip.GZipMiddleware",
@@ -75,6 +77,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "inclusion_connect.middleware.never_cache",
     "inclusion_connect.accounts.middleware.post_login_actions",
+    # Final logger
+    "django_datadog_logger.middleware.request_log.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "inclusion_connect.urls"

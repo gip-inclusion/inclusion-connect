@@ -143,6 +143,7 @@ class TestLogoutView:
         assertRecords(
             caplog,
             [
+                ("django_datadog_logger.middleware.request_log", logging.WARNING, "HTTP 400 Bad Request"),
                 ("django.request", logging.WARNING, "Bad Request: /auth/logout"),
                 (
                     "inclusion_connect.oidc",
@@ -209,6 +210,7 @@ class TestLogoutView:
         assertRecords(
             caplog,
             [
+                ("django_datadog_logger.middleware.request_log", logging.WARNING, "HTTP 400 Bad Request"),
                 ("django.request", logging.WARNING, "Bad Request: /auth/logout"),
                 (
                     "inclusion_connect.oidc",
@@ -340,6 +342,7 @@ class TestAuthorizeView:
         assertRecords(
             caplog,
             [
+                ("django_datadog_logger.middleware.request_log", logging.WARNING, "HTTP 400 Bad Request"),
                 ("django.request", logging.WARNING, f"Bad Request: {auth_url}"),
                 (
                     "inclusion_connect.oidc",
