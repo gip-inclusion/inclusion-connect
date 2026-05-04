@@ -177,6 +177,7 @@ L'_id token_ est un objet JWT signé qui contient notamment :
 - **given_name** : le prénom de l'utilisateur.
 - **family_name** : son nom de famille.
 - **email** : son adresse e-mail.
+- **usual_name** : son nom d'usage (identique à `family_name`).
 
 
 La signature du token est chiffrée avec l'algorithme `RS256` et il est possible de récupérer la clé publique pour vérifier la signature.
@@ -218,6 +219,7 @@ Corps HTTP:
     'given_name': <prénom>,
     'family_name': <nom de famille>
     'email': <l'email>
+    'usual_name': <nom d'usage (= family_name)>
 }
 ```
 

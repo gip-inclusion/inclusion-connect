@@ -69,6 +69,7 @@ def oidc_flow_followup(
     assert decoded_id_token["given_name"] == user.first_name
     assert decoded_id_token["family_name"] == user.last_name
     assert decoded_id_token["email"] == user.email
+    assert decoded_id_token["usual_name"] == user.last_name
     for k, v in (additional_claims or {}).items():
         assert decoded_id_token[k] == v
 
@@ -82,6 +83,7 @@ def oidc_flow_followup(
         "given_name": user.first_name,
         "family_name": user.last_name,
         "email": user.email,
+        "usual_name": user.last_name,
     } | (additional_claims or {})
     assertRecords(caplog, [])
 

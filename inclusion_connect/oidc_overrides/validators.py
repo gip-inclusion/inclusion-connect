@@ -10,6 +10,7 @@ class CustomOAuth2Validator(OAuth2Validator):
             "permissions": "permissions",
             "site_pe": "profile",
             "structure_pe": "profile",
+            "usual_name": "profile",
         }
     )
 
@@ -20,4 +21,5 @@ class CustomOAuth2Validator(OAuth2Validator):
             "given_name": request.user.first_name,
             "family_name": request.user.last_name,
             "email": request.user.email,
+            "usual_name": request.user.last_name,
         }
