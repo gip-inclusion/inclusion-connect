@@ -174,10 +174,7 @@ L'_access token_ sera ensuite utilisé pour accéder à l'endpoint _UserInfo_.
 L'_id token_ est un objet JWT signé qui contient notamment :
 - **nonce** : la valeur transmise lors de la requête initiale qu'il faut vérifier.
 - **sub** : l'identifiant unique de l'utilisateur que le FS doit conserver au cas où l'utilisateur change son adresse e-mail un jour.
-- **given_name** : le prénom de l'utilisateur.
-- **family_name** : son nom de famille.
-- **email** : son adresse e-mail.
-
+- les données additionnelles demandées dans le **scope**
 
 La signature du token est chiffrée avec l'algorithme `RS256` et il est possible de récupérer la clé publique pour vérifier la signature.
 
@@ -215,6 +212,7 @@ Corps HTTP:
 ```
 {
     'sub': <l'identifiant unique de l'utilisateur>
+    # Eventuellement en fonction des scopes transmis
     'given_name': <prénom>,
     'family_name': <nom de famille>
     'email': <l'email>

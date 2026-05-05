@@ -307,6 +307,17 @@ OAUTH2_PROVIDER = {
         "openid": "OpenID Connect scope",
         "profile": "Profil utilisateur",
         "email": "Email de l'utilisateur",
+        # ProConnect specific scopes
+        "siret": "Siret de la structure de rattachement",
+        "given_name": "Prénom de l'utilisateur",
+        "usual_name": "Nom de famille de l'utilisateur",
+        "uid": "Identifiant unique de l'utilisateur",
+        "siren": "SIREN de la structure",
+        # ProConnect unused specific scopes
+        "organizational_unit": "Non implémenté",
+        "belonging_population": "Non implémenté",
+        "phone": "Non implémenté",
+        "chorusdt": "Non implémenté",
     },
     "PKCE_REQUIRED": False,
     "OAUTH2_VALIDATOR_CLASS": "inclusion_connect.oidc_overrides.validators.CustomOAuth2Validator",
@@ -355,3 +366,5 @@ if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
 
 
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+SIRET = "13003013300016"

@@ -28,6 +28,13 @@ def oidc_flow_followup(
     code_verifier=None,
     with_trailing_slash=False,
 ):
+    additional_claims = additional_claims or {
+        # defauld claims for "openid profile email"
+        "given_name": user.first_name,
+        "family_name": user.last_name,
+        "email": user.email,
+    }
+
     # Call TOKEN endpoint
     token_data = {
         "client_id": oidc_params["client_id"],
@@ -66,9 +73,6 @@ def oidc_flow_followup(
     assert decoded_id_token["nonce"] == oidc_params["nonce"]
     assert decoded_id_token["sub"] == str(user.pk)
     assert uuid.UUID(decoded_id_token["sub"]), "Sub should be an uuid"
-    assert decoded_id_token["given_name"] == user.first_name
-    assert decoded_id_token["family_name"] == user.last_name
-    assert decoded_id_token["email"] == user.email
     for k, v in (additional_claims or {}).items():
         assert decoded_id_token[k] == v
 
@@ -77,12 +81,7 @@ def oidc_flow_followup(
         "/auth/userinfo" + ("/" if with_trailing_slash else ""),
         headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
-    assert response.json() == {
-        "sub": str(user.pk),
-        "given_name": user.first_name,
-        "family_name": user.last_name,
-        "email": user.email,
-    } | (additional_claims or {})
+    assert response.json() == {"sub": str(user.pk)} | additional_claims
     assertRecords(caplog, [])
 
     return token_json["id_token"]
