@@ -823,3 +823,92 @@ def test_base_url_redirect(client):
     client.force_login(UserFactory())
     response = client.get(reverse("index"))
     assertRedirects(response, reverse("accounts:home"))
+
+
+@freeze_time("2023-05-05 11:11:11")
+def test_proconnect_scopes(caplog, client, oidc_params):
+    # See https://partenaires.proconnect.gouv.fr/docs/fournisseur-identite/configuration#31-scopes
+    oidc_params["scope"] = " ".join(
+        [
+            "openid",
+            "given_name",
+            "usual_name",
+            "email",
+            "uid",
+            "siren",
+            "siret",
+            "organizational_unit",
+            "belonging_population",
+            "phone",
+            "chorusdt",
+        ]
+    )
+    auth_url = reverse("oauth2_provider:authorize")
+    ApplicationFactory(client_id=oidc_params["client_id"])
+    user = UserFactory()
+
+    auth_complete_url = add_url_params(auth_url, oidc_params)
+    response = client.get(auth_complete_url)
+    assertRedirects(response, reverse("accounts:login"))
+    assertRecords(caplog, [])
+
+    response = client.post(
+        response.url,
+        data={
+            "email": user.email,
+            "password": DEFAULT_PASSWORD,
+        },
+    )
+    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
+    assert get_user(client).is_authenticated is True
+    user = User.objects.get(email=user.email)
+    assert user.linked_applications.count() == 0
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"application": "my_application", "user": user.email, "event": "login"},
+            )
+        ],
+    )
+
+    response = client.get(auth_complete_url)
+    assert response.status_code == 302
+    assert response.url.startswith(oidc_params["redirect_uri"])
+    auth_response_params = get_url_params(response.url)
+    assert user.linked_applications.count() == 1
+    code = auth_response_params["code"]
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.oidc",
+                logging.INFO,
+                {
+                    "application": "my_application",
+                    "event": "redirect",
+                    "user": user.email,
+                    "url": f"http://localhost/callback?code={code}&state=state",
+                },
+            )
+        ],
+    )
+
+    oidc_flow_followup(
+        client,
+        auth_response_params,
+        user,
+        oidc_params,
+        caplog,
+        additional_claims={
+            "sub": str(user.pk),
+            "email": user.email,
+            "siret": "13003013300016",
+            "siren": "130030133",
+            "usual_name": user.last_name,
+            "given_name": user.first_name,
+            "uid": str(user.pk),
+        },
+    )
