@@ -14,8 +14,6 @@ Le format des urls est le suivant :
 |               |                                       |
 |           --- | ---                                   |
 | Authorization | https://{hostname}/auth/authorize     |
-| Registration  | https://{hostname}/auth/register      |
-| Activation    | https://{hostname}/auth/activate      |
 | Token         | https://{hostname}/auth/token         |
 | UserInfo      | https://{hostname}/auth/userinfo      |
 | Logout        | https://{hostname}/auth/logout        |
@@ -88,28 +86,6 @@ Une fois sur Inclusion Connect, il y a 3 possibilités.
 - Si c'est un nouvel utilisateur, il devra se créer un compte, puis recevra un email de vérification d'adresse email qui le renverra sur Inclusion Connect avant d'être redirigé sur **redirect_uri**.
 - Si c'est un utilisateur existant non connecté, il devra entrer ses identifiants et sera ensuite redirigé sur **redirect_uri**.
 - Si c'est un utilisateur déjà connecté, il sera directement redirigé sur **redirect_uri**.
-
-#### Requête (Création de compte)
-
-Il est possible d'utiliser l'endpoint _Registration_ pour que l'utilisateur arrive directement sur cette seconde page.
-
-- URL : `https://{hostname}/auth/register?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
-- Méthode : GET
-
-Les paramètres sont les mêmes que pour l'Authentification.
-
-#### Requête (Activation de compte)
-
-Il est possible d'utiliser l'endpoint _Activation_ pour que l'utilisateur arrive directement sur une page de création de compte pré-remplie.
-
-- URL : `https://{hostname}/auth/activate?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<FS_URL>%2F<URL_CALLBACK>&scope=<SCOPES>&state=><STATE>&nonce=<NONCE>`
-- Méthode : GET
-
-Les paramètres sont les mêmes que pour l'Authentification, plus :
-- **login_hint**: devient obligatoire
-- **firstname**: permet de pré-remplir le prénom de l'utilisateur
-- **lastname**: permet de pré-remplir le nom de famille de l'utilisateur
-Sur cette page, ces informations ne sont pas modifiables. Cela permet de s'assurer qu'un utilisateur existant d'une plateforme qui migre son compte à Inclusion Connect ne change pas ses informations personnelles.
 
 #### Réponse
 
