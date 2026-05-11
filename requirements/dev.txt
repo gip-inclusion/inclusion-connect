@@ -584,9 +584,9 @@ ipython-pygments-lexers==1.1.1 \
     --hash=sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81 \
     --hash=sha256:a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c
     # via ipython
-jedi==0.19.2 \
-    --hash=sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0 \
-    --hash=sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9
+jedi==0.20.0 \
+    --hash=sha256:7bdd9c2634f56713299976f4cbd59cb3fa92165cc5e05ea811fb253480728b67 \
+    --hash=sha256:c3f4ccbd276696f4b19c54618d4fb18f9fc24b0aef02acf704b23f487daa1011
     # via ipython
 jsbeautifier==1.15.4 \
     --hash=sha256:5bb18d9efb9331d825735fbc5360ee8f1aac5e52780042803943aa7f854f7592 \
