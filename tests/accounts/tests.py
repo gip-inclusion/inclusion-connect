@@ -10,6 +10,7 @@ from django.utils.http import urlsafe_base64_encode
 from freezegun import freeze_time
 from pytest_django.asserts import (
     assertContains,
+    assertMessages,
     assertRedirects,
     assertTemplateUsed,
 )
@@ -17,7 +18,7 @@ from pytest_django.asserts import (
 from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
-from tests.asserts import assertMessages, assertRecords
+from tests.asserts import assertRecords
 from tests.helpers import parse_response_to_soup, pretty_indented
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
@@ -213,7 +214,7 @@ class TestPasswordResetView:
             assertMessages(
                 response,
                 [
-                    (
+                    messages.Message(
                         messages.SUCCESS,
                         "Si un compte existe avec cette adresse e-mail, "
                         "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
@@ -293,7 +294,7 @@ class TestPasswordResetView:
         assertMessages(
             response,
             [
-                (
+                messages.Message(
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
                     "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
@@ -337,7 +338,7 @@ class TestPasswordResetView:
         assertMessages(
             response,
             [
-                (
+                messages.Message(
                     messages.SUCCESS,
                     "Si un compte existe avec cette adresse e-mail, "
                     "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
