@@ -51,6 +51,8 @@ THIRD_PARTY_APPS = [
     "django_bootstrap5",
     "corsheaders",
     "oauth2_provider",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
 ]
 
 LOCAL_APPS = [
@@ -75,6 +77,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "inclusion_connect.middleware.never_cache",
     "inclusion_connect.accounts.middleware.post_login_actions",
     # Final logger
@@ -368,3 +371,9 @@ if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 SIRET = "13003013300016"
+
+
+# OTP
+# ------------------------------------------------------------------------------
+OTP_TOTP_ISSUER = "Inclusion Connect"
+OTP_ADMIN_HIDE_SENSITIVE_DATA = True
