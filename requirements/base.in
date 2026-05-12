@@ -42,3 +42,8 @@ python-dotenv  # https://github.com/theskumar/python-dotenv
 # ------------------------------------------------------------------------------
 sentry-sdk  # https://github.com/getsentry/sentry-python
 python-json-logger  # https://github.com/madzak/python-json-logger
+
+# 2FA
+# ------------------------------------------------------------------------------
+django-otp  # https://github.com/django-otp/django-otp
+segno  # https://github.com/heuer/segno
