@@ -162,24 +162,26 @@ class TestUserAdmin:
         user = UserFactory(
             is_superuser=True,
             is_staff=True,
-            first_name="Admin",
-            last_name="Istrator",
-            email="admin@mailinator.net",
+        )
+        other_user = UserFactory(
+            first_name="John",
+            last_name="Doe",
+            email="john.doe@mailinator.net",
             username="11111111-1111-1111-1111-111111111111",
         )
 
         result_id = '[class*="field-password_is_temporary"]'
 
         def get_password_form_field():
-            response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
+            response = client.get(reverse("admin:users_user_change", kwargs={"object_id": other_user.pk}))
             assert response.status_code == 200
             return pretty_indented(parse_response_to_soup(response, selector=result_id))
 
         client.force_login(user)
         assert get_password_form_field() == snapshot(name="normal password")
 
-        user.password_is_temporary = True
-        user.save()
+        other_user.password_is_temporary = True
+        other_user.save()
         assert get_password_form_field() == snapshot(name="temporary password")
 
     def test_logout(self, client):
