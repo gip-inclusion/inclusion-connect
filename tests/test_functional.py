@@ -9,11 +9,11 @@ from django.contrib.auth.hashers import make_password
 from django.core import mail
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertRedirects
+from pytest_django.asserts import assertContains, assertMessages, assertRedirects
 
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
-from tests.asserts import assertMessages, assertRecords
+from tests.asserts import assertRecords
 from tests.conftest import Client
 from tests.helpers import (
     call_logout,
@@ -136,7 +136,7 @@ def test_login_after_password_reset(caplog, client, oidc_params):
     assertMessages(
         response,
         [
-            (
+            messages.Message(
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
                 "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
@@ -231,7 +231,7 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
     assertMessages(
         response,
         [
-            (
+            messages.Message(
                 messages.SUCCESS,
                 "Si un compte existe avec cette adresse e-mail, "
                 "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
