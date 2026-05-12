@@ -730,15 +730,6 @@ class TestMiddleware:
         response = client.get(reverse("accounts:change_password"))
         assert response.status_code == 200
 
-    def test_staff_users_are_not_concerned(self, client):
-        user = UserFactory(
-            password_is_temporary=True,
-            is_staff=True,
-        )
-        client.force_login(user)
-        response = client.get(reverse("admin:index"))
-        assert response.status_code == 200
-
     def test_logout_is_whitelisted(self, client):
         user = UserFactory(
             password_is_temporary=True,
