@@ -60,7 +60,14 @@ LOCAL_APPS = [
     "inclusion_connect.utils",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = (
+    [
+        "inclusion_connect.users"
+    ]  # We want our potential custom commands to override Django default ones (like `createsuperuser`).
+    + DJANGO_APPS
+    + THIRD_PARTY_APPS
+    + [app for app in LOCAL_APPS if app != "inclusion_connect.users"]
+)
 
 MIDDLEWARE = [
     # Generate request Id
