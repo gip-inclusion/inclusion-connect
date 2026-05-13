@@ -25,7 +25,7 @@ from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 class TestLoginView:
     def test_login(self, caplog, client, snapshot):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory()
 
@@ -33,7 +33,7 @@ class TestLoginView:
         assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
         response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assertRedirects(response, redirect_url)
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
@@ -155,7 +155,7 @@ class TestLoginView:
         )
 
     def test_login_hint(self, caplog, client, snapshot):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(email="me@mailinator.com")
         client_session = client.session
@@ -171,7 +171,7 @@ class TestLoginView:
 
         # Email is simply ignored.
         response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assertRedirects(response, redirect_url)
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
@@ -199,7 +199,7 @@ class TestPasswordResetView:
         user = UserFactory()
 
         with freeze_time("2023-06-08 09:10:03"):
-            redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+            redirect_url = reverse("accounts:change_password")
             url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
             response = client.get(url)
             password_reset_url = reverse("accounts:password_reset")
@@ -258,7 +258,7 @@ class TestPasswordResetView:
             )
 
             # User is now logged in and redirected to next_url
-            assertRedirects(response, redirect_url, fetch_redirect_response=False)
+            assertRedirects(response, redirect_url)
             assert get_user(client).is_authenticated is True
             # The redirect cleans `next_url` from the session.
             assert "next_url" not in client.session
@@ -279,7 +279,7 @@ class TestPasswordResetView:
             )
 
     def test_password_reset_unknown_email(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         response = client.get(url)
         password_reset_url = reverse("accounts:password_reset")
@@ -318,7 +318,7 @@ class TestPasswordResetView:
     def test_login_hint(self, caplog, client, mailoutbox, snapshot):
         user = UserFactory(email="me@mailinator.com")
 
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
 
         client_session = client.session
@@ -370,7 +370,7 @@ class TestPasswordResetView:
         response = client.post(response.url, data={"new_password1": password, "new_password2": password})
 
         # User is now logged in and redirected to next_url
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assertRedirects(response, redirect_url)
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
@@ -397,8 +397,7 @@ class TestPasswordResetConfirmView:
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = PasswordResetView.token_generator.make_token(user)
         response = client.get(reverse("accounts:password_reset_confirm", args=(uid, token)))
-        print(response.url)
-        assertRedirects(response, response.url, fetch_redirect_response=False)
+        assertRedirects(response, response.url)
         response = client.post(
             response.url,
             data={"new_password1": "password", "new_password2": "password-typo"},
@@ -528,7 +527,7 @@ class TestPasswordChangeView:
 
 class TestChangeTemporaryPasswordView:
     def test_view(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(password_is_temporary=True)
 
@@ -551,7 +550,7 @@ class TestChangeTemporaryPasswordView:
             reverse("accounts:change_temporary_password"),
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assertRedirects(response, redirect_url)
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
         user.refresh_from_db()
@@ -575,7 +574,7 @@ class TestChangeTemporaryPasswordView:
             reverse("accounts:change_temporary_password"),
             data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, reverse("accounts:home"), fetch_redirect_response=False)
+        assertRedirects(response, reverse("accounts:home"))
 
         user.refresh_from_db()
         assert user.password_is_temporary is False
@@ -624,7 +623,7 @@ class TestChangeTemporaryPasswordView:
 
 class TestChangeWeakPasswordView:
     def test_view(self, caplog, client):
-        redirect_url = reverse("oauth2_provider:rp-initiated-logout")
+        redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
         user = UserFactory(password=make_password("weak_password"))
 
@@ -647,7 +646,7 @@ class TestChangeWeakPasswordView:
             reverse("accounts:change_weak_password"),
             data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
         )
-        assertRedirects(response, redirect_url, fetch_redirect_response=False)
+        assertRedirects(response, redirect_url)
 
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
