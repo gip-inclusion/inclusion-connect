@@ -261,6 +261,8 @@
                           <tr>
                               <td>
                                   
+                                      <i class="ri-verified-badge-fill text-success" data-bs-placement="top" data-bs-title="Vous avez utilisé cet appareil pour vous connecter." data-bs-toggle="tooltip"></i>
+                                  
                               </td>
                               <td>bitwarden</td>
                               <td>11 mars 2025 06:18</td>
@@ -269,7 +271,7 @@
                               </td>
                               <td>
   
-                                  <button aria-label="Supprimer l’appareil bitwarden" class="btn btn-sm btn-link text-danger" data-bs-target="#delete_[PK of device_1]_modal" data-bs-toggle="modal" type="button">
+                                  <button aria-label="Supprimer l’appareil bitwarden" class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-target="#delete_[PK of device_1]_modal" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
                                       <i aria-hidden="true" class="ri-delete-bin-line fw-normal"></i>
                                   </button>
                               </td>
@@ -303,25 +305,6 @@
   
           
           
-              
-                  <div aria-hidden="true" class="modal fade" id="delete_[PK of device_1]_modal" tabindex="-1">
-                      <div class="modal-dialog modal-dialog-centered">
-                          <div class="modal-content">
-                              <div class="modal-header">
-                                  <h3 class="modal-title">Êtes-vous sûr de vouloir supprimer l'appareil bitwarden ?</h3>
-                              </div>
-                              <div class="modal-body">
-                                  <p>Cette action est irréversible.</p>
-                              </div>
-                              <div class="modal-footer">
-                                  <button class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal" type="button">Retour</button>
-                                  <button aria-label="Supprimer l’appareil bitwarden" class="btn btn-sm btn-danger" name="delete-device" value="[PK of device_1]">
-                                      Confirmer la suppression
-                                  </button>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
               
           
               

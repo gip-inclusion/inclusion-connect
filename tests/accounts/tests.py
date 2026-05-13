@@ -751,7 +751,7 @@ class TestOTP:
     @freeze_time("2025-03-11 05:18:56")
     def test_devices(self, client, snapshot, caplog):
         user = UserFactory()
-        client.force_login(user)
+        client.force_login(user, device=None)
         url = reverse("accounts:otp_devices")
 
         response = client.get(url)
@@ -869,13 +869,13 @@ class TestOTP:
         url = reverse("accounts:otp_devices")
 
         with freeze_time("2025-03-11 05:18:56") as frozen_time:
-            client.force_login(user)
-
             device_1 = TOTPDevice.objects.create(user=user, confirmed=True, name="bitwarden")
             frozen_time.tick(60)
 
             device_2 = TOTPDevice.objects.create(user=user, confirmed=True, name="authenticator")
             frozen_time.tick(60)
+
+            client.force_login(user, device_1)
 
             # List devices
             response = client.get(url)
