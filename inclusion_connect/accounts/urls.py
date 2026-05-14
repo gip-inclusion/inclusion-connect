@@ -17,4 +17,5 @@ urlpatterns = [
     re_path(r"^change-weak-password/$", views.ChangeWeakPassword.as_view(), name="change_weak_password"),
     path("otp/devices", views.OtpDevices.as_view(), name="otp_devices"),
     path("otp/confirm/<int:device_id>", views.OtpConfirmDevice.as_view(), name="otp_confirm_device"),
+    path("otp/verify", views.VerifyOTPView.as_view(), name="verify_otp"),
 ]

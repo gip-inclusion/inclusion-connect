@@ -23,7 +23,7 @@ from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertRecords
-from tests.helpers import parse_response_to_soup, pretty_indented
+from tests.helpers import confirm_otp_flow, parse_response_to_soup, pretty_indented
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -31,14 +31,22 @@ class TestLoginView:
     def test_login(self, caplog, client, snapshot):
         redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        verify_otp_url = reverse("accounts:verify_otp")
         user = UserFactory()
+        device = TOTPDevice.objects.create(user=user)
 
         response = client.get(url)
-        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot(name="login_form")
 
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assertRedirects(response, redirect_url)
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+        assertRedirects(response, verify_otp_url)
         assert get_user(client).is_authenticated is True
+        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot(name="verify_otp")
+
+        totp = TOTP(device.bin_key)
+        response = client.post(verify_otp_url, {"otp_token": totp.token()})
+        assertRedirects(response, redirect_url)
+
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
         assertRecords(
@@ -48,17 +56,63 @@ class TestLoginView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"user": user.email, "event": "login"},
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "verify_otp_device", "device": device.pk},
+                ),
+            ],
+        )
+
+    def test_login_no_otp(self, caplog, client):
+        redirect_url = reverse("accounts:change_password")
+        login_url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        user = UserFactory()
+
+        response = client.get(login_url)
+        response = client.post(login_url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+
+        response, device = confirm_otp_flow(client, response)
+        assertRedirects(response, redirect_url)
+
+        assert get_user(client).is_authenticated is True
+
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "login"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
+                ),
             ],
         )
 
     def test_no_next_url(self, caplog, client):
         user = UserFactory()
+        verify_otp_url = reverse("accounts:verify_otp")
+        device = TOTPDevice.objects.create(user=user)
 
         response = client.post(
             reverse("accounts:login"),
             data={"email": user.email, "password": DEFAULT_PASSWORD},
+            follow=True,
         )
+        assertRedirects(response, verify_otp_url)
+
+        totp = TOTP(device.bin_key)
+        response = client.post(verify_otp_url, {"otp_token": totp.token()})
         assertRedirects(response, reverse("accounts:home"))
         assert get_user(client).is_authenticated is True
         assertRecords(
@@ -68,7 +122,12 @@ class TestLoginView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"user": user.email, "event": "login"},
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "verify_otp_device", "device": device.pk},
+                ),
             ],
         )
 
@@ -175,10 +234,9 @@ class TestLoginView:
 
         # Email is simply ignored.
         response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
+        response, device = confirm_otp_flow(client, response)
         assertRedirects(response, redirect_url)
         assert get_user(client).is_authenticated is True
-        # The redirect cleans `next_url` from the session.
-        assert "next_url" not in client.session
         assertRecords(
             caplog,
             [
@@ -186,7 +244,17 @@ class TestLoginView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"user": user.email, "event": "login"},
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
+                ),
             ],
         )
 
@@ -259,9 +327,11 @@ class TestPasswordResetView:
             response = client.post(
                 response.url,
                 data={"new_password1": password, "new_password2": password},
+                follow=True,
             )
 
-            # User is now logged in and redirected to next_url
+            # User is now logged in and redirected to otp setup
+            response, device = confirm_otp_flow(client, response)
             assertRedirects(response, redirect_url)
             assert get_user(client).is_authenticated is True
             # The redirect cleans `next_url` from the session.
@@ -278,6 +348,16 @@ class TestPasswordResetView:
                         "inclusion_connect.auth",
                         logging.INFO,
                         {"event": "login", "user": user.email},
+                    ),
+                    (
+                        "inclusion_connect.auth",
+                        logging.INFO,
+                        {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                    ),
+                    (
+                        "inclusion_connect.auth",
+                        logging.INFO,
+                        {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
                     ),
                 ],
             )
@@ -371,10 +451,12 @@ class TestPasswordResetView:
         # Change password
         password = "V€r¥--$3©®€7"
         response = client.get(password_reset_url)  # retrieve the modified url
-        response = client.post(response.url, data={"new_password1": password, "new_password2": password})
+        response = client.post(response.url, data={"new_password1": password, "new_password2": password}, follow=True)
 
-        # User is now logged in and redirected to next_url
+        # User is now logged in and redirected to otp setup
+        response, device = confirm_otp_flow(client, response)
         assertRedirects(response, redirect_url)
+
         assert get_user(client).is_authenticated is True
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
@@ -390,6 +472,16 @@ class TestPasswordResetView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"event": "login", "user": user.email},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
                 ),
             ],
         )
@@ -533,10 +625,18 @@ class TestChangeTemporaryPasswordView:
     def test_view(self, caplog, client):
         redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory(password_is_temporary=True)
+        change_temporary_password_url = reverse("accounts:change_temporary_password")
+        verify_otp_url = reverse("accounts:verify_otp")
 
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assertRedirects(response, reverse("accounts:change_temporary_password"))
+        user = UserFactory(password_is_temporary=True)
+        device = TOTPDevice.objects.create(user=user)
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+        assertRedirects(response, verify_otp_url)
+
+        totp = TOTP(device.bin_key)
+        response = client.post(verify_otp_url, {"otp_token": totp.token()})
+        assertRedirects(response, change_temporary_password_url)
         assert get_user(client).is_authenticated is True
         assert client.session["next_url"] == redirect_url
         assertRecords(
@@ -546,12 +646,71 @@ class TestChangeTemporaryPasswordView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"user": user.email, "event": "login"},
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "verify_otp_device", "device": device.pk},
+                ),
             ],
         )
 
         response = client.post(
-            reverse("accounts:change_temporary_password"),
+            change_temporary_password_url,
+            data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
+        )
+        assertRedirects(response, redirect_url)
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
+        user.refresh_from_db()
+        assert user.password_is_temporary is False
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "change_temporary_password", "user": user.email},
+                )
+            ],
+        )
+
+    def test_view_no_otp(self, caplog, client):
+        redirect_url = reverse("accounts:home")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        change_temporary_password_url = reverse("accounts:change_temporary_password")
+
+        user = UserFactory(password_is_temporary=True)
+
+        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+        response, device = confirm_otp_flow(client, response)
+
+        assertRedirects(response, change_temporary_password_url)
+        assert get_user(client).is_authenticated is True
+        assert client.session["next_url"] == redirect_url
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "login"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
+                ),
+            ],
+        )
+
+        response = client.post(
+            change_temporary_password_url,
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
         assertRedirects(response, redirect_url)
@@ -629,10 +788,18 @@ class TestChangeWeakPasswordView:
     def test_view(self, caplog, client):
         redirect_url = reverse("accounts:change_password")
         url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        change_weak_password_url = reverse("accounts:change_weak_password")
+        verify_otp_url = reverse("accounts:verify_otp")
         user = UserFactory(password=make_password("weak_password"))
+        device = TOTPDevice.objects.create(user=user)
 
-        response = client.post(url, data={"email": user.email, "password": "weak_password"})
-        assertRedirects(response, reverse("accounts:change_weak_password"))
+        response = client.post(url, data={"email": user.email, "password": "weak_password"}, follow=True)
+        assertRedirects(response, verify_otp_url)
+
+        totp = TOTP(device.bin_key)
+        response = client.post(verify_otp_url, {"otp_token": totp.token()})
+        assertRedirects(response, change_weak_password_url)
+
         assert get_user(client).is_authenticated is True
         assert client.session["next_url"] == redirect_url
         assertRecords(
@@ -642,12 +809,71 @@ class TestChangeWeakPasswordView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {"user": user.email, "event": "login"},
-                )
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "verify_otp_device", "device": device.pk},
+                ),
             ],
         )
 
         response = client.post(
-            reverse("accounts:change_weak_password"),
+            change_weak_password_url,
+            data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
+        )
+        assertRedirects(response, redirect_url)
+
+        # The redirect cleans `next_url` from the session.
+        assert "next_url" not in client.session
+        user.refresh_from_db()
+        assert user.password_is_temporary is False
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"event": "change_weak_password", "user": user.email},
+                )
+            ],
+        )
+
+    def test_view_no_otp(self, caplog, client):
+        redirect_url = reverse("accounts:home")
+        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
+        change_weak_password_url = reverse("accounts:change_weak_password")
+        user = UserFactory(password=make_password("weak_password"))
+
+        response = client.post(url, data={"email": user.email, "password": "weak_password"}, follow=True)
+        response, device = confirm_otp_flow(client, response)
+
+        assertRedirects(response, change_weak_password_url)
+        assert get_user(client).is_authenticated is True
+        assert client.session["next_url"] == redirect_url
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "login"},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                ),
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
+                ),
+            ],
+        )
+
+        response = client.post(
+            change_weak_password_url,
             data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
         )
         assertRedirects(response, redirect_url)
@@ -715,17 +941,43 @@ class TestMiddleware:
             password_is_temporary=True,
             password_is_too_weak=True,
         )
-        client.force_login(user)
+        client.force_login(user, device=None)
+        assert not TOTPDevice.objects.exists()
 
+        # With no device
         response = client.get(reverse("accounts:change_password"))
+        device = TOTPDevice.objects.get()
+        confirm_otp_url = reverse("accounts:otp_confirm_device", args=(device.pk,))
+        assertRedirects(response, confirm_otp_url)
+
+        totp = TOTP(device.bin_key)
+        post_data = {
+            "name": "Mon appareil",
+            "otp_token": totp.token(),
+        }
+        response = client.post(confirm_otp_url, data=post_data)
         assertRedirects(response, reverse("accounts:change_temporary_password"))
 
+        # With a pre-existing confirmed device
+        client.logout()
+        TOTPDevice.objects.update(last_t=1)  # Reset last_t to allow using the same token again
+        client.force_login(user, device=None)
+        response = client.get(reverse("accounts:change_password"))
+        verify_otp_url = reverse("accounts:verify_otp")
+        assertRedirects(response, verify_otp_url)
+
+        totp = TOTP(device.bin_key)
+        response = client.post(verify_otp_url, {"otp_token": totp.token()})
+        assertRedirects(response, reverse("accounts:change_temporary_password"))
+
+        # Change temporary password
         client.post(
             reverse("accounts:change_temporary_password"),
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
         )
         response = client.get(reverse("accounts:change_weak_password"))
 
+        # Change weak password
         client.post(
             reverse("accounts:change_weak_password"),
             data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
@@ -751,15 +1003,30 @@ class TestOTP:
     @freeze_time("2025-03-11 05:18:56")
     def test_devices(self, client, snapshot, caplog):
         user = UserFactory()
-        client.force_login(user, device=None)
+        client.force_login(user)
+
         url = reverse("accounts:otp_devices")
 
         response = client.get(url)
-        assert pretty_indented(parse_response_to_soup(response, ".s-main")) == snapshot(name="no_device")
-
-        response = client.post(url, data={"action": "new"})
         device = TOTPDevice.objects.get()
-        assertRedirects(response, reverse("accounts:otp_confirm_device", args=(device.pk,)))
+        assert (
+            pretty_indented(
+                parse_response_to_soup(
+                    response,
+                    ".s-main",
+                    replace_in_attr=[
+                        ("value", f"{device.pk}", "[PK of device]"),
+                        ("id", f"delete_{device.pk}_modal", "delete_[PK of device]_modal"),
+                        ("data-bs-target", f"#delete_{device.pk}_modal", "#delete_[PK of device]_modal"),
+                    ],
+                ),
+            )
+            == snapshot
+        )
+
+        response = client.post(url, data={"action": "new"})
+        new_device = TOTPDevice.objects.filter(confirmed=False).get()
+        assertRedirects(response, reverse("accounts:otp_confirm_device", args=(new_device.pk,)))
 
         assertRecords(
             caplog,
@@ -767,50 +1034,15 @@ class TestOTP:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
+                    {"user": user.email, "event": "create_otp_device", "device": new_device.pk},
                 )
             ],
         )
 
-        # As long as the device isn't confirmed it isn't shown, and we don't create a new one.
-        response = client.get(url)
-        assert pretty_indented(parse_response_to_soup(response, ".s-main")) == snapshot(name="no_device")
-
+        # Doing it twice still redirects to the same page (we don't create a second unconfirmed device)
         response = client.post(url, data={"action": "new"})
-        device = TOTPDevice.objects.get()  # Still only one
-        assertRedirects(response, reverse("accounts:otp_confirm_device", args=(device.pk,)))
-
-        # When the user already confirmed a device, the page is different
-        device.name = "Mon appareil"
-        device.confirmed = True
-        device.save()
-        response = client.get(url)
-        assert pretty_indented(
-            parse_response_to_soup(
-                response,
-                ".s-main",
-                replace_in_attr=[
-                    ("value", f"{device.pk}", "[PK of device]"),
-                    ("id", f"delete_{device.pk}_modal", "delete_[PK of device]_modal"),
-                    ("data-bs-target", f"#delete_{device.pk}_modal", "#delete_[PK of device]_modal"),
-                ],
-            ),
-        ) == snapshot(name="with_device")
-
-        response = client.post(url, data={"action": "new"})
-        device = TOTPDevice.objects.exclude(pk=device.pk).get()
-        assertRedirects(response, reverse("accounts:otp_confirm_device", args=(device.pk,)))
-
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
-                )
-            ],
-        )
+        assertRedirects(response, reverse("accounts:otp_confirm_device", args=(new_device.pk,)))
+        assertRecords(caplog, [])
 
     def test_confirm(self, client, caplog):
         user = UserFactory()
@@ -896,7 +1128,19 @@ class TestOTP:
                 )
             ) == snapshot(name="with_device")
 
-            # The user removes a other device
+            # We cannot remove the used device
+            response = client.post(url, data={"delete-device": str(device_1.pk)}, follow=True)
+            assertQuerySetEqual(TOTPDevice.objects.all(), [device_1, device_2], ordered=False)
+            assertMessages(
+                response,
+                [
+                    messages.Message(
+                        messages.ERROR, "Impossible de supprimer l’appareil qui a été utilisé pour se connecter."
+                    )
+                ],
+            )
+
+            # The user removes his other other device
             response = client.post(url, data={"delete-device": str(device_2.pk)})
             assertQuerySetEqual(TOTPDevice.objects.all(), [device_1])
             assertContains(response, device_1.name)

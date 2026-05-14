@@ -25,7 +25,7 @@ def initial_from_login_hint(request):
     return {}
 
 
-def get_next_url(request):
+def get_next_url(request, fallback_url=None):
     if not request.user.is_authenticated:
         return None
     next_url = required_action_url(request)
@@ -33,4 +33,4 @@ def get_next_url(request):
         return next_url
     session_next_url = request.session.pop("next_url", None)
     user_next_url = request.user.pop_next_redirect_uri()
-    return session_next_url or user_next_url or reverse("accounts:home")
+    return session_next_url or user_next_url or fallback_url or reverse("accounts:home")

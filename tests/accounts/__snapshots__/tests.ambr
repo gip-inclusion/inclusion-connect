@@ -66,7 +66,7 @@
   
   '''
 # ---
-# name: TestLoginView.test_login
+# name: TestLoginView.test_login[login_form]
   '''
   <main class="s-main" id="main" role="main">
       <section class="s-section pt-lg-3">
@@ -118,6 +118,47 @@
                               <div>
                                   <button class="btn btn-block btn-primary">
                                       Connexion
+                                  </button>
+                              </div>
+                          </form>
+                      </div>
+                  </div>
+                  <div class="d-none d-lg-flex col-lg-6 p-lg-6 justify-content-center align-items-center bg-light">
+                      <img alt="" class="img-fluid" loading="lazy" src="/static/img/illustration-ic.svg"/>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
+# name: TestLoginView.test_login[verify_otp]
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <div class="container container-messages">
+                          </div>
+                          <form class="js-prevent-multiple-submit" method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <fieldset>
+                                  <p class="h4">
+                                      Saisir le code OTP
+                                  </p>
+                                  <div class="mb-3 form-group-required">
+                                      <label class="visually-hidden" for="id_otp_token">
+                                          Otp token
+                                      </label>
+                                      <input autocomplete="one-time-code" class="form-control" id="id_otp_token" max_length="6" name="otp_token" placeholder="Otp token" required="" type="text"/>
+                                  </div>
+                              </fieldset>
+                              <div>
+                                  <button class="btn btn-block btn-primary">
+                                      Valider
                                   </button>
                               </div>
                           </form>
@@ -339,6 +380,116 @@
               </section>
   '''
 # ---
+# name: TestOTP.test_devices
+  '''
+  <main class="s-main" id="main" role="main">
+      <section class="s-section pt-lg-3">
+          <div class="container">
+              <div class="row g-0 bg-white">
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Mon compte
+                          </h1>
+                          <ul class="nav nav-tabs flex-column">
+                              <li class="nav-item">
+                                  <a class="nav-link" href="/accounts/home/">
+                                      Accueil
+                                  </a>
+                              </li>
+                              <li class="nav-item">
+                                  <a class="nav-link" href="/accounts/change-password/">
+                                      Mot de passe
+                                  </a>
+                              </li>
+                              <li class="nav-item">
+                                  <a class="nav-link" href="/accounts/otp/devices">
+                                      2FA
+                                  </a>
+                              </li>
+                              <li class="nav-item">
+                                  <a class="nav-link" href="/admin/">
+                                      Admin
+                                  </a>
+                              </li>
+                          </ul>
+                      </div>
+                  </div>
+                  <div class="col-12 col-lg-6 bg-lg-white">
+                      <div class="bg-white p-3 py-lg-7 px-lg-8">
+                          <h1>
+                              Configuration 2FA
+                          </h1>
+                          <h2>
+                              Mes appareils
+                          </h2>
+                          <form method="post">
+                              <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                              <p>
+                                  Voici la liste de vos appareils configurés :
+                              </p>
+                              <table class="table table-sm">
+                                  <caption class="visually-hidden">
+                                      Liste de vos appareils configurés
+                                  </caption>
+                                  <thead>
+                                      <tr>
+                                          <th scope="col">
+                                          </th>
+                                          <th scope="col">
+                                              Nom
+                                          </th>
+                                          <th scope="col">
+                                              Créé le
+                                          </th>
+                                          <th scope="col">
+                                              Dernière utilisation
+                                          </th>
+                                          <th scope="col">
+                                              Supprimer
+                                          </th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      <tr>
+                                          <td>
+                                              <i class="ri-verified-badge-fill text-success" data-bs-placement="top" data-bs-title="Vous avez utilisé cet appareil pour vous connecter." data-bs-toggle="tooltip">
+                                              </i>
+                                          </td>
+                                          <td>
+                                          </td>
+                                          <td>
+                                              11 mars 2025 06:18
+                                          </td>
+                                          <td>
+                                              <i class="text-disabled">
+                                                  jamais
+                                              </i>
+                                          </td>
+                                          <td>
+                                              <button aria-label="Supprimer l’appareil " class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-target="#delete_[PK of device]_modal" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
+                                                  <i aria-hidden="true" class="ri-delete-bin-line fw-normal">
+                                                  </i>
+                                              </button>
+                                          </td>
+                                      </tr>
+                                  </tbody>
+                              </table>
+                              <button class="btn btn-block btn-primary" name="action" type="submit" value="new">
+                                  Configurer un
+              nouvel
+              appareil
+                              </button>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </section>
+  </main>
+  
+  '''
+# ---
 # name: TestOTP.test_devices[no_device]
   '''
   <main class="s-main" id="main" role="main">
@@ -475,6 +626,8 @@
                                   <tbody>
                                       <tr>
                                           <td>
+                                              <i class="ri-verified-badge-fill text-success" data-bs-placement="top" data-bs-title="Vous avez utilisé cet appareil pour vous connecter." data-bs-toggle="tooltip">
+                                              </i>
                                           </td>
                                           <td>
                                               Mon appareil
@@ -488,7 +641,7 @@
                                               </i>
                                           </td>
                                           <td>
-                                              <button aria-label="Supprimer l’appareil Mon appareil" class="btn btn-sm btn-link text-danger" data-bs-target="#delete_[PK of device]_modal" data-bs-toggle="modal" type="button">
+                                              <button aria-label="Supprimer l’appareil Mon appareil" class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-target="#delete_[PK of device]_modal" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
                                                   <i aria-hidden="true" class="ri-delete-bin-line fw-normal">
                                                   </i>
                                               </button>
@@ -501,30 +654,6 @@
               nouvel
               appareil
                               </button>
-                              <div aria-hidden="true" class="modal fade" id="delete_[PK of device]_modal" tabindex="-1">
-                                  <div class="modal-dialog modal-dialog-centered">
-                                      <div class="modal-content">
-                                          <div class="modal-header">
-                                              <h3 class="modal-title">
-                                                  Êtes-vous sûr de vouloir supprimer l'appareil Mon appareil ?
-                                              </h3>
-                                          </div>
-                                          <div class="modal-body">
-                                              <p>
-                                                  Cette action est irréversible.
-                                              </p>
-                                          </div>
-                                          <div class="modal-footer">
-                                              <button class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal" type="button">
-                                                  Retour
-                                              </button>
-                                              <button aria-label="Supprimer l’appareil Mon appareil" class="btn btn-sm btn-danger" name="delete-device" value="[PK of device]">
-                                                  Confirmer la suppression
-                                              </button>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
                           </form>
                       </div>
                   </div>

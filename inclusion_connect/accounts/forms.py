@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
+from django_otp import match_token
 
 
 EMAIL_FIELDS_WIDGET_ATTRS = {"placeholder": "nom@domaine.fr", "autocomplete": "email"}
@@ -100,3 +101,23 @@ class ConfirmTOTPDeviceForm(forms.Form):
             self.add_error("otp_token", "Mauvais code OTP")
 
         return cleaned_data
+
+
+class VerifyOTPForm(forms.Form):
+    otp_token = forms.CharField(required=True)
+
+    otp_token.widget.attrs.update({"max_length": 6, "autocomplete": "one-time-code"})
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_otp_token(self):
+        otp_token = self.cleaned_data.get("otp_token")
+
+        device = match_token(self.user, otp_token)
+        if device is None:
+            raise ValidationError("code invalide")
+        self.user.otp_device = device
+
+        return otp_token

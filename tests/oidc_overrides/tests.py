@@ -8,6 +8,7 @@ from django.contrib.sessions.models import Session
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from freezegun import freeze_time
 from pytest_django.asserts import assertRedirects
 
@@ -18,6 +19,7 @@ from tests.asserts import assertRecords
 from tests.conftest import Client
 from tests.helpers import (
     call_logout,
+    confirm_otp_flow,
     has_ongoing_sessions,
     oidc_complete_flow,
     parse_response_to_soup,
@@ -234,6 +236,8 @@ class TestLogoutView:
         id_token = oidc_complete_flow(client, user, oidc_params, caplog, application=application)
         assert get_user(client).is_authenticated is True
 
+        # Reset last_t to allow using the same token again
+        TOTPDevice.objects.update(last_t=1)
         other_client = Client()
         oidc_complete_flow(other_client, user, oidc_params, caplog, application=application)
         assert get_user(other_client).is_authenticated is True
@@ -471,6 +475,7 @@ def test_session_duration(client, oidc_params):
                 "password": DEFAULT_PASSWORD,
             },
         )
+        response, device = confirm_otp_flow(client, response)
         assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
         # call auth view to clear the session
         assert OIDC_SESSION_KEY in client.session
