@@ -307,7 +307,7 @@ class OtpConfirmDevice(MyAccountMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse("accounts:otp_devices")
+        return get_next_url(self.request, fallback_url=reverse("accounts:otp_devices"))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -316,3 +316,27 @@ class OtpConfirmDevice(MyAccountMixin, FormView):
         context["qrcode"] = segno.make(self.device.config_url).svg_data_uri()
         context["otp_verified"] = False
         return context
+
+
+class VerifyOTPView(FormView):
+    template_name = "verify_otp.html"
+    form_class = forms.VerifyOTPForm
+    EVENT_NAME = "verify_otp_device"
+
+    def get_form_kwargs(self):
+        return super().get_form_kwargs() | {"user": self.request.user}
+
+    def log(self):
+        log = log_data(self.request)
+        log["user"] = self.request.user.email
+        log["event"] = self.EVENT_NAME
+        log["device"] = self.request.user.otp_device.pk
+        transaction.on_commit(partial(logger.info, log))
+
+    def form_valid(self, form):
+        otp_login(self.request, self.request.user.otp_device)
+        self.log()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return get_next_url(self.request)

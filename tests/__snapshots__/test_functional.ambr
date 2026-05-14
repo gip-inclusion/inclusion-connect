@@ -163,6 +163,11 @@
                   <div class="col-12 col-lg-6 bg-lg-white">
                       <div class="bg-white p-3 py-lg-7 px-lg-8">
                           <div class="container container-messages">
+                              <div class="alert alert-success alert-dismissible fade show toast" role="alert">
+                                  Votre nouvel appareil est confirmé
+                                  <button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button">
+                                  </button>
+                              </div>
                           </div>
                           <div class="block-center">
                               <h3>

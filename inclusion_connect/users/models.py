@@ -68,6 +68,11 @@ class User(AbstractUser):
         self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
         return next_url
 
+    def is_verified(self):
+        # Allow to call the method even if the user wasn't handled by OTPMiddleware
+        # This happens because the login view calls required_action_url to redirect the user
+        return False
+
 
 class UserApplicationLink(models.Model):
     user = models.ForeignKey(

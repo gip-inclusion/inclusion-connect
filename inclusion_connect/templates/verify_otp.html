@@ -1,0 +1,18 @@
+{% extends "layout/left_content.html" %}
+{% load django_bootstrap5 %}
+
+{% block section_title %}Configuration 2FA{% endblock %}
+
+{% block content %}
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <fieldset>
+            <p class="h4">Saisir le code OTP</p>
+            {% bootstrap_form_errors form type="all" %}
+            {% bootstrap_field form.otp_token show_label=False %}
+        </fieldset>
+        <div>
+            <button class="btn btn-block btn-primary">Valider</button>
+        </div>
+    </form>
+{% endblock %}
