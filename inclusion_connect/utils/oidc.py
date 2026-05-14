@@ -28,7 +28,7 @@ def initial_from_login_hint(request):
 def get_next_url(request):
     if not request.user.is_authenticated:
         return None
-    next_url = required_action_url(request.user)
+    next_url = required_action_url(request)
     if next_url:
         return next_url
     session_next_url = request.session.pop("next_url", None)
