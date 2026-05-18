@@ -78,12 +78,6 @@ class UserChangeForm(auth_forms.UserChangeForm):
         widget=TemporaryPasswordWidget,
     )
 
-    def __init__(self, *args, instance, **kwargs):
-        super().__init__(*args, instance=instance, **kwargs)
-        email = self.fields.get("email")
-        if email:
-            email.label = "Adresse e-mail vérifiée"
-
     def log_changes(self, request):
         log = log_data(request)
         log["event"] = "admin_change"
