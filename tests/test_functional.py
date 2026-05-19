@@ -257,7 +257,6 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {
-                    "application": "my_application",
                     "event": "reset_password",
                     "user": user.email,
                 },
@@ -265,7 +264,10 @@ def test_login_after_password_reset_other_client(caplog, client, oidc_params):
             (
                 "inclusion_connect.auth",
                 logging.INFO,
-                {"application": "my_application", "event": "login", "user": user.email},
+                {
+                    "event": "login",
+                    "user": user.email,
+                },
             ),
         ],
     )

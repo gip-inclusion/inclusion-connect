@@ -42,11 +42,10 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        response = super().form_valid(form)
         log = form.log
         log["event"] = self.EVENT_NAME
         transaction.on_commit(partial(logger.info, log))
-        return response
+        return super().form_valid(form)
 
 
 class PasswordResetView(auth_views.PasswordResetView):
@@ -80,15 +79,13 @@ class PasswordResetView(auth_views.PasswordResetView):
         transaction.on_commit(partial(logger.info, log))
 
     def form_invalid(self, form):
-        response = super().form_invalid(form)
         email = form.cleaned_data.get("email", form.data.get("email", ""))
         self.log(f"{self.EVENT_NAME}_error", email)
-        return response
+        return super().form_invalid(form)
 
     def form_valid(self, form):
-        response = super().form_valid(form)
         self.log(self.EVENT_NAME, form.cleaned_data["email"])
-        return response
+        return super().form_valid(form)
 
 
 class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
@@ -97,13 +94,13 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     post_reset_login = True
     EVENT_NAME = "reset_password"
     post_reset_login_backend = settings.DEFAULT_AUTH_BACKEND
+    success_url = None
 
     def get_success_url(self):
         return get_next_url(self.request)
 
     def log(self, event_name, form):
-        next_url = self.get_success_url()
-        log = log_data(self.request, next_url=next_url)
+        log = log_data(self.request)
         log["event"] = event_name
         log["user"] = self.user.email
         if form.errors:
@@ -111,15 +108,13 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         transaction.on_commit(partial(logger.info, log))
 
     def form_invalid(self, form):
-        response = super().form_invalid(form)
         self.log(f"{self.EVENT_NAME}_error", form)
-        return response
+        return super().form_invalid(form)
 
     def form_valid(self, form):
-        response = super().form_valid(form)
         self.log(self.EVENT_NAME, form)
         self.log(LoginView.EVENT_NAME, form)  # Also log a login here
-        return response
+        return super().form_valid(form)
 
 
 class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
@@ -145,9 +140,8 @@ class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
         transaction.on_commit(partial(logger.info, log))
 
     def form_invalid(self, form):
-        response = super().form_invalid(form)
         self.log(f"{self.EVENT_NAME}_error", form)
-        return response
+        return super().form_invalid(form)
 
     def form_valid(self, form):
         user = form.save()
@@ -220,9 +214,8 @@ class PasswordChangeView(MyAccountMixin, FormView):
         transaction.on_commit(partial(logger.info, log))
 
     def form_invalid(self, form):
-        response = super().form_invalid(form)
         self.log(f"{self.EVENT_NAME}_error", form)
-        return response
+        return super().form_invalid(form)
 
     def form_valid(self, form):
         form.save()

@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from django.urls import reverse
 
 from inclusion_connect.accounts.middleware import required_action_url
@@ -27,7 +25,6 @@ def initial_from_login_hint(request):
     return {}
 
 
-@lru_cache
 def get_next_url(request):
     if not request.user.is_authenticated:
         return None

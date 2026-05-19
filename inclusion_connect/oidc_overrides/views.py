@@ -205,11 +205,9 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
         return prompt_logout
 
     def form_invalid(self, form):
-        response = super().form_invalid(form)
         self.log(f"{self.EVENT_NAME}_error", application=None, user=None, errors=form.errors.get_json_data())
-        return response
+        return super().form_invalid(form)
 
     def error_response(self, error):
-        response = super().error_response(error)
         self.log(f"{self.EVENT_NAME}_error", application=None, user=None, error=str(error))
-        return response
+        return super().error_response(error)
