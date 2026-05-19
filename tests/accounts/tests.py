@@ -393,7 +393,7 @@ class TestPasswordResetView:
                 (
                     "inclusion_connect.auth",
                     logging.INFO,
-                    {"event": "forgot_password", "email": "evil@mailinator.com"},
+                    {"event": "forgot_password_error", "email": "evil@mailinator.com"},
                 )
             ],
         )
