@@ -20,8 +20,7 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": PASSWORD_PLACEHOLDER}),
     )
 
-    def __init__(self, log, request, *args, **kwargs):
-        self.log = log
+    def __init__(self, request, *args, **kwargs):
         self.request = request
         super().__init__(*args, **kwargs)
         self.fields["email"].disabled = "email" in self.initial
@@ -32,10 +31,7 @@ class LoginForm(forms.Form):
 
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
-            if self.user_cache:
-                self.log["user"] = self.user_cache.email
-            else:
-                self.log["email"] = email
+            if self.user_cache is None:
                 raise ValidationError(
                     ("Adresse e-mail ou mot de passe invalide."),
                     code="invalid_login",

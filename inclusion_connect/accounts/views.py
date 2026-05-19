@@ -35,20 +35,17 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
     template_name = "login.html"
     EVENT_NAME = "login"
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["log"] = log_data(self.request)
-        return kwargs
-
     def form_invalid(self, form):
-        log = form.log
+        log = log_data(self.request)
+        log["email"] = form.cleaned_data.get("email")
         log["event"] = f"{self.EVENT_NAME}_error"
         log["errors"] = form.errors.get_json_data()
         transaction.on_commit(partial(logger.info, log))
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        log = form.log
+        log = log_data(self.request)
+        log["user"] = form.user_cache.email
         log["event"] = self.EVENT_NAME
         transaction.on_commit(partial(logger.info, log))
         return super().form_valid(form)
