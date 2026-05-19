@@ -1,0 +1,31 @@
+{% extends "layout/account.html" %}
+{% load django_bootstrap5 %}
+
+{% block section_title %}Configuration 2FA{% endblock %}
+
+{% block content %}
+    <form method="post" class="js-prevent-multiple-submit">
+        {% csrf_token %}
+        <p>Choisissez un nom pour votre appareil :</p>
+        {% bootstrap_field form.name layout='inline' %}
+
+        <br>
+        <p>Scannez ce QR Code avec votre logiciel de génération de mots de passe à usage unique.</p>
+        <div class="text-center">
+            <img src="{{ qrcode }}" width="250" alt="QR code pour la configuration de l’authentification à deux facteurs">
+        </div>
+
+        <p>
+            Ou bien copiez le code suivant dans ce même logiciel :
+            <br>
+            <strong>{{ otp_secret }}</strong>
+        </p>
+
+        <hr>
+        <p>Puis générez le code OTP et entrez-le ici :</p>
+        {% bootstrap_field form.otp_token layout='inline' %}
+        <button type="submit" class="btn btn-block btn-primary mt-1">
+            <span>Vérifier le code OTP</span>
+        </button>
+    </form>
+{% endblock content %}
