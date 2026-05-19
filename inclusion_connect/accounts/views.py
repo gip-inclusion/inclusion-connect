@@ -1,13 +1,10 @@
-import logging
 from base64 import b32encode
-from functools import partial
 
 import segno
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -17,14 +14,14 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from inclusion_connect.accounts import forms
 from inclusion_connect.accounts.helpers import create_new_totp_device, get_next_url, login
-from inclusion_connect.logging import log_data
+from inclusion_connect.logging import log
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.oidc import initial_from_login_hint
 
 
-logger = logging.getLogger("inclusion_connect.auth")
+LOGGER_NAME = "inclusion_connect.auth"
 
 
 EMAIL_CONFIRM_KEY = "email_to_confirm"
@@ -36,18 +33,22 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
     EVENT_NAME = "login"
 
     def form_invalid(self, form):
-        log = log_data(self.request)
-        log["email"] = form.cleaned_data.get("email")
-        log["event"] = f"{self.EVENT_NAME}_error"
-        log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
+        log(
+            LOGGER_NAME,
+            self.request,
+            email=form.cleaned_data.get("email"),
+            event=f"{self.EVENT_NAME}_error",
+            errors=form.errors.get_json_data(),
+        )
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        log = log_data(self.request)
-        log["user"] = form.user_cache.email
-        log["event"] = self.EVENT_NAME
-        transaction.on_commit(partial(logger.info, log))
+        log(
+            LOGGER_NAME,
+            self.request,
+            user=form.user_cache.email,
+            event=self.EVENT_NAME,
+        )
         return super().form_valid(form)
 
 
@@ -72,22 +73,32 @@ class PasswordResetView(auth_views.PasswordResetView):
         )
         return reverse("accounts:login")
 
-    def log(self, event_name, email):
-        log = log_data(self.request)
-        log["event"] = event_name
-        try:
-            log["user"] = User.objects.get(email=email).email
-        except User.DoesNotExist:
-            log["email"] = email
-        transaction.on_commit(partial(logger.info, log))
-
     def form_invalid(self, form):
-        email = form.cleaned_data.get("email", form.data.get("email", ""))
-        self.log(f"{self.EVENT_NAME}_error", email)
+        log(
+            LOGGER_NAME,
+            self.request,
+            event=f"{self.EVENT_NAME}_error",
+            email=form.cleaned_data.get("email", form.data.get("email", "")),
+        )
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        self.log(self.EVENT_NAME, form.cleaned_data["email"])
+        email = form.cleaned_data.get("email")
+        if User.objects.filter(email=email).exists():
+            log(
+                LOGGER_NAME,
+                self.request,
+                event=self.EVENT_NAME,
+                user=email,
+            )
+        else:
+            # No user found ? the form data wasn't really valid
+            log(
+                LOGGER_NAME,
+                self.request,
+                event=self.EVENT_NAME,
+                email=email,
+            )
         return super().form_valid(form)
 
 
@@ -102,21 +113,27 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     def get_success_url(self):
         return get_next_url(self.request)
 
-    def log(self, event_name, form):
-        log = log_data(self.request)
-        log["event"] = event_name
-        log["user"] = self.user.email
-        if form.errors:
-            log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
+    def log(self, event_name, **kwargs):
+        next_url = self.get_success_url()
+        log(
+            LOGGER_NAME,
+            self.request,
+            event=event_name,
+            next_url=next_url,
+            user=self.user.email,
+            **kwargs,
+        )
 
     def form_invalid(self, form):
-        self.log(f"{self.EVENT_NAME}_error", form)
+        self.log(
+            f"{self.EVENT_NAME}_error",
+            errors=form.errors.get_json_data(),
+        )
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        self.log(self.EVENT_NAME, form)
-        self.log(LoginView.EVENT_NAME, form)  # Also log a login here
+        self.log(self.EVENT_NAME)
+        self.log(LoginView.EVENT_NAME)  # Also log a login here
         return super().form_valid(form)
 
 
@@ -134,23 +151,27 @@ class ChangeTemporaryPassword(LoginRequiredMixin, FormView):
     def get_success_url(self):
         return get_next_url(self.request)
 
-    def log(self, event_name, form):
-        log = log_data(self.request)
-        log["event"] = event_name
-        log["user"] = self.request.user.email
-        if form.errors:
-            log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
+    def log(self, event_name, **kwargs):
+        log(
+            LOGGER_NAME,
+            self.request,
+            event=event_name,
+            user=self.request.user.email,
+            **kwargs,
+        )
 
     def form_invalid(self, form):
-        self.log(f"{self.EVENT_NAME}_error", form)
+        self.log(
+            f"{self.EVENT_NAME}_error",
+            errors=form.errors.get_json_data(),
+        )
         return super().form_invalid(form)
 
     def form_valid(self, form):
         user = form.save()
         login(self.request, user)
         messages.success(self.request, "Votre mot de passe a été mis à jour.")
-        self.log(self.EVENT_NAME, form)
+        self.log(self.EVENT_NAME)
         return super().form_valid(form)
 
 
@@ -210,24 +231,25 @@ class PasswordChangeView(MyAccountMixin, FormView):
         context["edit_password"]["active"] = True
         return context
 
-    def log(self, event_name, form):
-        log = log_data(self.request)
-        log["event"] = event_name
-        log["user"] = self.request.user.email
+    def log(self, event_name, **kwargs):
         if self.application:
-            log["application"] = self.application.client_id
-        if form.errors:
-            log["errors"] = form.errors.get_json_data()
-        transaction.on_commit(partial(logger.info, log))
+            kwargs["application"] = self.application.client_id
+        log(
+            LOGGER_NAME,
+            self.request,
+            event=event_name,
+            user=self.request.user.email,
+            **kwargs,
+        )
 
     def form_invalid(self, form):
-        self.log(f"{self.EVENT_NAME}_error", form)
+        self.log(f"{self.EVENT_NAME}_error", errors=form.errors.get_json_data())
         return super().form_invalid(form)
 
     def form_valid(self, form):
         form.save()
         login(self.request, self.get_object())
-        self.log(self.EVENT_NAME, form)
+        self.log(self.EVENT_NAME)
         messages.success(self.request, "Votre mot de passe a été mis à jour.")
         return super().form_valid(form)
 
@@ -246,13 +268,6 @@ class ChangeWeakPassword(ChangeTemporaryPassword):
 class OtpDevices(MyAccountMixin, TemplateView):
     template_name = "otp_devices.html"
 
-    def log(self, device, event_name):
-        log = log_data(self.request)
-        log["user"] = self.request.user.email
-        log["event"] = event_name
-        log["device"] = device.pk
-        transaction.on_commit(partial(logger.info, log))
-
     def post(self, request, *args, **kwargs):
         if request.POST.get("action") == "new":
             device = create_new_totp_device(request)
@@ -262,7 +277,13 @@ class OtpDevices(MyAccountMixin, TemplateView):
             device = get_object_or_404(TOTPDevice.objects.filter(user=request.user), pk=device_id)
             if device != request.user.otp_device:
                 messages.success(request, "L’appareil a été supprimé.")
-                self.log(device, "delete_otp_device")
+                log(
+                    LOGGER_NAME,
+                    self.request,
+                    user=self.request.user.email,
+                    event="delete_otp_device",
+                    device=device.pk,
+                )
                 device.delete()
             else:
                 messages.error(request, "Impossible de supprimer l’appareil qui a été utilisé pour se connecter.")
@@ -286,19 +307,18 @@ class OtpConfirmDevice(MyAccountMixin, FormView):
     def get_form_kwargs(self):
         return super().get_form_kwargs() | {"device": self.device}
 
-    def log(self):
-        log = log_data(self.request)
-        log["user"] = self.request.user.email
-        log["event"] = self.EVENT_NAME
-        log["device"] = self.device.pk
-        transaction.on_commit(partial(logger.info, log))
-
     def form_valid(self, form):
         self.device.confirmed = True
         self.device.name = form.cleaned_data["name"]
         self.device.save(update_fields=["name", "confirmed"])
         messages.success(self.request, "Votre nouvel appareil est confirmé", extra_tags="toast")
-        self.log()
+        log(
+            LOGGER_NAME,
+            self.request,
+            user=self.request.user.email,
+            event=self.EVENT_NAME,
+            device=self.device.pk,
+        )
         # Mark the user as verified
         otp_login(self.request, self.device)
         return super().form_valid(form)
@@ -323,16 +343,15 @@ class VerifyOTPView(FormView):
     def get_form_kwargs(self):
         return super().get_form_kwargs() | {"user": self.request.user}
 
-    def log(self):
-        log = log_data(self.request)
-        log["user"] = self.request.user.email
-        log["event"] = self.EVENT_NAME
-        log["device"] = self.request.user.otp_device.pk
-        transaction.on_commit(partial(logger.info, log))
-
     def form_valid(self, form):
         otp_login(self.request, self.request.user.otp_device)
-        self.log()
+        log(
+            LOGGER_NAME,
+            self.request,
+            user=self.request.user.email,
+            event=self.EVENT_NAME,
+            device=self.request.user.otp_device.pk,
+        )
         return super().form_valid(form)
 
     def get_success_url(self):

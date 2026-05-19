@@ -1,17 +1,13 @@
-import logging
-from functools import partial
-
 from django.conf import settings
 from django.contrib import auth
-from django.db import transaction
 from django.urls import reverse
 from django_otp import user_has_device
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
-from inclusion_connect.logging import log_data
+from inclusion_connect.logging import log
 
 
-logger = logging.getLogger("inclusion_connect.auth")
+LOGGER_NAME = "inclusion_connect.auth"
 
 
 def login(request, user, backend=settings.DEFAULT_AUTH_BACKEND):
@@ -31,11 +27,13 @@ def create_new_totp_device(request):
     device, created = TOTPDevice.objects.get_or_create(user=request.user, confirmed=False)
 
     if created:
-        log = log_data(request)
-        log["user"] = request.user.email
-        log["event"] = "create_otp_device"
-        log["device"] = device.pk
-        transaction.on_commit(partial(logger.info, log))
+        log(
+            LOGGER_NAME,
+            request,
+            user=request.user.email,
+            event="create_otp_device",
+            device=device.pk,
+        )
     return device
 
 
