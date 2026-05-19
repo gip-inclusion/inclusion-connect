@@ -10,10 +10,11 @@ from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
 from oauth2_provider.signals import app_authorized
 
+from inclusion_connect.accounts.helpers import get_next_url
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
-from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, get_next_url, initial_from_login_hint
+from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, initial_from_login_hint
 from inclusion_connect.utils.urls import get_url_params, is_inclusion_connect_url
 
 

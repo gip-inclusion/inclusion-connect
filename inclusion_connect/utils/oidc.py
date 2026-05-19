@@ -1,6 +1,5 @@
 from django.urls import reverse
 
-from inclusion_connect.accounts.middleware import required_action_url
 from inclusion_connect.utils.urls import get_url_params
 
 
@@ -23,14 +22,3 @@ def initial_from_login_hint(request):
         if login_hint := get_url_params(next_url).get("login_hint"):
             return {"email": login_hint}
     return {}
-
-
-def get_next_url(request, fallback_url=None):
-    if not request.user.is_authenticated:
-        return None
-    next_url = required_action_url(request)
-    if next_url:
-        return next_url
-    session_next_url = request.session.pop("next_url", None)
-    user_next_url = request.user.pop_next_redirect_uri()
-    return session_next_url or user_next_url or fallback_url or reverse("accounts:home")
