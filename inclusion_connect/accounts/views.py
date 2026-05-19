@@ -16,12 +16,12 @@ from django_otp import devices_for_user, login as otp_login
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from inclusion_connect.accounts import forms
-from inclusion_connect.accounts.helpers import create_new_totp_device, login
+from inclusion_connect.accounts.helpers import create_new_totp_device, get_next_url, login
 from inclusion_connect.logging import log_data
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 from inclusion_connect.users.models import User
-from inclusion_connect.utils.oidc import get_next_url, initial_from_login_hint
+from inclusion_connect.utils.oidc import initial_from_login_hint
 
 
 logger = logging.getLogger("inclusion_connect.auth")
