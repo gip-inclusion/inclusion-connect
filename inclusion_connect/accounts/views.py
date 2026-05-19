@@ -92,11 +92,11 @@ class PasswordResetView(auth_views.PasswordResetView):
                 user=email,
             )
         else:
-            # No user found ? the form data wasn't really valid
+            # No user found ? the form data wasn't really valid but we hide it
             log(
                 LOGGER_NAME,
                 self.request,
-                event=self.EVENT_NAME,
+                event=f"{self.EVENT_NAME}_error",
                 email=email,
             )
         return super().form_valid(form)
