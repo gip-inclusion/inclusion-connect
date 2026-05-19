@@ -1119,9 +1119,9 @@ uv==0.11.14 \
     --hash=sha256:f0a8b58b38e984241bca5d7a5a47bf9ffe1ca2ab392a640887db8a04c4a9ec95 \
     --hash=sha256:f3005a2db1e8d72e125630d4f22ac4ceddb2c033e1f9b94b7f3ea38ebac46dd6
     # via -r dev.in
-virtualenv==21.3.2 \
-    --hash=sha256:3ecda97894a6fc1c53106356f488690e5c86278c1f693f3fc0805ac85a513686 \
-    --hash=sha256:c58ea748fa50bb2a4367da5ba3d30b02458ed40b4ea888faad94021f3309f764
+virtualenv==21.3.3 \
+    --hash=sha256:7d5987d8369e098e41406efb780a3d4ca79280097293899e351a6407ee153ab3 \
+    --hash=sha256:f5bda277e553b1c2b3c1a8debfc30496e1288cc93ce6b7b71b3280047e317328
     # via pre-commit
 wcwidth==0.7.0 \
     --hash=sha256:5d69154c429a82910e241c738cd0e2976fac8a2dd47a1a805f4afed1c0f136f2 \
