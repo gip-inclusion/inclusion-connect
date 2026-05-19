@@ -1,18 +1,15 @@
 import copy
-import logging
-from functools import partial
 
 from django import forms
 from django.contrib import admin
 from django.contrib.auth import admin as auth_admin, forms as auth_forms, password_validation
-from django.db import transaction
 
-from inclusion_connect.logging import log_data
+from inclusion_connect.logging import log
 
 from .models import User, UserApplicationLink
 
 
-logger = logging.getLogger("inclusion_connect.auth")
+LOGGER_NAME = "inclusion_connect.auth"
 
 
 class AdminPasswordChangeForm(forms.Form):
@@ -79,29 +76,28 @@ class UserChangeForm(auth_forms.UserChangeForm):
     )
 
     def log_changes(self, request):
-        log = log_data(request)
-        log["event"] = "admin_change"
-        log["acting_user"] = request.user.email
-        log["user"] = self.instance.email
+        log_data = {}
+        log_data["acting_user"] = request.user.email
+        log_data["user"] = self.instance.email
         tracked_changed_fields = set(self.changed_data) & {"first_name", "last_name"}
         for field in sorted(tracked_changed_fields):
-            log[f"old_{field}"] = self.initial[field]
-            log[f"new_{field}"] = self.cleaned_data[field]
+            log_data[f"old_{field}"] = self.initial[field]
+            log_data[f"new_{field}"] = self.cleaned_data[field]
         if "groups" in self.changed_data:
             current_groups = set(self.initial["groups"])
             new_groups = set(self.cleaned_data["groups"])
-            log["groups"] = {}
+            log_data["groups"] = {}
             added_groups = new_groups - current_groups
             if added_groups:
-                log["groups"]["added"] = {}
+                log_data["groups"]["added"] = {}
                 for group in added_groups:
-                    log["groups"]["added"][group.pk] = group.name
+                    log_data["groups"]["added"][group.pk] = group.name
             removed_groups = current_groups - added_groups
             if removed_groups:
-                log["groups"]["removed"] = {}
+                log_data["groups"]["removed"] = {}
                 for group in current_groups - new_groups:
-                    log["groups"]["removed"][group.pk] = group.name
-        transaction.on_commit(partial(logger.info, log))
+                    log_data["groups"]["removed"][group.pk] = group.name
+        log(LOGGER_NAME, request, event="admin_change", **log_data)
 
 
 @admin.register(User)
@@ -130,11 +126,13 @@ class UserAdmin(auth_admin.UserAdmin):
         if change:
             form.log_changes(request)
         else:
-            log = log_data(request)
-            log["event"] = "admin_add"
-            log["acting_user"] = request.user.email
-            log["user"] = form.instance.email
-            transaction.on_commit(partial(logger.info, log))
+            log(
+                LOGGER_NAME,
+                request,
+                event="admin_add",
+                acting_user=request.user.email,
+                user=form.instance.email,
+            )
 
     def construct_change_message(self, request, form, formsets, add=False):
         """
@@ -142,11 +140,13 @@ class UserAdmin(auth_admin.UserAdmin):
         """
         change_message = super().construct_change_message(request, form, formsets, add=add)
         if isinstance(form, self.change_password_form):
-            log = log_data(request)
-            log["event"] = "admin_change_password"
-            log["acting_user"] = request.user.email
-            log["user"] = form.user.email
-            transaction.on_commit(partial(logger.info, log))
+            log(
+                LOGGER_NAME,
+                request,
+                event="admin_change_password",
+                acting_user=request.user.email,
+                user=form.user.email,
+            )
         return change_message
 
     def get_fieldsets(self, request, obj=None):

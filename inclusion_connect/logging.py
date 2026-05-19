@@ -1,16 +1,22 @@
+import logging
+from functools import partial
+
+from django.db import transaction
 from pythonjsonlogger.json import JsonFormatter
 
 from inclusion_connect.utils.oidc import oidc_params
 
 
-def log_data(request, next_url=None):
-    log_data = {"ip_address": request.META["REMOTE_ADDR"]}
+def log(logger_name, request, next_url=None, **kwargs):
+    logger = logging.getLogger(logger_name)
+    data = {"ip_address": request.META["REMOTE_ADDR"]} | kwargs
     params = oidc_params(request, next_url)
     try:
-        log_data["application"] = params["client_id"]
+        data["application"] = params["client_id"]
     except KeyError:
         pass
-    return log_data
+    # sort keys to make testing easier
+    transaction.on_commit(partial(logger.info, dict(sorted(data.items()))))
 
 
 class JsonFormatter(JsonFormatter):

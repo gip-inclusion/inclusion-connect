@@ -1,8 +1,4 @@
-import logging
-from functools import partial
-
 from django.contrib.sessions.models import Session
-from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
@@ -11,14 +7,14 @@ from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientErr
 from oauth2_provider.signals import app_authorized
 
 from inclusion_connect.accounts.helpers import get_next_url
-from inclusion_connect.logging import log_data
+from inclusion_connect.logging import log
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY, initial_from_login_hint
 from inclusion_connect.utils.urls import get_url_params, is_inclusion_connect_url
 
 
-logger = logging.getLogger("inclusion_connect.oidc")
+LOGGER_NAME = "inclusion_connect.oidc"
 
 
 class OIDCSessionMixin:
@@ -58,11 +54,12 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
             self.validate_authorization_request(request)
         except OAuthToolkitError as error:
             # Application is not available at this time.
-            log = log_data(self.request) | {
-                "event": "oidc_params_error",
-                "oidc_params": get_url_params(self.request.get_full_path()),
-            }
-            transaction.on_commit(partial(logger.info, log))
+            log(
+                LOGGER_NAME,
+                self.request,
+                event="oidc_params_error",
+                oidc_params=get_url_params(self.request.get_full_path()),
+            )
             return self.error_response(error, application=None)
 
         return super().dispatch(request, *args, **kwargs)
@@ -87,20 +84,19 @@ class BaseAuthorizationView(OIDCSessionMixin, oauth2_views.base.AuthorizationVie
         return response
 
     def redirect(self, redirect_to, application):
-        log = log_data(self.request)
+        log_data = {}
         if application:
-            log["application"] = application.client_id
+            log_data["application"] = application.client_id
         elif client_id := self.request.GET.get("client_id"):
             # On auth errors, the application might not be set.
             # Fallback on oidc_params client_id
-            log["application"] = client_id
-        log["event"] = "redirect"
+            log_data["application"] = client_id
         if self.request.user.is_authenticated:
-            log["user"] = self.request.user.email
+            log_data["user"] = self.request.user.email
         else:
-            log["user"] = None
-        log["url"] = redirect_to
-        transaction.on_commit(partial(logger.info, log))
+            log_data["user"] = None
+        log_data["url"] = redirect_to
+        log(LOGGER_NAME, self.request, event="redirect", **log_data)
         return super().redirect(redirect_to, application)
 
 
@@ -111,12 +107,13 @@ class AuthorizationView(BaseAuthorizationView):
 
 
 def handle_app_authorized(sender, request, token, **kwargs):
-    log = log_data(request) | {
-        "application": token.application.client_id,
-        "event": "token",
-        "user": token.user.email,
-    }
-    transaction.on_commit(partial(logger.info, log))
+    log(
+        LOGGER_NAME,
+        request,
+        event="token",
+        application=token.application.client_id,
+        user=token.user.email,
+    )
 
 
 app_authorized.connect(handle_app_authorized)
@@ -128,22 +125,21 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
 
     def log(self, event_name, application, user, **extra):
         request = self.request
-        log = log_data(request)
+        log_data = {}
         if application:
-            log["application"] = application.client_id
-        log["event"] = event_name
+            log_data["application"] = application.client_id
         request_data = request.GET if request.method == "GET" else request.POST
         for param in ["id_token_hint", "logout_hint", "client_id", "post_logout_redirect_uri", "state"]:
             try:
-                log[param] = request_data[param]
+                log_data[param] = request_data[param]
             except KeyError:
                 pass
         if user and user.is_authenticated:
-            log["user"] = user.email
+            log_data["user"] = user.email
         else:
-            log["user"] = None
-        log.update(extra)
-        transaction.on_commit(partial(logger.info, log))
+            log_data["user"] = None
+        log_data.update(extra)
+        log(LOGGER_NAME, self.request, event=event_name, **log_data)
 
     def do_logout(self, application=None, post_logout_redirect_uri=None, state=None, token_user=None):
         user = token_user or self.request.user
