@@ -70,7 +70,7 @@ class User(AbstractUser):
 
     def is_verified(self):
         # Allow to call the method even if the user wasn't handled by OTPMiddleware
-        # This happens because the login view calls required_action_url to redirect the user
+        # This happens because the login view calls next_action_url to redirect the user
         return False
 
 

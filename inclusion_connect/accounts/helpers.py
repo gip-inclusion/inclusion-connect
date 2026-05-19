@@ -39,7 +39,7 @@ def create_new_totp_device(request):
     return device
 
 
-def required_action_url(request):
+def next_action_url(request):
     if not request.user.is_verified():
         if user_has_device(request.user):
             return reverse("accounts:verify_otp")
@@ -56,7 +56,7 @@ def required_action_url(request):
 def get_next_url(request, fallback_url=None):
     if not request.user.is_authenticated:
         return None
-    next_url = required_action_url(request)
+    next_url = next_action_url(request)
     if next_url:
         return next_url
     session_next_url = request.session.pop("next_url", None)
