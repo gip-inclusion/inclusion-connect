@@ -22,6 +22,11 @@
                                   </a>
                               </li>
                               <li class="nav-item">
+                                  <a class="nav-link" href="/accounts/otp/devices">
+                                      2FA
+                                  </a>
+                              </li>
+                              <li class="nav-item">
                                   <a class="nav-link" href="/admin/">
                                       Admin
                                   </a>

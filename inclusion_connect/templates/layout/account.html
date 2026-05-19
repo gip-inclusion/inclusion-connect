@@ -14,6 +14,9 @@
                     <a class="nav-link{% if edit_password.active %} active{% endif %}" href="{{ edit_password.url }}">Mot de passe</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link{% if otp.active %} active{% endif %}" href="{{ otp.url }}">2FA</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{% url "admin:index" %}">Admin</a>
                 </li>
             </ul>
