@@ -17,8 +17,6 @@ from inclusion_connect.accounts.helpers import create_new_totp_device, get_next_
 from inclusion_connect.logging import log
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
-from inclusion_connect.users.models import User
-from inclusion_connect.utils.oidc import initial_from_login_hint
 
 
 LOGGER_NAME = "inclusion_connect.auth"
@@ -49,56 +47,6 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
             user=form.user_cache.email,
             event=self.EVENT_NAME,
         )
-        return super().form_valid(form)
-
-
-class PasswordResetView(auth_views.PasswordResetView):
-    template_name = "password_reset.html"
-    subject_template_name = "registration/password_reset_subject.txt"
-    email_template_name = "registration/password_reset_body.txt"
-    html_email_template_name = "registration/password_reset_body.html"
-    form_class = forms.PasswordResetForm
-    EVENT_NAME = "forgot_password"
-
-    def get_initial(self):
-        initial = super().get_initial()
-        initial.update(initial_from_login_hint(self.request))
-        return initial
-
-    def get_success_url(self):
-        messages.success(
-            self.request,
-            "Si un compte existe avec cette adresse e-mail, "
-            "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-        )
-        return reverse("accounts:login")
-
-    def form_invalid(self, form):
-        log(
-            LOGGER_NAME,
-            self.request,
-            event=f"{self.EVENT_NAME}_error",
-            email=form.cleaned_data.get("email", form.data.get("email", "")),
-        )
-        return super().form_invalid(form)
-
-    def form_valid(self, form):
-        email = form.cleaned_data.get("email")
-        if User.objects.filter(email=email).exists():
-            log(
-                LOGGER_NAME,
-                self.request,
-                event=self.EVENT_NAME,
-                user=email,
-            )
-        else:
-            # No user found ? the form data wasn't really valid but we hide it
-            log(
-                LOGGER_NAME,
-                self.request,
-                event=f"{self.EVENT_NAME}_error",
-                email=email,
-            )
         return super().form_valid(form)
 
 
