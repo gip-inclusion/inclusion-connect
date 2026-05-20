@@ -1,6 +1,3 @@
-from django.utils import timezone
-from freezegun import freeze_time
-
 from tests.users.factories import UserFactory
 
 

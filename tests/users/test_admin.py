@@ -1,11 +1,10 @@
 import logging
 
 from django.urls import reverse
-from freezegun import freeze_time
-from pytest_django.asserts import assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.users.models import User
-from tests.helpers import assertRecords, parse_response_to_soup, pretty_indented
+from tests.helpers import assertRecords
 from tests.users.factories import UserFactory
 
 
@@ -125,64 +124,52 @@ class TestUserAdmin:
             ],
         )
 
-    def test_admin_password_update(self, caplog, client, snapshot):
+    def test_admin_password_status_with_usable_password(self, client):
         staff_user = UserFactory(is_superuser=True, is_staff=True)
         client.force_login(staff_user)
 
-        user = UserFactory(
-            first_name="John",
-            last_name="Doe",
-            email="admin@mailinator.net",
-            username="11111111-1111-1111-1111-111111111111",
-        )
-        response = client.get(reverse("admin:auth_user_password_change", args=(user.pk,)))
-        assert pretty_indented(parse_response_to_soup(response, selector="#user_form")) == snapshot
+        user = UserFactory()
+        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
+        assert response.status_code == 200
+        assertContains(response, "Mot de passe valide")
+        assertContains(response, "Invalider le mot de passe")
 
-        password = "V€r¥--$3©®€7"
-        response = client.post(
-            reverse("admin:auth_user_password_change", args=(user.pk,)),
-            data={"password": password},
-        )
-        assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
+    def test_admin_password_status_without_usable_password(self, client):
+        staff_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(staff_user)
+
+        user = UserFactory()
+        user.set_unusable_password()
+        user.save()
+        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
+        assert response.status_code == 200
+        assertContains(response, "Sans mot de passe")
+        assertContains(response, "Copier le lien de réinitialisation")
+
+    def test_admin_invalidate_password(self, client):
+        staff_user = UserFactory(is_superuser=True, is_staff=True)
+        client.force_login(staff_user)
+
+        user = UserFactory()
+        assert user.has_usable_password()
+
+        invalidate_url = reverse("admin:users_user_invalidate_password", args=[user.pk])
+        response = client.get(invalidate_url)
+        assert response.status_code == 200
+        assertContains(response, "Confirmer")
+
+        response = client.post(invalidate_url)
+        assertRedirects(response, reverse("admin:users_user_change", args=[user.pk]))
         user.refresh_from_db()
-        assert user.password_is_temporary
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "admin_change_password", "acting_user": staff_user.email, "user": user.email},
-                )
-            ],
-        )
+        assert not user.has_usable_password()
 
-    @freeze_time("2023-05-12T16:00:00+02:00")
-    def test_admin_detail_password_field(self, client, snapshot):
-        user = UserFactory(
-            is_superuser=True,
-            is_staff=True,
-        )
-        other_user = UserFactory(
-            first_name="John",
-            last_name="Doe",
-            email="john.doe@mailinator.net",
-            username="11111111-1111-1111-1111-111111111111",
-        )
-
-        result_id = '[class*="field-password_is_temporary"]'
-
-        def get_password_form_field():
-            response = client.get(reverse("admin:users_user_change", kwargs={"object_id": other_user.pk}))
-            assert response.status_code == 200
-            return pretty_indented(parse_response_to_soup(response, selector=result_id))
-
-        client.force_login(user)
-        assert get_password_form_field() == snapshot(name="normal password")
-
-        other_user.password_is_temporary = True
-        other_user.save()
-        assert get_password_form_field() == snapshot(name="temporary password")
+    def test_non_staff_user_cannot_invalidate_password(self, client):
+        non_staff_user = UserFactory()
+        client.force_login(non_staff_user)
+        target_user = UserFactory()
+        invalidate_url = reverse("admin:users_user_invalidate_password", args=[target_user.pk])
+        response = client.get(invalidate_url)
+        assertRedirects(response, reverse("admin:login") + f"?next={invalidate_url}")
 
     def test_logout(self, client):
         user = UserFactory(is_superuser=True, is_staff=True)
