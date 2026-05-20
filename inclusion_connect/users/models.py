@@ -3,8 +3,12 @@ import uuid
 from citext import CIEmailField
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.tokens import default_token_generator
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 
 class User(AbstractUser):
@@ -52,6 +56,18 @@ class User(AbstractUser):
     def id(self):
         # Required by some third party libraries that use user.id (django-oauth-toolkit)
         return self.pk
+
+    def get_password_reset_url_path(self):
+        uid = urlsafe_base64_encode(force_bytes(self.pk))
+        token = default_token_generator.make_token(self)
+        path = reverse(
+            "password_reset_confirm",
+            kwargs={
+                "uidb64": uid,
+                "token": token,
+            },
+        )
+        return path
 
     def is_verified(self):
         # Allow to call the method even if the user wasn't handled by OTPMiddleware

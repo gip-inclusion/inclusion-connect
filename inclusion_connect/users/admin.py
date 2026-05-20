@@ -1,8 +1,13 @@
 import copy
 
 from django import forms
-from django.contrib import admin
-from django.contrib.auth import admin as auth_admin, forms as auth_forms, password_validation
+from django.contrib import admin, messages
+from django.contrib.auth import admin as auth_admin, forms as auth_forms
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
+from django.utils.html import format_html
 
 from inclusion_connect.logging import log
 
@@ -10,44 +15,6 @@ from .models import User, UserApplicationLink
 
 
 LOGGER_NAME = "inclusion_connect.auth"
-
-
-class AdminPasswordChangeForm(forms.Form):
-    """
-    A form used to change the password of a user in the admin interface.
-    """
-
-    required_css_class = "required"
-    password = forms.CharField(
-        label="Mot de passe",
-        widget=forms.TextInput(attrs={"autocomplete": "new-password", "autofocus": True}),
-    )
-
-    def __init__(self, user, *args, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
-
-    def clean_password(self):
-        self.cleaned_data["set_usable_password"] = True
-        password = self.cleaned_data.get("password")
-        password_validation.validate_password(password, self.user)
-        return password
-
-    def save(self, commit=True):
-        password = self.cleaned_data["password"]
-        self.user.set_password(password)
-        self.user.password_is_temporary = True
-        if commit:
-            self.user.save()
-        return self.user
-
-    @property
-    def changed_data(self):
-        data = super().changed_data
-        for name in self.fields:
-            if name not in data:
-                return []
-        return ["password"]
 
 
 class UserApplicationLinkInline(admin.TabularInline):
@@ -62,18 +29,8 @@ class UserApplicationLinkInline(admin.TabularInline):
         return False
 
 
-class TemporaryPasswordWidget(forms.Widget):
-    template_name = "admin/widgets/temporary_password.html"
-
-
 class UserChangeForm(auth_forms.UserChangeForm):
     password = None
-    password_is_temporary = forms.Field(
-        label="Mot de passe",
-        disabled=True,
-        required=False,
-        widget=TemporaryPasswordWidget,
-    )
 
     def log_changes(self, request):
         log_data = {}
@@ -108,18 +65,64 @@ class UserAdmin(auth_admin.UserAdmin):
         "username",
         "date_joined",
         "last_login",
+        "password_status",
     ]
-    list_filter = auth_admin.UserAdmin.list_filter + ("password_is_temporary",)
+    list_filter = auth_admin.UserAdmin.list_filter
     inlines = [UserApplicationLinkInline]
-    change_password_form = AdminPasswordChangeForm
     search_fields = auth_admin.UserAdmin.search_fields
     list_display = (
         "username",
         "email",
         "first_name",
         "last_name",
+        "has_usable_password_display",
         "is_staff",
     )
+
+    class Media:
+        js = ["js/admin_clipboard.js"]
+
+    @admin.display(description="Mot de passe valide", boolean=True)
+    def has_usable_password_display(self, obj):
+        return obj.has_usable_password()
+
+    def password_status(self, obj):
+        if obj.has_usable_password():
+            invalidate_url = reverse("admin:users_user_invalidate_password", args=[obj.pk])
+            return format_html(
+                'Mot de passe valide · <a href="{}">Invalider le mot de passe</a>',
+                invalidate_url,
+            )
+        reset_url = obj.get_password_reset_url_path()
+        return format_html(
+            'Sans mot de passe · <a href="{}" data-copy-to-clipboard>Copier le lien de réinitialisation</a>',
+            reset_url,
+        )
+
+    password_status.short_description = "Mot de passe"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "<pk>/invalidate_password/",
+                self.admin_site.admin_view(self.invalidate_password_view),
+                name="users_user_invalidate_password",
+            ),
+        ]
+        return custom_urls + urls
+
+    def invalidate_password_view(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        if request.method == "POST":
+            user.set_unusable_password()
+            user.save()
+            messages.success(request, "Le mot de passe a été invalidé.")
+            return HttpResponseRedirect(reverse("admin:users_user_change", args=[pk]))
+        context = self.admin_site.each_context(request)
+        context["user_obj"] = user
+        context["opts"] = self.model._meta
+        return TemplateResponse(request, "admin/users/user/invalidate_password_confirm.html", context)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -134,21 +137,6 @@ class UserAdmin(auth_admin.UserAdmin):
                 user=form.instance.email,
             )
 
-    def construct_change_message(self, request, form, formsets, add=False):
-        """
-        Abusing the only method called with the request and user when a change_password succeeded.
-        """
-        change_message = super().construct_change_message(request, form, formsets, add=add)
-        if isinstance(form, self.change_password_form):
-            log(
-                LOGGER_NAME,
-                request,
-                event="admin_change_password",
-                acting_user=request.user.email,
-                user=form.user.email,
-            )
-        return change_message
-
     def get_fieldsets(self, request, obj=None):
         fieldsets = super().get_fieldsets(request, obj)
         is_change_form = obj is not None
@@ -158,7 +146,7 @@ class UserAdmin(auth_admin.UserAdmin):
             if not self.has_change_permission(request, obj):
                 fieldsets[0][1]["fields"] = ("username",)
             else:
-                fieldsets[0][1]["fields"] = ("username", "password_is_temporary")
+                fieldsets[0][1]["fields"] = ("username", "password_status")
 
             assert fieldsets[1] == ("Informations personnelles", {"fields": ("first_name", "last_name", "email")})
 
