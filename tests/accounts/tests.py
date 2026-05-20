@@ -3,7 +3,7 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
-from django.core import mail
+from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -19,7 +19,6 @@ from pytest_django.asserts import (
     assertTemplateUsed,
 )
 
-from inclusion_connect.accounts.views import PasswordResetView
 from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertRecords
@@ -265,233 +264,11 @@ class TestLoginView:
         assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
 
 
-class TestPasswordResetView:
-    @freeze_time("2023-06-08 09:10:03")
-    def test_password_reset(self, caplog, client):
-        user = UserFactory()
-
-        with freeze_time("2023-06-08 09:10:03"):
-            redirect_url = reverse("accounts:change_password")
-            url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-            response = client.get(url)
-            password_reset_url = reverse("accounts:password_reset")
-            assertContains(response, password_reset_url)
-
-            response = client.get(password_reset_url)
-            assertTemplateUsed(response, "password_reset.html")
-
-            response = client.post(password_reset_url, data={"email": user.email})
-            assertRedirects(response, reverse("accounts:login"))
-            assert client.session["next_url"] == redirect_url
-            assertMessages(
-                response,
-                [
-                    messages.Message(
-                        messages.SUCCESS,
-                        "Si un compte existe avec cette adresse e-mail, "
-                        "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-                    ),
-                ],
-            )
-
-            # Check sent email
-            [email] = mail.outbox
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = PasswordResetView.token_generator.make_token(user)
-            password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
-            assert password_reset_url in email.body
-            assertRecords(
-                caplog,
-                [
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"event": "forgot_password", "user": user.email},
-                    )
-                ],
-            )
-
-        # More than a day after link generation
-        with freeze_time("2023-06-09 09:10:04"):
-            response = client.get(password_reset_url)
-            assertContains(
-                response,
-                "Veuillez renouveler votre demande de mise à jour de mot de passe.",
-            )
-
-        # Exaclty a day after link generation
-        with freeze_time("2023-06-09 09:10:03"):
-            # Change password
-            password = "V€r¥--$3©®€7"
-            response = client.get(password_reset_url)  # retrieve the modified url
-            response = client.post(
-                response.url,
-                data={"new_password1": password, "new_password2": password},
-                follow=True,
-            )
-
-            # User is now logged in and redirected to otp setup
-            response, device = confirm_otp_flow(client, response)
-            assertRedirects(response, redirect_url)
-            assert get_user(client).is_authenticated is True
-            # The redirect cleans `next_url` from the session.
-            assert "next_url" not in client.session
-            assertRecords(
-                caplog,
-                [
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"event": "reset_password", "user": user.email},
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"event": "login", "user": user.email},
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"user": user.email, "event": "create_otp_device", "device": device.pk},
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
-                    ),
-                ],
-            )
-
-    def test_password_reset_unknown_email(self, caplog, client):
-        redirect_url = reverse("accounts:change_password")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        response = client.get(url)
-        password_reset_url = reverse("accounts:password_reset")
-        assertContains(response, password_reset_url)
-
-        response = client.get(password_reset_url)
-        assertTemplateUsed(response, "password_reset.html")
-
-        response = client.post(password_reset_url, data={"email": "evil@mailinator.com"})
-        assertRedirects(response, reverse("accounts:login"))
-        assert client.session["next_url"] == redirect_url
-        assertMessages(
-            response,
-            [
-                messages.Message(
-                    messages.SUCCESS,
-                    "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-                ),
-            ],
-        )
-        # Check sent email
-        assert len(mail.outbox) == 0
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "forgot_password_error", "email": "evil@mailinator.com"},
-                )
-            ],
-        )
-
-    @freeze_time("2023-06-08 09:10:03")
-    def test_login_hint(self, caplog, client, mailoutbox, snapshot):
-        user = UserFactory(email="me@mailinator.com")
-
-        redirect_url = reverse("accounts:change_password")
-        url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-
-        client_session = client.session
-        client_session[OIDC_SESSION_KEY] = {"login_hint": user.email}
-        client_session.save()
-
-        response = client.get(url)
-        password_reset_url = reverse("accounts:password_reset")
-        assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
-
-        response = client.get(password_reset_url)
-        assertTemplateUsed(response, "password_reset.html")
-
-        # Email is simply ignored.
-        response = client.post(password_reset_url, data={"email": "evil@mailinator.com"})
-        assertRedirects(response, reverse("accounts:login"))
-        assertMessages(
-            response,
-            [
-                messages.Message(
-                    messages.SUCCESS,
-                    "Si un compte existe avec cette adresse e-mail, "
-                    "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-                ),
-            ],
-        )
-        assert client.session["next_url"] == redirect_url
-
-        # Check sent email
-        [email] = mailoutbox
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = PasswordResetView.token_generator.make_token(user)
-        password_reset_url = reverse("accounts:password_reset_confirm", args=(uid, token))
-        assert password_reset_url in email.body
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "forgot_password", "user": user.email},
-                )
-            ],
-        )
-
-        # Change password
-        password = "V€r¥--$3©®€7"
-        response = client.get(password_reset_url)  # retrieve the modified url
-        response = client.post(response.url, data={"new_password1": password, "new_password2": password}, follow=True)
-
-        # User is now logged in and redirected to otp setup
-        response, device = confirm_otp_flow(client, response)
-        assertRedirects(response, redirect_url)
-
-        assert get_user(client).is_authenticated is True
-        # The redirect cleans `next_url` from the session.
-        assert "next_url" not in client.session
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "reset_password", "user": user.email},
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"event": "login", "user": user.email},
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"user": user.email, "event": "create_otp_device", "device": device.pk},
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"user": user.email, "event": "confirm_otp_device", "device": device.pk},
-                ),
-            ],
-        )
-
-
 class TestPasswordResetConfirmView:
     def test_confirm_password_reset_error(self, caplog, client):
         user = UserFactory()
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = PasswordResetView.token_generator.make_token(user)
+        token = default_token_generator.make_token(user)
         response = client.get(reverse("accounts:password_reset_confirm", args=(uid, token)))
         assertRedirects(response, response.url)
         response = client.post(

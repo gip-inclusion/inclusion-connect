@@ -3,18 +3,15 @@ import logging
 import re
 
 import pytest
-from django.contrib import messages
 from django.contrib.auth import get_user
 from django.contrib.auth.hashers import make_password
-from django.core import mail
 from django.urls import reverse
 from freezegun import freeze_time
-from pytest_django.asserts import assertContains, assertMessages, assertRedirects
+from pytest_django.asserts import assertRedirects
 
 from inclusion_connect.users.models import User
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertRecords
-from tests.conftest import Client
 from tests.helpers import (
     call_logout,
     confirm_otp_flow,
@@ -125,244 +122,6 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
 
 
 @freeze_time("2023-05-05 11:11:11")
-def test_login_after_password_reset(caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory()
-
-    auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, oidc_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:login"))
-
-    response = client.get(response.url)
-    assertContains(response, reverse("accounts:password_reset"))
-    assertRecords(caplog, [])
-
-    response = client.post(reverse("accounts:password_reset"), data={"email": user.email})
-    assertRedirects(response, reverse("accounts:login"))
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "forgot_password",
-                    "user": user.email,
-                },
-            )
-        ],
-    )
-
-    assertMessages(
-        response,
-        [
-            messages.Message(
-                messages.SUCCESS,
-                "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-            )
-        ],
-    )
-
-    reset_url_regex = reverse("accounts:password_reset_confirm", args=("string", "string")).replace("string", "[^/]*")
-    reset_url = re.search(reset_url_regex, mail.outbox[0].body)[0]
-    response = client.get(reset_url)  # retrieve the modified url
-    response = client.post(
-        response.url,
-        data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
-        follow=True,
-    )
-    response, device = confirm_otp_flow(client, response)
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "reset_password",
-                    "user": user.email,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"application": "my_application", "event": "login", "user": user.email},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
-            ),
-        ],
-    )
-
-    response = client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
-
-
-@freeze_time("2023-05-05 11:11:11")
-def test_login_after_password_reset_other_client(caplog, client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory()
-
-    auth_url = reverse("oauth2_provider:authorize")
-    auth_complete_url = add_url_params(auth_url, oidc_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:login"))
-
-    response = client.get(response.url)
-    assertContains(response, reverse("accounts:password_reset"))
-    assertRecords(caplog, [])
-
-    response = client.post(reverse("accounts:password_reset"), data={"email": user.email})
-    assertRedirects(response, reverse("accounts:login"))
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "forgot_password",
-                    "user": user.email,
-                },
-            )
-        ],
-    )
-
-    assertMessages(
-        response,
-        [
-            messages.Message(
-                messages.SUCCESS,
-                "Si un compte existe avec cette adresse e-mail, "
-                "vous recevrez un e-mail contenant des instructions pour réinitialiser votre mot de passe.",
-            )
-        ],
-    )
-
-    reset_url_regex = reverse("accounts:password_reset_confirm", args=("string", "string")).replace("string", "[^/]*")
-    reset_url = re.search(reset_url_regex, mail.outbox[0].body)[0]
-
-    other_client = Client()
-    response = other_client.get(reset_url)  # retrieve the modified url
-    response = other_client.post(
-        response.url,
-        data={"new_password1": "V€r¥--$3©®€7", "new_password2": "V€r¥--$3©®€7"},
-        follow=True,
-    )
-    response, device = confirm_otp_flow(other_client, response)
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(other_client).is_authenticated is True
-    assertRecords(
-        caplog,
-        [
-            # We don't retreive the oidc params anymore because of the otp step
-            # But we will soon remove this feature so it's okay
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "reset_password",
-                    "user": user.email,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "login",
-                    "user": user.email,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
-            ),
-        ],
-    )
-
-    response = other_client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-
-    oidc_flow_followup(other_client, auth_response_params, user, oidc_params, caplog)
-
-
-@freeze_time("2023-05-05 11:11:11")
 def test_login_hint_is_preserved(caplog, client, oidc_params, snapshot):
     ApplicationFactory(client_id=oidc_params["client_id"])
 
@@ -373,11 +132,6 @@ def test_login_hint_is_preserved(caplog, client, oidc_params, snapshot):
     response = client.get(auth_complete_url, follow=True)
     assertRedirects(response, reverse("accounts:login"))
     assert pretty_indented(parse_response_to_soup(response, "#id_email")) == snapshot(name="login_email_field")
-
-    response = client.get(reverse("accounts:password_reset"))
-    assert pretty_indented(parse_response_to_soup(response, "#id_email")) == snapshot(
-        name="password_reset_email_field"
-    )
     assertRecords(caplog, [])
 
 
