@@ -39,64 +39,6 @@ Les URLs de retour sont configurées pour un setup local des emplois de l’incl
   <summary>2) L’utilisateur saisit son login/mdp, clique sur “Se connecter” et est redirigé vers la plateforme depuis laquelle il est parti</summary>
 </details>
 
-## Parcours de ré-initialisation de mot de passe oublié
-
-- <details>
-  <summary>1) Arrivée sur la page de connexion</summary>
-
-  ![image info](img/reset-password-1.jpg)
-
-  - <details>
-    <summary>**[DEV]** : Url et paramètres d’accès direct à la page:</summary>
-
-    http://0.0.0.0:8080/auth/authorize?response_type=code&client_id=local_inclusion_connect&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Finclusion_connect%2Fcallback&scope=openid+profile+email&state=0xGVKT6eO9NT%3Aarn7NqGqozXjsvio5CAmU2lpoF2nJmLTlU9OuaHAtOg&nonce=r04v4u8sT05W
-
-    L’url est celle de l’endpoint Authorization: `https://{hostname}/auth/authorize`
-
-    Les paramètres à renseigner sont:
-
-    - `**response_type**` : La valeur `code`
-    - `**client_id**` : Le `CLIENT_ID` qui vous été fourni
-    - `**redirect_uri**` : L’url à laquelle sera redirigée l’utilisateur à la fin du processus sur Inclusion Connect
-    - `**scope**` : La valeur `openid profile email`
-    - `**state**` : Une valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
-    - `**nonce**` : Une autre valeur généré par votre application ([voir documentation sur github pour plus de détail](inclusion_connect.md#requête-authentification))
-    - `**login_hint**` (optionnel) : permet de spécifier l'adresse e-mail que l'utilisateur doit utiliser pour se connecter ou pour se créer un compte.
-
-  </details>
-
-</details>
-
-- <details>
-  <summary>2) L’utilisateur clique sur “Mot de passe oublié”</summary>
-
-  ![image info](img/reset-password-2.jpg)
-</details>
-
-- <details>
-  <summary>3) L’utilisateur saisi son email et clique sur “Soumettre”</summary>
-
-  L’utilisateur est redirigé vers la page de connexion et un email est envoyé
-
-  ![image info](img/reset-password-3.jpg)
-</details>
-
-- <details>
-  <summary>4) L’utilisateur clique sur le lien dans l’e-mail</summary>
-
-  ![image info](img/reset-password-4.jpg)
-</details>
-
-- <details>
-  <summary>5) L’utilisateur arrive sur le formulaire de ré-initialisation de mot de passe</summary>
-
-  ![image info](img/reset-password-5.jpg)
-</details>
-
-- <details>
-  <summary>6) L’utilisateur rentre un nouveau mot de passe et clique sur “Soumettre” et est redirigé vers la plateforme</summary>
-</details>
-
 ## Déconnexion en passant par la page Inclusion Connect
 
 La déconnexion peut être faite de deux manières:
