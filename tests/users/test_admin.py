@@ -18,12 +18,11 @@ class TestUserAdmin:
     def test_admin_add(self, caplog, client):
         admin_user = UserFactory(is_superuser=True, is_staff=True)
         client.force_login(admin_user)
-        password = "V€r¥--$3©®€7"
         response = client.post(
             reverse("admin:users_user_add"),
             {
-                "password1": password,
-                "password2": password,
+                "email": "user@example.com",
+                "is_active": "on",
                 "linked_applications-TOTAL_FORMS": "0",
                 "linked_applications-INITIAL_FORMS": "0",
                 "linked_applications-MIN_NUM_FORMS": "0",
@@ -33,7 +32,8 @@ class TestUserAdmin:
         )
         user = User.objects.get(is_superuser=False)
         assertRedirects(response, reverse("admin:users_user_change", args=(user.pk,)))
-        assert user.email == ""
+        assert user.email == "user@example.com"
+        assert not user.has_usable_password()
         assertRecords(
             caplog,
             [
