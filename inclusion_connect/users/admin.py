@@ -29,6 +29,20 @@ class UserApplicationLinkInline(admin.TabularInline):
         return False
 
 
+class UserAddForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "email", "is_active", "is_staff", "is_superuser")
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_unusable_password()  # User is created without a password.
+        if commit:
+            user.save()
+            self._save_m2m()
+        return user
+
+
 class UserChangeForm(auth_forms.UserChangeForm):
     password = None
 
@@ -60,6 +74,8 @@ class UserChangeForm(auth_forms.UserChangeForm):
 @admin.register(User)
 class UserAdmin(auth_admin.UserAdmin):
     model = User
+    add_form = UserAddForm
+    add_fieldsets = (("Informations personnelles", {"fields": ("first_name", "last_name", "email")}),)
     form = UserChangeForm
     readonly_fields = [
         "username",
@@ -138,6 +154,15 @@ class UserAdmin(auth_admin.UserAdmin):
             )
 
     def get_fieldsets(self, request, obj=None):
+        # When creating a user.
+        if obj is None:
+            fieldsets = [
+                ("Informations personnelles", {"fields": ("first_name", "last_name", "email")}),
+            ]
+            if request.user.is_superuser:
+                fieldsets.append(("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}))
+            return fieldsets
+
         fieldsets = super().get_fieldsets(request, obj)
         is_change_form = obj is not None
         if is_change_form:
