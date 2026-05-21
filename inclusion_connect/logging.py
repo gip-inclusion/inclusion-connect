@@ -7,10 +7,10 @@ from pythonjsonlogger.json import JsonFormatter
 from inclusion_connect.utils.oidc import oidc_params
 
 
-def log(logger_name, request, next_url=None, **kwargs):
+def log(logger_name, request, **kwargs):
     logger = logging.getLogger(logger_name)
     data = {"ip_address": request.META["REMOTE_ADDR"]} | kwargs
-    params = oidc_params(request, next_url)
+    params = oidc_params(request)
     try:
         data["application"] = params["client_id"]
     except KeyError:
