@@ -114,12 +114,10 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
         return get_next_url(self.request)
 
     def log(self, event_name, **kwargs):
-        next_url = self.get_success_url()
         log(
             LOGGER_NAME,
             self.request,
             event=event_name,
-            next_url=next_url,
             user=self.user.email,
             **kwargs,
         )
