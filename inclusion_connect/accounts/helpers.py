@@ -58,5 +58,4 @@ def get_next_url(request, fallback_url=None):
     if next_url:
         return next_url
     session_next_url = request.session.pop("next_url", None)
-    user_next_url = request.user.pop_next_redirect_uri()
-    return session_next_url or user_next_url or fallback_url or reverse("accounts:home")
+    return session_next_url or fallback_url or reverse("accounts:home")

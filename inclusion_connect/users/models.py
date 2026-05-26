@@ -1,4 +1,3 @@
-import datetime
 import uuid
 
 from citext import CIEmailField
@@ -53,20 +52,6 @@ class User(AbstractUser):
     def id(self):
         # Required by some third party libraries that use user.id (django-oauth-toolkit)
         return self.pk
-
-    def save_next_redirect_uri(self, next_redirect_uri):
-        self.next_redirect_uri = next_redirect_uri
-        self.next_redirect_uri_stored_at = timezone.now()
-        self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
-
-    def pop_next_redirect_uri(self):
-        next_url = self.next_redirect_uri
-        if next_url and self.next_redirect_uri_stored_at < timezone.now() - datetime.timedelta(days=1):
-            next_url = None
-        self.next_redirect_uri = None
-        self.next_redirect_uri_stored_at = None
-        self.save(update_fields=["next_redirect_uri", "next_redirect_uri_stored_at"])
-        return next_url
 
     def is_verified(self):
         # Allow to call the method even if the user wasn't handled by OTPMiddleware
