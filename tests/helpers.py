@@ -89,7 +89,7 @@ def oidc_flow_followup(
         "/auth/userinfo" + ("/" if with_trailing_slash else ""),
         headers={"Authorization": f"Bearer {token_json['access_token']}"},
     )
-    assert response.json() == {"sub": str(user.pk)} | additional_claims
+    assert response.json() == {"sub": str(user.pk), "acr": "eidas2"} | additional_claims
     assertRecords(caplog, [])
 
     return token_json["id_token"]
