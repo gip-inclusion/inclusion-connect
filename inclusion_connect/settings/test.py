@@ -28,3 +28,6 @@ STORAGES = {
 # OIDC Config
 # -----------
 OAUTH2_PROVIDER["OIDC_ISS_ENDPOINT"] = "http://testserver/auth"
+
+
+DEMO_MODE = False
