@@ -102,6 +102,8 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 # Django CSP
                 "csp.context_processors.nonce",
+                # local
+                "inclusion_connect.utils.context_processors.expose_settings",
             ],
         },
     },

@@ -21,6 +21,12 @@
         {% block extra_head %}{% endblock %}
     </head>
     <body>
+        {% if DEMO_MODE %}
+            <div id="header-env-notice" class="text-align-center">
+                <p class="fr-mb-0">DEMO</p>
+            </div>
+        {% endif %}
+
         {% include "layout/_header.html" %}
 
         <main id="main" role="main" class="s-main">
