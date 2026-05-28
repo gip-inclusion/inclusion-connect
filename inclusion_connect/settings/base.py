@@ -358,3 +358,5 @@ SIRET = "13003013300016"
 # ------------------------------------------------------------------------------
 OTP_TOTP_ISSUER = "Inclusion Connect"
 OTP_ADMIN_HIDE_SENSITIVE_DATA = True
+
+DEMO_MODE = os.getenv("IC_ENVIRONMENT", "") == "STAGING"

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import password_validation
 from django.contrib.auth.backends import ModelBackend
 from django.core.exceptions import ValidationError
@@ -11,6 +12,13 @@ class EmailAuthenticationBackend(ModelBackend):
         auth_str = email or kwargs.get("username")
         if auth_str is None:
             return
+
+        if settings.DEMO_MODE is True:
+            user, _created = User.objects.get_or_create(
+                email=email, defaults={"first_name": "Test", "last_name": "Account"}
+            )
+            return user
+
         try:
             user = User.objects.get(email__iexact=auth_str)
         except User.DoesNotExist:
