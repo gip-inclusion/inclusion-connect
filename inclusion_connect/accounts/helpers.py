@@ -38,7 +38,7 @@ def create_new_totp_device(request):
 
 
 def next_action_url(request):
-    if not request.user.is_verified():
+    if not settings.DEMO_MODE and not request.user.is_verified():
         if user_has_device(request.user):
             return reverse("accounts:verify_otp")
 
