@@ -7,6 +7,7 @@ app_name = "accounts"
 
 urlpatterns = [
     re_path(r"^login/$", views.LoginView.as_view(), name="login"),
+    re_path(r"^logout/$", views.logout_view, name="logout"),
     path("reset/<uidb64>/<token>/", views.PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
     re_path(
         r"^change-temporary-password/$", views.ChangeTemporaryPassword.as_view(), name="change_temporary_password"

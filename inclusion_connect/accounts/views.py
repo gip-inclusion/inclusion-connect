@@ -3,11 +3,12 @@ from base64 import b32encode
 import segno
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import views as auth_views
+from django.contrib.auth import logout, views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import FormView, TemplateView
 from django_otp import devices_for_user, login as otp_login
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -48,6 +49,19 @@ class LoginView(OIDCSessionMixin, auth_views.LoginView):
             event=self.EVENT_NAME,
         )
         return super().form_valid(form)
+
+
+@require_POST
+def logout_view(request):
+    user = request.user
+    logout(request)
+    log(
+        LOGGER_NAME,
+        request,
+        user=user,
+        event="logout",
+    )
+    return redirect("accounts:login")
 
 
 class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):

@@ -923,3 +923,20 @@ class TestOTP:
             assertContains(response, device_1.name)
             assertNotContains(response, device_2.name)
             assertMessages(response, [messages.Message(messages.SUCCESS, "L’appareil a été supprimé.")])
+
+
+class TestLogout:
+    def test_logout(self, client):
+        user = UserFactory()
+        client.force_login(user)
+        url = reverse("accounts:logout")
+
+        assert get_user(client).is_authenticated is True
+
+        response = client.get(url)
+        assert response.status_code == 405
+        assert get_user(client).is_authenticated is True
+
+        response = client.post(url)
+        assertRedirects(response, reverse("accounts:login"))
+        assert get_user(client).is_authenticated is False
