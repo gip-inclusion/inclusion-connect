@@ -31,6 +31,14 @@
                                       Admin
                                   </a>
                               </li>
+                              <li class="nav-item">
+                                  <form action="/accounts/logout/" method="post">
+                                      <input name="csrfmiddlewaretoken" type="hidden" value="NORMALIZED_CSRF_TOKEN"/>
+                                      <button class="nav-link" type="submit">
+                                          Déconnexion
+                                      </button>
+                                  </form>
+                              </li>
                           </ul>
                       </div>
                   </div>
