@@ -32,4 +32,5 @@ class CustomOAuth2Validator(OAuth2Validator):
         for k, v in data.items():
             if k in request.scopes and k not in claims:
                 claims[k] = v
+        claims["acr"] = "eidas2"  # We enfore 2FA TOTP and have a HR process to create accounts
         return claims
