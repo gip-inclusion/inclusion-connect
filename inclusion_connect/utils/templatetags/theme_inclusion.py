@@ -8,16 +8,6 @@ URL_THEME = "vendor/theme-inclusion/"
 
 
 @register.simple_tag
-def static_theme(url_path):
-    """
-    Usage:
-        {% load theme_inclusion %}
-        {% static_theme url_path %}
-    """
-    return static(f"{URL_THEME}{url_path}")
-
-
-@register.simple_tag
 def static_theme_images(url_path):
     """
     Usage:
