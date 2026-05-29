@@ -23,9 +23,6 @@ from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
 LOGGER_NAME = "inclusion_connect.auth"
 
 
-EMAIL_CONFIRM_KEY = "email_to_confirm"
-
-
 class LoginView(OIDCSessionMixin, auth_views.LoginView):
     form_class = forms.LoginForm
     template_name = "login.html"

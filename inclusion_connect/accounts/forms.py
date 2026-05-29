@@ -6,7 +6,6 @@ from django_otp import match_token
 
 EMAIL_FIELDS_WIDGET_ATTRS = {"placeholder": "nom@domaine.fr", "autocomplete": "email"}
 PASSWORD_PLACEHOLDER = "**********"
-FRANCETRAVAIL_EMAIL_SUFFIX = ("@pole-emploi.fr", "@francetravail.fr")
 
 
 class LoginForm(forms.Form):

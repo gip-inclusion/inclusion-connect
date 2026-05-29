@@ -52,11 +52,6 @@ class User(AbstractUser):
             text += f" — {self.email}"
         return text
 
-    @property
-    def id(self):
-        # Required by some third party libraries that use user.id (django-oauth-toolkit)
-        return self.pk
-
     def get_password_reset_url_path(self):
         uid = urlsafe_base64_encode(force_bytes(self.pk))
         token = default_token_generator.make_token(self)
