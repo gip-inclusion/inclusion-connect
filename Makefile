@@ -84,7 +84,7 @@ test: $(VIRTUAL_ENV)
 	pytest --numprocesses=logical --create-db --verbosity=2 $(TARGET)
 
 coverage: $(VIRTUAL_ENV)
-	pytest --cov=inclusion_connect --create-db
+	pytest --cov=inclusion_connect --create-db --cov-report html
 
 # Docker shell.
 # =============================================================================
