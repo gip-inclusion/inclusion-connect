@@ -36,9 +36,9 @@ Avant de lancer une commande python/django, assurez-vous d'avoir un environnemen
 . .venv/bin/activate
 ```
 
-## Démarrer PostgreSQL et MailHog
+## Démarrer PostgreSQL
 
-Lancer les images dockers depuis la racine du dépôt :
+Lancer l'image docker depuis la racine du dépôt :
 
 ```bash
 docker compose up
@@ -107,10 +107,3 @@ Le port exposé par défaut est le `5433` car si vous travaillez déjà avec un 
 Il vous faudra alors modifier la variable d'environnement `PGPORT` en conséquence pour que votre application Django se connecte sur le bon port.
 
 Pour faciliter la gestion des variables d'environnement, l'utilisation de [`direnv`](https://direnv.net/) est recommandée.
-
-## Serveur mail de test MailHog
-
-Afin d'avoir accès aux mails envoyés par Inclusion Connect en local, notre `docker-compose.yml` lance une image docker de [MailHog](https://github.com/mailhog/MailHog).
-
-MailHog donne accès à un faux webmail à l'adresse http://localhost:8025 qui permet d'afficher tous les emails qui sont envoyés.
-Cela permet de ne pas avoir besoin d'un vrai serveur SMTP et d'une vraie adresse email.

@@ -34,7 +34,6 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = False
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "connect.inclusion.beta.gouv.fr").split(",")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Inclusion Connect <contact@inclusion.beta.gouv.fr>")
 
 # Application definition
 
@@ -279,21 +278,6 @@ if SENTRY_DSN:
     from ._sentry import sentry_init
 
     sentry_init(dsn=SENTRY_DSN, traces_sample_rate=_sentry_traces_sample_rate)
-
-
-# Email
-# -----
-
-# Email https://anymail.readthedocs.io/en/stable/esps/mailjet/
-ANYMAIL = {
-    # it's the default but our probes need this at import time.
-    "MAILJET_API_URL": "https://api.mailjet.com/v3.1/",
-    "MAILJET_API_KEY": os.getenv("API_MAILJET_KEY"),
-    "MAILJET_SECRET_KEY": os.getenv("API_MAILJET_SECRET"),
-    "WEBHOOK_SECRET": os.getenv("MAILJET_WEBHOOK_SECRET"),
-}
-
-EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 
 # Django-oauth-toolkit
 # --------------------
