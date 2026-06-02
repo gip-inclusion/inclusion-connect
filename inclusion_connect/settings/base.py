@@ -252,8 +252,9 @@ AUTHENTICATION_BACKENDS = ("inclusion_connect.auth.backends.EmailAuthenticationB
 
 DEFAULT_AUTH_BACKEND = AUTHENTICATION_BACKENDS[0]
 
-
-PASSWORD_RESET_TIMEOUT = 24 * 60 * 60  # 1 day in seconds
+# Since the user can't request a new link without asking an admin, make the link duration longer
+# than the default value
+PASSWORD_RESET_TIMEOUT = 24 * 60 * 60 * 7  # 7 day in seconds
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -279,9 +280,6 @@ if SENTRY_DSN:
 
     sentry_init(dsn=SENTRY_DSN, traces_sample_rate=_sentry_traces_sample_rate)
 
-# email link validity
-EMAIL_LINKS_VALIDITY_DAYS = 1
-PASSWORD_RESET_TIMEOUT = EMAIL_LINKS_VALIDITY_DAYS * 60 * 60 * 24
 
 # Email
 # -----
