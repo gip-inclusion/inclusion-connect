@@ -7,8 +7,6 @@ django==5.2.*  # https://www.djangoproject.com/
 
 django-oauth-toolkit  # https://github.com/jazzband/django-oauth-toolkit
 
-django-anymail  # https://github.com/anymail/django-anymail
-
 django-cors-headers  # https://github.com/adamchainz/django-cors-headers
 
 dj-database-url  # https://github.com/jazzband/dj-database-url

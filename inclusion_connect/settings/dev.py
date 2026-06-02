@@ -5,10 +5,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "192.168.0.1", "0.0.0.0"]
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "localhost"
-EMAIL_PORT = 1025
-
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = "Lax"  # SameSite=None cookies aren’t set when Secure=False.
 
