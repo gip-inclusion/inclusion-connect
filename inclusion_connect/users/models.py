@@ -56,7 +56,7 @@ class User(AbstractUser):
         uid = urlsafe_base64_encode(force_bytes(self.pk))
         token = default_token_generator.make_token(self)
         path = reverse(
-            "password_reset_confirm",
+            "accounts:password_reset_confirm",
             kwargs={
                 "uidb64": uid,
                 "token": token,
