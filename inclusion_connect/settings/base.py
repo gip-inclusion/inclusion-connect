@@ -15,6 +15,7 @@ from pathlib import Path
 
 import dj_database_url
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.csp import CSP
 from dotenv import load_dotenv
 
 
@@ -66,7 +67,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     # Generate request Id
     "django_datadog_logger.middleware.request_id.RequestIdMiddleware",
-    "csp.middleware.CSPMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -99,8 +100,7 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                # Django CSP
-                "csp.context_processors.nonce",
+                "django.template.context_processors.csp",
             ],
         },
     },
@@ -321,27 +321,26 @@ ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
 # -----------------------
 
 # Beware, some browser extensions may prevent the reports to be sent to sentry with CORS errors.
-CSP_BASE_URI = ["'none'"]  # We don't use any <base> element in our code, so let's forbid it
-CSP_DEFAULT_SRC = ["'self'"]
-CSP_IMG_SRC = [
-    "'self'",
-    "data:",  # Because of bootstrap
-]
-CSP_STYLE_SRC = [
-    "'self'",
-]
-CSP_FONT_SRC = ["'self'"]
-CSP_SCRIPT_SRC = [
-    "'self'",
-    # https://docs.sentry.io/platforms/javascript/install/loader/#content-security-policy
-    "https://browser.sentry-cdn.com",
-    "https://js-de.sentry-cdn.com",
-]
-CSP_CONNECT_SRC = ["'self'", "*.sentry.io"]
-CSP_OBJECT_SRC = ["'none'"]
-CSP_INCLUDE_NONCE_IN = ["script-src"]
-CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", None)
-CSP_FRAME_ANCESTORS = os.getenv("CSP_FRAME_ANCESTORS", "").split(",")
+SECURE_CSP = {
+    "base-uri": [CSP.NONE],  # We don't use any <base> element in our code, so let's forbid it
+    "connect-src": [CSP.SELF, "*.sentry.io"],
+    "default-src": [CSP.SELF],
+    "font-src": [CSP.SELF],
+    "frame-ancestors": [s for s in os.getenv("CSP_FRAME_ANCESTORS", "").split(",") if s] or "none",
+    "img-src": [
+        CSP.SELF,
+        "data:",  # Because of bootstrap
+    ],
+    "object-src": [CSP.NONE],
+    "report-uri": os.getenv("CSP_REPORT_URI", None),
+    "script-src": [
+        CSP.SELF,
+        # https://docs.sentry.io/platforms/javascript/install/loader/#content-security-policy
+        "https://browser.sentry-cdn.com",
+        "https://js-de.sentry-cdn.com",
+    ],
+    "style-src": [CSP.SELF],
+}
 
 CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS") == "True"
 
