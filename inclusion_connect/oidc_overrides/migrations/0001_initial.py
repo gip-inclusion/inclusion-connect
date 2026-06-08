@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         db_index=True,
                         default=oauth2_provider.generators.generate_client_secret,
-                        help_text="Hashed on Save. Copy it now if this is a new secret.",
+                        help_text="Client secret for authentication",
                         max_length=255,
                     ),
                 ),
