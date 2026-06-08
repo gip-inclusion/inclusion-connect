@@ -318,9 +318,9 @@ django-datadog-logger==0.9.0 \
     --hash=sha256:502ccdf7684f29f4ca40c52ed1d03484236760abc71568f032d766aee42bc9bb \
     --hash=sha256:8bdb40f5dc7c7a8095e301bbaf623dbdad4c141dadb4b9cdccfebc68df130f3a
     # via -r base.in
-django-oauth-toolkit==3.2.0 \
-    --hash=sha256:bd2cd2719b010231a2f370f927dbcc740454fb1d0dd7e7f4138f36227363dc26 \
-    --hash=sha256:c36761ae6810083d95a652e9c820046cde0d45a2e2a5574bbe7202656ec20bb6
+django-oauth-toolkit==3.3.0 \
+    --hash=sha256:2b375d14b1c0ff86e5df5e5de5d1a6d9868873304f54aca37c50158552d5b922 \
+    --hash=sha256:7af1365cd80735211454b0dca810bc9e860c631e61fd17768ad0fa331737954f
     # via -r base.in
 django-otp==1.7.0 \
     --hash=sha256:406d2d7f797dc313569270e06d6c360c7d986c9f653eab80b190d663ed5f1133 \
