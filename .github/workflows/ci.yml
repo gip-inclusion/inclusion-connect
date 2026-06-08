@@ -43,7 +43,7 @@ jobs:
         PGHOST: localhost
         PGUSER: postgres
         PGPORT: 5433
-    - uses: actions/checkout@v6.0.2
+    - uses: actions/checkout@v6.0.3
     - name: 💾 Create a database to check migrations
       run: createdb inclusion_connect
       env:
