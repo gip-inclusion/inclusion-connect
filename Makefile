@@ -39,10 +39,10 @@ $(VIRTUAL_ENV): $(REQUIREMENTS_PATH)
 
 venv: $(VIRTUAL_ENV)
 
-PIP_COMPILE_FLAGS := --no-strip-extras --generate-hashes $(PIP_COMPILE_OPTIONS)
+PIP_COMPILE_FLAGS := --directory requirements/ --no-strip-extras --generate-hashes $(PIP_COMPILE_OPTIONS)
 compile-deps: $(VIRTUAL_ENV)
-	uv pip compile $(PIP_COMPILE_FLAGS) -o requirements/base.txt requirements/base.in
-	uv pip compile $(PIP_COMPILE_FLAGS) -o requirements/dev.txt requirements/dev.in
+	uv pip compile $(PIP_COMPILE_FLAGS) -o base.txt base.in
+	uv pip compile $(PIP_COMPILE_FLAGS) -o dev.txt dev.in
 
 clean:
 	find . -type d -name "__pycache__" -depth -exec rm -rf '{}' \;
