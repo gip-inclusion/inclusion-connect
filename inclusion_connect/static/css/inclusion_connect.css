@@ -23,3 +23,9 @@ main {
   align-items: center;
 }
 
+#debug-mode-banner {
+  background-color: #d10000;
+  color: #ffffff;
+  text-align: center;
+  padding: 0.5em;
+}
