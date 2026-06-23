@@ -10,6 +10,8 @@ from cryptography.x509.oid import NameOID
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django_otp.plugins.otp_totp.models import TOTPDevice
+from pytest_django.asserts import assertRedirects
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.client import Saml2Client
 from saml2.config import SPConfig
@@ -18,10 +20,12 @@ from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMA
 
 from inclusion_connect.saml.conf import ATTRIBUTE_URIS
 from inclusion_connect.saml.models import SamlServiceProvider
+from inclusion_connect.saml.views import SAML_SESSION_KEY
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
+from tests.helpers import confirm_otp_flow
 from tests.saml.factories import SamlServiceProviderFactory, build_sp_metadata
-from tests.users.factories import UserFactory
+from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
 IDP_ENTITY_ID = "http://testserver/saml/idp"
@@ -299,11 +303,86 @@ class TestSso:
 
     def test_unauthenticated_redirects_to_login(self, client):
         register_sp()
-        _, params = authn_request_query(build_sp_client(client))
+        _, params = authn_request_query(build_sp_client(client), relay_state="/deep/link")
 
         response = client.get(reverse("saml:sso"), params)
         assert response.status_code == 302
         assert response.url.startswith(reverse("accounts:login"))
+
+        # The validated request is stashed and the post-login flow points at the continue URL.
+        stashed = client.session[SAML_SESSION_KEY]
+        assert stashed["SAMLRequest"] == params["SAMLRequest"]
+        assert stashed["RelayState"] == "/deep/link"
+        assert stashed["binding"] == BINDING_HTTP_REDIRECT
+        assert client.session["next_url"] == reverse("saml:sso_continue")
+
+    def test_unauthenticated_login_otp_gate_then_assertion(self, client):
+        # A brand-new user still owes a confirmed TOTP device: the gate must hold the assertion.
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+        request_id, params = authn_request_query(sp_client, relay_state="/deep/link")
+
+        login_url = reverse("accounts:login")
+        continue_url = reverse("saml:sso_continue")
+
+        # 1. Unauthenticated AuthnRequest bounces to login with the request stashed.
+        response = client.get(reverse("saml:sso"), params)
+        assert response.status_code == 302
+        assert response.url.startswith(login_url)
+
+        # 2. Password alone does not clear the mandatory TOTP gate: the continue URL is itself
+        #    gated, so no assertion is issued until OTP is confirmed.
+        response = client.post(login_url, {"email": user.email, "password": DEFAULT_PASSWORD})
+        device = TOTPDevice.objects.get()
+        otp_url = reverse("accounts:otp_confirm_device", args=(device.pk,))
+        assertRedirects(response, otp_url)
+        gated = client.get(continue_url)
+        assertRedirects(gated, otp_url, fetch_redirect_response=False)
+        assert SAML_SESSION_KEY in client.session  # request still pending
+
+        # 3. Clearing the TOTP gate resumes the flow at the continue URL.
+        response, _ = confirm_otp_flow(client, response)
+        assertRedirects(response, continue_url, fetch_redirect_response=False)
+
+        # 4. The assertion is built and auto-POSTed to the SP's ACS, RelayState intact.
+        content = client.get(continue_url).content.decode()
+        assert f'action="{SP_ACS_URL}"' in content
+        assert form_field(content, "RelayState") == "/deep/link"
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.assertion.signature is not None
+        assert authn_response.name_id.format == NAMEID_FORMAT_PERSISTENT
+        assert authn_response.name_id.text == str(user.username)
+        assert SAML_SESSION_KEY not in client.session  # consumed
+
+    @pytest.mark.parametrize(
+        "user_kwargs,gate_url_name",
+        [
+            pytest.param({"password_is_temporary": True}, "accounts:change_temporary_password", id="temporary"),
+            pytest.param({"password_is_too_weak": True}, "accounts:change_weak_password", id="weak"),
+        ],
+    )
+    def test_password_gate_blocks_assertion(self, client, user_kwargs, gate_url_name):
+        # OTP-cleared but a password change still pending: the assertion must wait. The gate is
+        # enforced by post_login_actions on the continue URL, independent of the login mechanism.
+        user = UserFactory(**user_kwargs)
+        device = TOTPDevice.objects.create(user=user, confirmed=True)
+        register_sp()
+        _, params = authn_request_query(build_sp_client(client))
+
+        continue_url = reverse("saml:sso_continue")
+        client.get(reverse("saml:sso"), params)  # stash the request
+        client.force_login(user, device=device)  # authenticated + OTP-verified
+
+        gated = client.get(continue_url)
+        assertRedirects(gated, reverse(gate_url_name), fetch_redirect_response=False)
+        assert SAML_SESSION_KEY in client.session  # no assertion issued
+
+    def test_continue_without_stashed_request_is_rejected(self, client):
+        client.force_login(UserFactory())
+        assert client.get(reverse("saml:sso_continue")).status_code == 400
 
     def test_unknown_service_provider_is_rejected(self, client, caplog):
         user = UserFactory()
