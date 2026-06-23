@@ -183,7 +183,7 @@
                                   <input id="id_id_token_hint" name="id_token_hint" type="hidden"/>
                                   <input id="id_logout_hint" name="logout_hint" type="hidden"/>
                                   <input id="id_client_id" name="client_id" type="hidden" value="my_application"/>
-                                  <input id="id_post_logout_redirect_uri" name="post_logout_redirect_uri" type="hidden" value="http://callback/"/>
+                                  <input id="id_post_logout_redirect_uri" name="post_logout_redirect_uri" type="hidden" value="http://testserver/logout_callback"/>
                                   <input id="id_state" name="state" type="hidden"/>
                                   <input id="id_ui_locales" name="ui_locales" type="hidden"/>
                                   <div class="control-group">

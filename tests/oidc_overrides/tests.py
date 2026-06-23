@@ -35,19 +35,19 @@ class TestRedirectUris:
     def test_allow_all_settings(self, allow_all):
         with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
             application = ApplicationFactory(redirect_uris="*")
-            assert application.redirect_uri_allowed("http://localhost/callback") is allow_all
+            assert application.redirect_uri_allowed("http://testserver/callback") is allow_all
 
     def test_allow_wildcard_at_redirect_uris_end(self):
-        application = ApplicationFactory(redirect_uris="http://localhost/* http://other_callback/")
-        assert application.redirect_uri_allowed("http://localhost/callback")
+        application = ApplicationFactory(redirect_uris="http://testserver/* http://other_callback/")
+        assert application.redirect_uri_allowed("http://testserver/callback")
 
     def test_no_open_redirect_uri(self):
         application = ApplicationFactory(redirect_uris="http://localhost*")
-        assert not application.redirect_uri_allowed("http://localhost/callback")
+        assert not application.redirect_uri_allowed("http://testserver/callback")
 
     def test_allow_subdomain_wildcard(self):
-        application = ApplicationFactory(redirect_uris="http://*.localhost/callback")
-        assert application.redirect_uri_allowed("http://toto.localhost/callback") is True
+        application = ApplicationFactory(redirect_uris="http://*.testserver/callback")
+        assert application.redirect_uri_allowed("http://toto.testserver/callback") is True
 
 
 class TestPostLogoutRedirectUris:
@@ -55,19 +55,19 @@ class TestPostLogoutRedirectUris:
     def test_allow_all_settings(self, allow_all):
         with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
             application = ApplicationFactory(post_logout_redirect_uris="*")
-            assert application.post_logout_redirect_uri_allowed("http://localhost/callback") is allow_all
+            assert application.post_logout_redirect_uri_allowed("http://testserver/callback") is allow_all
 
     def test_allow_wildcard_at_redirect_uris_end(self):
-        application = ApplicationFactory(post_logout_redirect_uris="http://localhost/* http://other_callback/")
-        assert application.post_logout_redirect_uri_allowed("http://localhost/callback")
+        application = ApplicationFactory(post_logout_redirect_uris="http://testserver/* http://other_callback/")
+        assert application.post_logout_redirect_uri_allowed("http://testserver/callback")
 
     def test_no_open_redirect_uri(self):
         application = ApplicationFactory(post_logout_redirect_uris="http://localhost*")
-        assert not application.post_logout_redirect_uri_allowed("http://localhost/callback")
+        assert not application.post_logout_redirect_uri_allowed("http://testserver/callback")
 
     def test_allow_subdomain_wildcard(self):
-        application = ApplicationFactory(post_logout_redirect_uris="http://*.localhost/callback")
-        assert application.post_logout_redirect_uri_allowed("http://toto.localhost/callback") is True
+        application = ApplicationFactory(post_logout_redirect_uris="http://*.testserver/callback")
+        assert application.post_logout_redirect_uri_allowed("http://toto.testserver/callback") is True
 
 
 class TestLogoutView:
@@ -81,9 +81,9 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://testserver/logout_callback"},
         )
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
@@ -98,7 +98,7 @@ class TestLogoutView:
                         "application": "my_application",
                         "event": "logout",
                         "id_token_hint": id_token,
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": user.email,
                     },
                 )
@@ -113,9 +113,9 @@ class TestLogoutView:
             assert get_user(client).is_authenticated is True
 
         with freeze_time("2023-05-05 14:59:21"):
-            params = {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"}
+            params = {"id_token_hint": id_token, "post_logout_redirect_uri": "http://testserver/logout_callback"}
             response = call_logout(client, "get", params)
-            assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+            assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
 
             assert get_user(client).is_authenticated is False
             assert has_ongoing_sessions(user) is False
@@ -130,7 +130,7 @@ class TestLogoutView:
                             "application": "my_application",
                             "event": "logout",
                             "id_token_hint": id_token,
-                            "post_logout_redirect_uri": "http://callback/",
+                            "post_logout_redirect_uri": "http://testserver/logout_callback",
                             "user": user.email,
                         },
                     )
@@ -216,7 +216,9 @@ class TestLogoutView:
 
     def test_bad_id_token_hint_with_unknown_redirect_uri_fails(self, caplog, client):
         """This test simulates a call on logout endpoint with an unknown id_token_hint"""
-        response = call_logout(client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://callback/"})
+        response = call_logout(
+            client, "get", {"id_token_hint": 111, "post_logout_redirect_uri": "http://testserver/logout_callback"}
+        )
         assert response.status_code == 400
         assertRecords(
             caplog,
@@ -229,7 +231,7 @@ class TestLogoutView:
                     {
                         "event": "logout_error",
                         "id_token_hint": "111",
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": None,
                         "error": "(invalid_request) The ID Token is expired, revoked, malformed, or otherwise "
                         "invalid.",
@@ -254,9 +256,9 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://testserver/logout_callback"},
         )
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
         assert get_user(client).is_authenticated is False
         assert get_user(other_client).is_authenticated is False
         assertRecords(
@@ -269,7 +271,7 @@ class TestLogoutView:
                         "application": "my_application",
                         "event": "logout",
                         "id_token_hint": id_token,
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": user.email,
                     },
                 )
@@ -292,9 +294,9 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token_1, "post_logout_redirect_uri": "http://callback/"},
+            {"id_token_hint": id_token_1, "post_logout_redirect_uri": "http://testserver/logout_callback"},
         )
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
@@ -309,7 +311,7 @@ class TestLogoutView:
                         "application": application_1.client_id,
                         "event": "logout",
                         "id_token_hint": id_token_1,
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": user.email,
                     },
                 )
@@ -319,9 +321,9 @@ class TestLogoutView:
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token_2, "post_logout_redirect_uri": "http://callback/"},
+            {"id_token_hint": id_token_2, "post_logout_redirect_uri": "http://testserver/logout_callback"},
         )
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
 
         assert get_user(client).is_authenticated is False
         assert has_ongoing_sessions(user) is False
@@ -336,7 +338,7 @@ class TestLogoutView:
                         "application": application_2.client_id,
                         "event": "logout",
                         "id_token_hint": id_token_2,
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": None,
                     },
                 )
