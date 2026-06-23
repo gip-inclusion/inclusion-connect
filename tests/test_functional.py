@@ -112,7 +112,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
@@ -192,7 +192,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
@@ -203,9 +203,9 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     response = call_logout(
         client,
         "get",
-        {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+        {"id_token_hint": id_token, "post_logout_redirect_uri": "http://testserver/logout_callback"},
     )
-    assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+    assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
     assertRecords(
@@ -218,7 +218,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
                     "application": "my_application",
                     "event": "logout",
                     "id_token_hint": id_token,
-                    "post_logout_redirect_uri": "http://callback/",
+                    "post_logout_redirect_uri": "http://testserver/logout_callback",
                     "user": user.email,
                 },
             )
@@ -294,7 +294,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                         "application": "my_application",
                         "event": "redirect",
                         "user": user.email,
-                        "url": f"http://localhost/callback?code={code}&state=state",
+                        "url": f"http://testserver/callback?code={code}&state=state",
                     },
                 )
             ],
@@ -308,7 +308,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         response = call_logout(
             client,
             "get",
-            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://callback/"},
+            {"id_token_hint": id_token, "post_logout_redirect_uri": "http://testserver/logout_callback"},
         )
         assertRecords(
             caplog,
@@ -320,14 +320,14 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                         "application": "my_application",
                         "event": "logout",
                         "id_token_hint": id_token,
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": user.email,
                     },
                 ),
             ],
         )
 
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
         assert not get_user(client).is_authenticated
         assert token_are_revoked(user)
 
@@ -393,7 +393,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
@@ -406,7 +406,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
         "get",
         {
             "client_id": oidc_params["client_id"],
-            "post_logout_redirect_uri": "http://callback/",
+            "post_logout_redirect_uri": "http://testserver/logout_callback",
         },
     )
     assert response.status_code == 200
@@ -418,11 +418,11 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
         "post",
         {
             "client_id": oidc_params["client_id"],
-            "post_logout_redirect_uri": "http://callback/",
+            "post_logout_redirect_uri": "http://testserver/logout_callback",
             "allow": True,
         },
     )
-    assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+    assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
     assert not get_user(client).is_authenticated
     assert token_are_revoked(user)
     assertRecords(
@@ -435,7 +435,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
                     "application": "my_application",
                     "event": "logout",
                     "client_id": "my_application",
-                    "post_logout_redirect_uri": "http://callback/",
+                    "post_logout_redirect_uri": "http://testserver/logout_callback",
                     "user": user.email,
                 },
             ),
@@ -508,7 +508,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                         "application": "my_application",
                         "event": "redirect",
                         "user": user.email,
-                        "url": f"http://localhost/callback?code={code}&state=state",
+                        "url": f"http://testserver/callback?code={code}&state=state",
                     },
                 )
             ],
@@ -524,7 +524,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
             "get",
             {
                 "client_id": oidc_params["client_id"],
-                "post_logout_redirect_uri": "http://callback/",
+                "post_logout_redirect_uri": "http://testserver/logout_callback",
             },
         )
         assertRecords(
@@ -537,14 +537,14 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                         "application": "my_application",
                         "event": "logout",
                         "client_id": "my_application",
-                        "post_logout_redirect_uri": "http://callback/",
+                        "post_logout_redirect_uri": "http://testserver/logout_callback",
                         "user": None,  # User is anonymous.
                     },
                 )
             ],
         )
 
-        assertRedirects(response, "http://callback/", fetch_redirect_response=False)
+        assertRedirects(response, "http://testserver/logout_callback", fetch_redirect_response=False)
         # The user is anonymous, without the `id_token`, the system cannot identify the user.
         # Without the user, their tokens cannot be revoked.
         assert not token_are_revoked(user)
@@ -756,7 +756,7 @@ def test_login_weak_password(caplog, client, oidc_params):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
@@ -860,7 +860,7 @@ def test_proconnect_scopes(caplog, client, oidc_params):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],

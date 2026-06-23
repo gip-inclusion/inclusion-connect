@@ -201,7 +201,7 @@ def oidc_complete_flow(
                     "application": application.client_id,
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
