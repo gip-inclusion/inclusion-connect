@@ -45,6 +45,10 @@ class TestRedirectUris:
         application = ApplicationFactory(redirect_uris="http://localhost*")
         assert not application.redirect_uri_allowed("http://localhost/callback")
 
+    def test_allow_subdomain_wildcard(self):
+        application = ApplicationFactory(redirect_uris="http://*.localhost/callback")
+        assert application.redirect_uri_allowed("http://toto.localhost/callback") is True
+
 
 class TestPostLogoutRedirectUris:
     @pytest.mark.parametrize("allow_all", [True, False])
@@ -60,6 +64,10 @@ class TestPostLogoutRedirectUris:
     def test_no_open_redirect_uri(self):
         application = ApplicationFactory(post_logout_redirect_uris="http://localhost*")
         assert not application.post_logout_redirect_uri_allowed("http://localhost/callback")
+
+    def test_allow_subdomain_wildcard(self):
+        application = ApplicationFactory(post_logout_redirect_uris="http://*.localhost/callback")
+        assert application.post_logout_redirect_uri_allowed("http://toto.localhost/callback") is True
 
 
 class TestLogoutView:
