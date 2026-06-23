@@ -1,6 +1,18 @@
 # Journal des modifications
 
 
+## [Non publié]
+
+### Ajouté
+
+- Fournisseur d'identité SAML 2.0 : endpoint de métadonnées IdP dynamique (`GET /saml/metadata`).
+- Réglages `SAML_IDP_ENTITY_ID`, `SAML_IDP_SIGNING_KEY_FILE` et `SAML_IDP_SIGNING_CERT_FILE` (certificat de signature dédié, cycle de vie indépendant de `oidc.pem`).
+
+### Modifié
+
+- Ajout de la dépendance `pysaml2`, qui plafonne `pyopenssl<24.3.0` et force `cryptography` de 49 à 43.
+
+
 ## [2] - 2023-07-17
 
 ### Ajouté

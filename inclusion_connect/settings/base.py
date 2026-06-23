@@ -59,6 +59,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "inclusion_connect.admin.apps.AdminConfig",
     "inclusion_connect.oidc_overrides",
+    "inclusion_connect.saml",
     "inclusion_connect.users",
     "inclusion_connect.utils",
 ]
@@ -317,6 +318,17 @@ OAUTH2_PROVIDER = {
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 
 ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
+
+
+# SAML 2.0 Identity Provider
+# --------------------------
+
+# Permanent, environment-derived entityID (recette and prod are distinct IdPs).
+SAML_IDP_ENTITY_ID = os.getenv("SAML_IDP_ENTITY_ID", "https://connect.inclusion.beta.gouv.fr/saml/idp")
+
+# Dedicated SAML signing certificate + key, with a lifecycle independent from oidc.pem.
+SAML_IDP_SIGNING_KEY_FILE = os.getenv("SAML_IDP_SIGNING_KEY_FILE", "saml.key")
+SAML_IDP_SIGNING_CERT_FILE = os.getenv("SAML_IDP_SIGNING_CERT_FILE", "saml.crt")
 
 
 # Content Security Policy
