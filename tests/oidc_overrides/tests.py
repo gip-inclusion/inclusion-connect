@@ -34,40 +34,65 @@ class TestRedirectUris:
     @pytest.mark.parametrize("allow_all", [True, False])
     def test_allow_all_settings(self, allow_all):
         with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
-            application = ApplicationFactory(redirect_uris="*")
-            assert application.redirect_uri_allowed("http://testserver/callback") is allow_all
-
-    def test_allow_wildcard_at_redirect_uris_end(self):
-        application = ApplicationFactory(redirect_uris="http://testserver/* http://other_callback/")
-        assert application.redirect_uri_allowed("http://testserver/callback")
+            application = ApplicationFactory(redirect_uris="")
+            assert application.redirect_uri_allowed("http://localhost/callback") is allow_all
 
     def test_no_open_redirect_uri(self):
         application = ApplicationFactory(redirect_uris="http://localhost*")
         assert not application.redirect_uri_allowed("http://testserver/callback")
 
-    def test_allow_subdomain_wildcard(self):
-        application = ApplicationFactory(redirect_uris="http://*.testserver/callback")
-        assert application.redirect_uri_allowed("http://toto.testserver/callback") is True
+    @pytest.mark.parametrize(
+        "url,allowed",
+        [
+            ("http://review-app-toto.inclusion.gouv.fr/callback", True),
+            ("http://*.inclusion.gouv.fr/callback", True),
+            ("http://*-toto.inclusion.gouv.fr/callback", True),
+            ("http://review-app-*.inclusion.gouv.fr/callback", True),
+            ("http://review-app-toto.*/callback", False),
+            ("http://review-app-toto.inclusion.gouv.fr/*", False),
+            ("http://review-app-toto.*.gouv.fr/callback", False),
+            ("http://review-app-toto*toto.inclusion.gouv.fr/callback", False),
+            ("http://*", False),
+            ("http://*/callback", False),
+        ],
+    )
+    def test_allow_subdomain_wildcard(self, url, allowed):
+        application = ApplicationFactory(redirect_uris=url)
+        assert application.redirect_uri_allowed("http://review-app-toto.inclusion.gouv.fr/callback") is allowed
 
 
 class TestPostLogoutRedirectUris:
     @pytest.mark.parametrize("allow_all", [True, False])
     def test_allow_all_settings(self, allow_all):
         with override_settings(ALLOW_ALL_REDIRECT_URIS=allow_all):
-            application = ApplicationFactory(post_logout_redirect_uris="*")
-            assert application.post_logout_redirect_uri_allowed("http://testserver/callback") is allow_all
-
-    def test_allow_wildcard_at_redirect_uris_end(self):
-        application = ApplicationFactory(post_logout_redirect_uris="http://testserver/* http://other_callback/")
-        assert application.post_logout_redirect_uri_allowed("http://testserver/callback")
+            application = ApplicationFactory(post_logout_redirect_uris="")
+            assert application.post_logout_redirect_uri_allowed("http://localhost/callback") is allow_all
 
     def test_no_open_redirect_uri(self):
         application = ApplicationFactory(post_logout_redirect_uris="http://localhost*")
         assert not application.post_logout_redirect_uri_allowed("http://testserver/callback")
 
-    def test_allow_subdomain_wildcard(self):
-        application = ApplicationFactory(post_logout_redirect_uris="http://*.testserver/callback")
-        assert application.post_logout_redirect_uri_allowed("http://toto.testserver/callback") is True
+    @pytest.mark.parametrize(
+        "url,allowed",
+        [
+            ("http://review-app-toto.inclusion.gouv.fr/callback", True),
+            ("http://*.inclusion.gouv.fr/callback", True),
+            ("http://*-toto.inclusion.gouv.fr/callback", True),
+            ("http://review-app-*.inclusion.gouv.fr/callback", True),
+            ("http://review-app-toto.*/callback", False),
+            ("http://review-app-toto.inclusion.gouv.fr/*", False),
+            ("http://review-app-toto.*.gouv.fr/callback", False),
+            ("http://review-app-toto*toto.inclusion.gouv.fr/callback", False),
+            ("http://*", False),
+            ("http://*/callback", False),
+        ],
+    )
+    def test_allow_subdomain_wildcard(self, url, allowed):
+        application = ApplicationFactory(post_logout_redirect_uris=url)
+        assert (
+            application.post_logout_redirect_uri_allowed("http://review-app-toto.inclusion.gouv.fr/callback")
+            is allowed
+        )
 
 
 class TestLogoutView:
