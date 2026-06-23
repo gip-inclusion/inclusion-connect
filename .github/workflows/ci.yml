@@ -55,6 +55,8 @@ jobs:
       run: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
     - name: ⛨ Generate test SAML signing certificate
       run: openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -keyout saml.key -out saml.crt -subj "/CN=Inclusion Connect SAML"
+    - name: 🔏 Install xmlsec1 (pysaml2 signing)
+      run: sudo apt-get update && sudo apt-get install -y xmlsec1
     - name: 💂 Install Python
       uses: actions/setup-python@v6
       with:

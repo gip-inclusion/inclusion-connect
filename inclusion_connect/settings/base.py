@@ -330,6 +330,9 @@ SAML_IDP_ENTITY_ID = os.getenv("SAML_IDP_ENTITY_ID", "https://connect.inclusion.
 SAML_IDP_SIGNING_KEY_FILE = os.getenv("SAML_IDP_SIGNING_KEY_FILE", "saml.key")
 SAML_IDP_SIGNING_CERT_FILE = os.getenv("SAML_IDP_SIGNING_CERT_FILE", "saml.crt")
 
+# Path to the xmlsec1 binary pysaml2 shells out to for signing. Empty = auto-detect on PATH.
+SAML_XMLSEC1_BINARY = os.getenv("SAML_XMLSEC1_BINARY")
+
 
 # Content Security Policy
 # -----------------------
@@ -366,6 +369,7 @@ if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 SIRET = "13003013300016"
+SIREN = SIRET[:9]
 
 
 # OTP

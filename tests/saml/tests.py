@@ -1,17 +1,24 @@
 import datetime
 import logging
+import re
 
 import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
+from saml2.client import Saml2Client
+from saml2.config import SPConfig
 from saml2.mdstore import InMemoryMetaData
+from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT
 
+from inclusion_connect.saml.conf import ATTRIBUTE_URIS
 from inclusion_connect.saml.models import SamlServiceProvider
+from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
 from tests.saml.factories import SamlServiceProviderFactory, build_sp_metadata
 from tests.users.factories import UserFactory
@@ -155,6 +162,180 @@ class TestSamlServiceProvider:
         assert response.status_code == 200
         assert SamlServiceProvider.objects.count() == 0
         assert "Métadonnées SAML invalides" in response.content.decode()
+
+
+SP_ENTITY_ID = "https://sp.example.com/saml/metadata"
+SP_ACS_URL = "https://sp.example.com/saml/acs"
+
+
+def build_sp_client(client, want_assertions_signed=True):
+    """A pysaml2 SP configured as the test counterparty.
+
+    It loads our published IdP metadata (fetched via `client`) so it discovers the SSO endpoint,
+    sends AuthnRequests there, and verifies the signature on the assertion we return.
+    """
+    idp_metadata = client.get(reverse("saml:metadata")).content.decode()
+    conf = SPConfig()
+    conf.load(
+        {
+            "entityid": SP_ENTITY_ID,
+            "service": {
+                "sp": {
+                    "endpoints": {"assertion_consumer_service": [(SP_ACS_URL, BINDING_HTTP_POST)]},
+                    "want_assertions_signed": want_assertions_signed,
+                    "want_response_signed": False,
+                    "allow_unsolicited": False,
+                },
+            },
+            "metadata": {"inline": [idp_metadata]},
+        }
+    )
+    return Saml2Client(config=conf)
+
+
+def authn_request_query(sp_client, relay_state=""):
+    """Build a Redirect-binding AuthnRequest and return (request_id, query_params)."""
+    request_id, info = sp_client.prepare_for_authenticate(relay_state=relay_state)
+    return request_id, get_url_params(dict(info["headers"])["Location"])
+
+
+def form_field(content, name):
+    """Extract a hidden form field value from a pysaml2 auto-POST page."""
+    return re.search(rf'name="{name}" value="([^"]+)"', content)[1]
+
+
+def parsed_assertion_attributes(assertion):
+    return {
+        attr.name: ([v.text for v in attr.attribute_value], attr.name_format)
+        for attr in assertion.attribute_statement[0].attribute
+    }
+
+
+def register_sp(**kwargs):
+    kwargs.setdefault("name", "Demo SP")
+    return SamlServiceProvider.objects.create(metadata=build_sp_metadata(SP_ENTITY_ID, SP_ACS_URL), **kwargs)
+
+
+class TestSso:
+    def _run_sso(self, client, user, sp_client, relay_state=""):
+        """Drive the SP-initiated round trip; return (page_content, parsed authn_response)."""
+        request_id, params = authn_request_query(sp_client, relay_state=relay_state)
+        client.force_login(user)
+        content = client.get(reverse("saml:sso"), params).content.decode()
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        return content, authn_response
+
+    def test_authenticated_happy_path(self, client, caplog):
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+        caplog.clear()
+        content, authn_response = self._run_sso(client, user, sp_client)
+
+        # The Response is delivered as an auto-submitting POST form to the SP's ACS.
+        assert f'action="{SP_ACS_URL}"' in content
+
+        # Signature validity is enforced by parse_authn_request_response (want_assertions_signed);
+        # the assertion carries a signature element.
+        assert authn_response.assertion.signature is not None
+
+        # Audience is restricted to the requesting SP.
+        audience = authn_response.assertion.conditions.audience_restriction[0].audience[0].text
+        assert audience == SP_ENTITY_ID
+
+        # NameID is persistent and equals User.username (= the OIDC sub).
+        assert authn_response.name_id.format == NAMEID_FORMAT_PERSISTENT
+        assert authn_response.name_id.text == str(user.username)
+
+        # Default attribute set, released under standard URI-format (OID) names.
+        assert parsed_assertion_attributes(authn_response.assertion) == {
+            ATTRIBUTE_URIS["email"]: ([user.email], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["given_name"]: ([user.first_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["family_name"]: ([user.last_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["uid"]: ([str(user.pk)], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siret"]: ([settings.SIRET], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siren"]: ([settings.SIREN], NAME_FORMAT_URI),
+        }
+
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "sso_request", "service_provider": SP_ENTITY_ID, "user": user.email},
+                ),
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "sso_assertion", "service_provider": SP_ENTITY_ID, "user": user.email},
+                ),
+            ],
+        )
+
+    def test_relay_state_round_trips(self, client):
+        user = UserFactory()
+        register_sp()
+        content, _ = self._run_sso(client, user, build_sp_client(client), relay_state="/deep/link")
+        assert form_field(content, "RelayState") == "/deep/link"
+
+    def test_email_nameid_format_override(self, client):
+        user = UserFactory()
+        register_sp(name="Email SP", nameid_format=SamlServiceProvider.NameIdFormat.EMAIL)
+        _, authn_response = self._run_sso(client, user, build_sp_client(client))
+
+        assert authn_response.name_id.format == NAMEID_FORMAT_EMAILADDRESS
+        assert authn_response.name_id.text == user.email
+
+    @pytest.mark.filterwarnings("ignore:The SAML service provider accepts unsigned")
+    def test_unsigned_assertion_when_sign_disabled(self, client):
+        user = UserFactory()
+        register_sp(name="Unsigned SP", sign_assertion=False)
+        _, authn_response = self._run_sso(client, user, build_sp_client(client, want_assertions_signed=False))
+
+        assert authn_response.assertion.signature is None
+
+    def test_unauthenticated_redirects_to_login(self, client):
+        register_sp()
+        _, params = authn_request_query(build_sp_client(client))
+
+        response = client.get(reverse("saml:sso"), params)
+        assert response.status_code == 302
+        assert response.url.startswith(reverse("accounts:login"))
+
+    def test_unknown_service_provider_is_rejected(self, client, caplog):
+        user = UserFactory()
+        # No SamlServiceProvider registered for this issuer.
+        _, params = authn_request_query(build_sp_client(client))
+
+        client.force_login(user)
+        caplog.clear()
+        response = client.get(reverse("saml:sso"), params)
+        assert response.status_code == 400
+        # Drop the generic django.request "Bad Request" warnings the 400 triggers.
+        caplog.records[:] = [r for r in caplog.records if r.name == "inclusion_connect.saml"]
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "sso_request_error", "error": "unknown_sp", "service_provider": SP_ENTITY_ID},
+                )
+            ],
+        )
+
+    def test_missing_authn_request_is_rejected(self, client):
+        client.force_login(UserFactory())
+        assert client.get(reverse("saml:sso")).status_code == 400
+
+    def test_malformed_authn_request_is_rejected(self, client):
+        # A non-empty but undecodable SAMLRequest must yield a clean 400, never a 500.
+        client.force_login(UserFactory())
+        response = client.get(reverse("saml:sso"), {"SAMLRequest": "not-a-real-saml-request"})
+        assert response.status_code == 400
 
 
 def _write_self_signed_cert(cert_path, key_path):

@@ -1,7 +1,8 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from saml2.mdstore import InMemoryMetaData
-from saml2.saml import NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT
+from saml2.saml import NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT, NameID
 
 
 def parse_sp_metadata(xml):
@@ -108,3 +109,27 @@ class SamlServiceProvider(models.Model):
         """The SP's AssertionConsumerService endpoints parsed from the metadata."""
         _, acs = parse_sp_metadata(self.metadata)
         return [endpoint["location"] for endpoints in acs.values() for endpoint in endpoints]
+
+    def name_id_for(self, user):
+        """Build the SAML NameID for ``user`` according to this SP's configured format.
+
+        Default ``persistent`` carries ``User.username`` (the UUID, identical to the OIDC sub);
+        SPs that require it can override to ``emailAddress``.
+        """
+        value = user.email if self.nameid_format == self.NameIdFormat.EMAIL else str(user.username)
+        return NameID(format=self.nameid_format, sp_name_qualifier=self.entity_id, text=value)
+
+    def identity_for(self, user):
+        """The canonical default attribute set released to this SP, by friendly name.
+
+        Mirrors the OIDC claims; mapped to URI-format names at issue time. SIRET/SIREN are
+        static from settings. Per-SP subsetting/renaming via ``attribute_mapping`` is a later slice.
+        """
+        return {
+            "email": user.email,
+            "given_name": user.first_name,
+            "family_name": user.last_name,
+            "uid": str(user.pk),
+            "siret": settings.SIRET,
+            "siren": settings.SIREN,
+        }
