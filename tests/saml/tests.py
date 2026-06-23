@@ -203,6 +203,16 @@ def authn_request_query(sp_client, relay_state=""):
     return request_id, get_url_params(dict(info["headers"])["Location"])
 
 
+def authn_request_post(sp_client, relay_state=""):
+    """Build a POST-binding AuthnRequest and return (request_id, form_params)."""
+    request_id, info = sp_client.prepare_for_authenticate(relay_state=relay_state, binding=BINDING_HTTP_POST)
+    form = info["data"]
+    params = {"SAMLRequest": form_field(form, "SAMLRequest")}
+    if relay_state:
+        params["RelayState"] = form_field(form, "RelayState")
+    return request_id, params
+
+
 def form_field(content, name):
     """Extract a hidden form field value from a pysaml2 auto-POST page."""
     return re.search(rf'name="{name}" value="([^"]+)"', content)[1]
@@ -415,6 +425,69 @@ class TestSso:
         client.force_login(UserFactory())
         response = client.get(reverse("saml:sso"), {"SAMLRequest": "not-a-real-saml-request"})
         assert response.status_code == 400
+
+
+class TestSsoHttpPostBinding:
+    def test_authenticated_happy_path_over_post(self, client):
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+        request_id, params = authn_request_post(sp_client, relay_state="/deep/link")
+
+        client.force_login(user)
+        content = client.post(reverse("saml:sso"), params).content.decode()
+
+        # Same outbound delivery as the Redirect path: auto-POST form to the SP's ACS.
+        assert f'action="{SP_ACS_URL}"' in content
+        assert form_field(content, "RelayState") == "/deep/link"
+
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.assertion.signature is not None
+        assert authn_response.name_id.format == NAMEID_FORMAT_PERSISTENT
+        assert authn_response.name_id.text == str(user.username)
+
+    def test_unauthenticated_post_login_then_assertion(self, client):
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+        request_id, params = authn_request_post(sp_client, relay_state="/deep/link")
+
+        # 1. Unauthenticated POST bounces to login with the request stashed under the POST binding.
+        response = client.post(reverse("saml:sso"), params)
+        assert response.status_code == 302
+        assert response.url.startswith(reverse("accounts:login"))
+        stashed = client.session[SAML_SESSION_KEY]
+        assert stashed["binding"] == BINDING_HTTP_POST
+
+        # 2. Login + OTP confirmation clears the gate and resumes at the continue URL.
+        continue_url = reverse("saml:sso_continue")
+        response = client.post(reverse("accounts:login"), {"email": user.email, "password": DEFAULT_PASSWORD})
+        response, _ = confirm_otp_flow(client, response)
+        assertRedirects(response, continue_url, fetch_redirect_response=False)
+
+        # 3. The replayed POST-binding request yields the same signed assertion.
+        content = client.get(continue_url).content.decode()
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.assertion.signature is not None
+        assert authn_response.name_id.text == str(user.username)
+        assert SAML_SESSION_KEY not in client.session
+
+    def test_post_is_csrf_exempt(self, client):
+        # The SP auto-submits cross-site without a Django CSRF token; enforcing CSRF would 403 a
+        # legitimate AuthnRequest. A registered request must reach the SSO engine, not be blocked.
+        user = UserFactory()
+        register_sp()
+        _, params = authn_request_post(build_sp_client(client))
+
+        csrf_client = client.__class__(enforce_csrf_checks=True)
+        csrf_client.force_login(user)
+        response = csrf_client.post(reverse("saml:sso"), params)
+        assert response.status_code == 200
+        assert f'action="{SP_ACS_URL}"' in response.content.decode()
 
 
 def _write_self_signed_cert(cert_path, key_path):

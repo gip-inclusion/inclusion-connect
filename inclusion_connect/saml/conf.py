@@ -1,3 +1,5 @@
+import base64
+
 from django.conf import settings
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT, samlp
 from saml2.attribute_converter import AttributeConverter
@@ -91,13 +93,20 @@ def build_idp_server(base_url, sp_metadata):
     return Server(config=config)
 
 
-def extract_issuer(saml_request):
-    """Read the issuer entityID from a Redirect-binding ``SAMLRequest``, untrusted.
+def extract_issuer(saml_request, binding):
+    """Read the issuer entityID from an untrusted ``SAMLRequest`` on the given inbound binding.
+
+    The two inbound bindings encode the request differently: Redirect base64s a DEFLATE-compressed
+    body, POST base64s the raw XML. Decode accordingly before reading the issuer.
 
     Used only to look up the registered SP; that SP's own pysaml2 ``Server`` then re-parses and
     validates the request authoritatively before any assertion is issued. Cheap on purpose — no
     Server, no signing context — so unknown/garbage requests are rejected without touching xmlsec1.
     Raises on undecodable input.
     """
-    request = samlp.authn_request_from_string(decode_base64_and_inflate(saml_request))
+    if binding == BINDING_HTTP_REDIRECT:
+        xml = decode_base64_and_inflate(saml_request)
+    else:
+        xml = base64.b64decode(saml_request)
+    request = samlp.authn_request_from_string(xml)
     return request.issuer.text if request and request.issuer else None

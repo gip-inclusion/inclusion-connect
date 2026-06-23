@@ -1,6 +1,8 @@
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.metadata import entity_descriptor
 
@@ -49,7 +51,7 @@ class _BaseSsoView(View):
         # Read the issuer cheaply (no Server / no xmlsec) just to find the SP; the SP's own server
         # re-parses and validates the request authoritatively before we issue anything.
         try:
-            issuer = extract_issuer(saml_request)
+            issuer = extract_issuer(saml_request, binding)
         except Exception:
             issuer = None
         if not issuer:
@@ -123,15 +125,26 @@ class _BaseSsoView(View):
         return HttpResponse(http_args["data"])
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class SsoView(_BaseSsoView):
-    """Entry point for an SP-initiated AuthnRequest on the inbound HTTP-Redirect binding."""
+    """Entry point for an SP-initiated AuthnRequest on either inbound binding.
+
+    HTTP-Redirect arrives as a GET, HTTP-POST as a form POST. The POST path is CSRF-exempt: the
+    AuthnRequest is auto-submitted cross-site by the SP and carries no Django CSRF token; its
+    authenticity is governed by the SAML layer (issuer lookup + per-SP signature policy), not CSRF.
+    """
 
     def get(self, request, *args, **kwargs):
-        saml_request = request.GET.get("SAMLRequest")
+        return self._dispatch_from(request, request.GET, BINDING_HTTP_REDIRECT)
+
+    def post(self, request, *args, **kwargs):
+        return self._dispatch_from(request, request.POST, BINDING_HTTP_POST)
+
+    def _dispatch_from(self, request, source, binding):
+        saml_request = source.get("SAMLRequest")
         if not saml_request:
             return self._request_error(request, "missing_request")
-        relay_state = request.GET.get("RelayState", "")
-        return self._dispatch(request, saml_request, relay_state, BINDING_HTTP_REDIRECT)
+        return self._dispatch(request, saml_request, source.get("RelayState", ""), binding)
 
 
 class ContinueSsoView(_BaseSsoView):
