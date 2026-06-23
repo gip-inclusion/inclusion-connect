@@ -172,28 +172,32 @@ SP_ENTITY_ID = "https://sp.example.com/saml/metadata"
 SP_ACS_URL = "https://sp.example.com/saml/acs"
 
 
-def build_sp_client(client, want_assertions_signed=True):
+def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_file=None):
     """A pysaml2 SP configured as the test counterparty.
 
     It loads our published IdP metadata (fetched via `client`) so it discovers the SSO endpoint,
-    sends AuthnRequests there, and verifies the signature on the assertion we return.
+    sends AuthnRequests there, and verifies the signature on the assertion we return. Passing a
+    key/cert makes it sign its AuthnRequests (query-string signature on Redirect, enveloped XML
+    signature on POST).
     """
     idp_metadata = client.get(reverse("saml:metadata")).content.decode()
+    sp = {
+        "endpoints": {"assertion_consumer_service": [(SP_ACS_URL, BINDING_HTTP_POST)]},
+        "want_assertions_signed": want_assertions_signed,
+        "want_response_signed": False,
+        "allow_unsolicited": False,
+    }
+    conf_dict = {
+        "entityid": SP_ENTITY_ID,
+        "service": {"sp": sp},
+        "metadata": {"inline": [idp_metadata]},
+    }
+    if cert_file:
+        sp["authn_requests_signed"] = True
+        conf_dict["key_file"] = key_file
+        conf_dict["cert_file"] = cert_file
     conf = SPConfig()
-    conf.load(
-        {
-            "entityid": SP_ENTITY_ID,
-            "service": {
-                "sp": {
-                    "endpoints": {"assertion_consumer_service": [(SP_ACS_URL, BINDING_HTTP_POST)]},
-                    "want_assertions_signed": want_assertions_signed,
-                    "want_response_signed": False,
-                    "allow_unsolicited": False,
-                },
-            },
-            "metadata": {"inline": [idp_metadata]},
-        }
-    )
+    conf.load(conf_dict)
     return Saml2Client(config=conf)
 
 
@@ -225,9 +229,10 @@ def parsed_assertion_attributes(assertion):
     }
 
 
-def register_sp(**kwargs):
+def register_sp(key_file=None, cert_file=None, **kwargs):
     kwargs.setdefault("name", "Demo SP")
-    return SamlServiceProvider.objects.create(metadata=build_sp_metadata(SP_ENTITY_ID, SP_ACS_URL), **kwargs)
+    metadata = build_sp_metadata(SP_ENTITY_ID, SP_ACS_URL, key_file=key_file, cert_file=cert_file)
+    return SamlServiceProvider.objects.create(metadata=metadata, **kwargs)
 
 
 class TestSso:
@@ -488,6 +493,112 @@ class TestSsoHttpPostBinding:
         response = csrf_client.post(reverse("saml:sso"), params)
         assert response.status_code == 200
         assert f'action="{SP_ACS_URL}"' in response.content.decode()
+
+
+BOTH_BINDINGS = [
+    pytest.param(BINDING_HTTP_REDIRECT, id="redirect"),
+    pytest.param(BINDING_HTTP_POST, id="post"),
+]
+
+
+def _make_keypair(tmp_path, stem):
+    cert, key = tmp_path / f"{stem}.crt", tmp_path / f"{stem}.key"
+    _write_self_signed_cert(cert, key)
+    return str(key), str(cert)
+
+
+def assert_invalid_signature_logged(caplog):
+    saml_logs = [r.msg for r in caplog.records if r.name == "inclusion_connect.saml"]
+    assert {
+        "event": "sso_request_error",
+        "error": "invalid_signature",
+        "service_provider": SP_ENTITY_ID,
+        "ip_address": "127.0.0.1",
+    } in saml_logs
+
+
+class TestAuthnRequestSignatureVerification:
+    def _authn_request(self, sp_client, binding, relay_state=""):
+        if binding == BINDING_HTTP_REDIRECT:
+            return authn_request_query(sp_client, relay_state=relay_state)
+        return authn_request_post(sp_client, relay_state=relay_state)
+
+    def _send(self, client, binding, params):
+        if binding == BINDING_HTTP_REDIRECT:
+            return client.get(reverse("saml:sso"), params)
+        return client.post(reverse("saml:sso"), params)
+
+    @pytest.mark.parametrize("binding", BOTH_BINDINGS)
+    def test_valid_signature_accepted(self, client, tmp_path, binding):
+        user = UserFactory()
+        key_file, cert_file = _make_keypair(tmp_path, "sp")
+        register_sp(key_file=key_file, cert_file=cert_file)
+        sp_client = build_sp_client(client, key_file=key_file, cert_file=cert_file)
+        request_id, params = self._authn_request(sp_client, binding)
+
+        client.force_login(user)
+        response = self._send(client, binding, params)
+        assert response.status_code == 200
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(response.content.decode(), "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.name_id.text == str(user.username)
+
+    @pytest.mark.parametrize("binding", BOTH_BINDINGS)
+    def test_required_and_absent_rejected(self, client, binding, caplog):
+        # Flag on but the SP sends an unsigned request: rejected, logged, no assertion.
+        user = UserFactory()
+        register_sp(require_signed_authn_request=True)
+        sp_client = build_sp_client(client)
+        _, params = self._authn_request(sp_client, binding)
+
+        client.force_login(user)
+        caplog.clear()
+        response = self._send(client, binding, params)
+        assert response.status_code == 400
+        assert "SAMLResponse" not in response.content.decode()
+        assert_invalid_signature_logged(caplog)
+
+    @pytest.mark.parametrize("binding", BOTH_BINDINGS)
+    @pytest.mark.parametrize("require_signed", [True, False], ids=["required", "flag-off"])
+    def test_invalid_signature_rejected(self, client, tmp_path, binding, require_signed, caplog):
+        # Metadata advertises cert A; the SP signs with key B → verification fails. A bad signature
+        # is rejected on both bindings whether or not the SP is required to sign.
+        user = UserFactory()
+        good_key, good_cert = _make_keypair(tmp_path, "good")
+        other_key, _ = _make_keypair(tmp_path, "other")
+        register_sp(key_file=good_key, cert_file=good_cert, require_signed_authn_request=require_signed)
+        sp_client = build_sp_client(client, key_file=other_key, cert_file=good_cert)
+        _, params = self._authn_request(sp_client, binding)
+
+        client.force_login(user)
+        caplog.clear()
+        response = self._send(client, binding, params)
+        assert response.status_code == 400
+        assert "SAMLResponse" not in response.content.decode()
+        # Pin the rejection to the signature-verification path, not some other 400.
+        assert_invalid_signature_logged(caplog)
+
+    @pytest.mark.parametrize("binding", BOTH_BINDINGS)
+    def test_required_signature_survives_login_resume(self, client, tmp_path, binding):
+        # An unauthenticated, validly-signed request must still verify after the login detour: the
+        # Redirect query-string signature is carried across the session, the POST enveloped one
+        # rides in the replayed XML.
+        user = UserFactory()
+        key_file, cert_file = _make_keypair(tmp_path, "sp")
+        register_sp(key_file=key_file, cert_file=cert_file, require_signed_authn_request=True)
+        sp_client = build_sp_client(client, key_file=key_file, cert_file=cert_file)
+        request_id, params = self._authn_request(sp_client, binding, relay_state="/deep/link")
+
+        continue_url = reverse("saml:sso_continue")
+        self._send(client, binding, params)  # stash
+        client.force_login(user, device=TOTPDevice.objects.create(user=user, confirmed=True))
+
+        content = client.get(continue_url).content.decode()
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.name_id.text == str(user.username)
 
 
 def _write_self_signed_cert(cert_path, key_path):

@@ -72,17 +72,19 @@ def build_idp_config(base_url):
     return config
 
 
-def build_idp_server(base_url, sp_metadata):
+def build_idp_server(base_url, sp_metadata, want_authn_requests_signed=False):
     """Build a pysaml2 ``Server`` that parses AuthnRequests from ``sp_metadata``'s SP and signs
     Responses to it.
 
     The SP's metadata XML is loaded inline so pysaml2 resolves the SP's ACS and certificates.
     Signing requires the `xmlsec1` binary on PATH (or `SAML_XMLSEC1_BINARY`). The default URI
     attribute converter is prepended so our canonical attribute set is always released under the
-    OID names in ``ATTRIBUTE_URIS``.
+    OID names in ``ATTRIBUTE_URIS``. ``want_authn_requests_signed`` makes a signature mandatory:
+    pysaml2 rejects a request that carries none (see ``verify_authn_request``).
     """
     conf_dict = _idp_conf_dict(base_url)
     conf_dict["metadata"] = {"inline": [sp_metadata]}
+    conf_dict["service"]["idp"]["want_authn_requests_signed"] = want_authn_requests_signed
     if settings.SAML_XMLSEC1_BINARY:
         conf_dict["xmlsec_binary"] = settings.SAML_XMLSEC1_BINARY
     config = Config()
@@ -91,6 +93,30 @@ def build_idp_server(base_url, sp_metadata):
     converter.from_dict({"identifier": NAME_FORMAT_URI, "to": ATTRIBUTE_URIS})
     config.attribute_converters.insert(0, converter)
     return Server(config=config)
+
+
+def verify_authn_request(base_url, sp_metadata, inbound, require_signed):
+    """Authoritatively parse ``inbound``'s AuthnRequest against ``sp_metadata`` and verify its
+    signature. Returns ``(server, message)``; raises ``IncorrectlySigned`` on a bad signature and
+    other pysaml2 errors on malformed/expired/replayed input (the caller maps both to a 400).
+
+    ``require_signed`` is the per-SP policy (reject an unsigned request). A present signature is
+    always verified, but pysaml2 only checks a Redirect-binding query-string signature when the
+    request is "required to be signed" — POST signatures are enveloped in the XML and checked
+    whenever present — so force that whenever a Redirect signature is present, else a bad one
+    would slip by. ``inbound`` carries the SAMLRequest, binding, RelayState and (Redirect-only)
+    sigalg/signature.
+    """
+    must = require_signed or (inbound.binding == BINDING_HTTP_REDIRECT and inbound.signature is not None)
+    server = build_idp_server(base_url, sp_metadata, want_authn_requests_signed=must)
+    request = server.parse_authn_request(
+        inbound.saml_request,
+        inbound.binding,
+        relay_state=inbound.relay_state,
+        sigalg=inbound.sigalg,
+        signature=inbound.signature,
+    )
+    return server, request.message
 
 
 def extract_issuer(saml_request, binding):
