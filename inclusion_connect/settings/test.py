@@ -28,3 +28,7 @@ STORAGES = {
 # OIDC Config
 # -----------
 OAUTH2_PROVIDER["OIDC_ISS_ENDPOINT"] = "http://testserver/auth"
+
+# SAML Config
+# -----------
+SAML_IDP_ENTITY_ID = "http://testserver/saml/idp"  # noqa: F405

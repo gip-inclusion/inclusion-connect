@@ -10,6 +10,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from inclusion_connect.logging import log
+from inclusion_connect.saml.models import UserSamlServiceProviderLink
 
 from .models import User, UserApplicationLink
 
@@ -17,8 +18,7 @@ from .models import User, UserApplicationLink
 LOGGER_NAME = "inclusion_connect.auth"
 
 
-class UserApplicationLinkInline(admin.TabularInline):
-    model = UserApplicationLink
+class _ReadOnlyLinkInline(admin.TabularInline):
     extra = 0
     can_delete = False
 
@@ -27,6 +27,14 @@ class UserApplicationLinkInline(admin.TabularInline):
 
     def has_add_permission(self, request, obj):
         return False
+
+
+class UserApplicationLinkInline(_ReadOnlyLinkInline):
+    model = UserApplicationLink
+
+
+class UserSamlServiceProviderLinkInline(_ReadOnlyLinkInline):
+    model = UserSamlServiceProviderLink
 
 
 class UserAddForm(forms.ModelForm):
@@ -84,7 +92,7 @@ class UserAdmin(auth_admin.UserAdmin):
         "password_status",
     ]
     list_filter = auth_admin.UserAdmin.list_filter
-    inlines = [UserApplicationLinkInline]
+    inlines = [UserApplicationLinkInline, UserSamlServiceProviderLinkInline]
     search_fields = auth_admin.UserAdmin.search_fields
     list_display = (
         "username",

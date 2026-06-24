@@ -4,6 +4,10 @@
 # OIDC RSA private key
 oidc.pem
 
+# SAML signing certificate + key
+saml.key
+saml.crt
+
 # Config
 docker-compose-prod.yml
 

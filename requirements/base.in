@@ -9,6 +9,9 @@ django-oauth-toolkit  # https://github.com/jazzband/django-oauth-toolkit
 
 django-cors-headers  # https://github.com/adamchainz/django-cors-headers
 
+# SAML 2.0 Identity Provider
+pysaml2  # https://github.com/IdentityPython/pysaml2
+
 dj-database-url  # https://github.com/jazzband/dj-database-url
 
 django-citext  # https://github.com/voiio/django-citext

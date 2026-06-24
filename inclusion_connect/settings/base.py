@@ -59,6 +59,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "inclusion_connect.admin.apps.AdminConfig",
     "inclusion_connect.oidc_overrides",
+    "inclusion_connect.saml",
     "inclusion_connect.users",
     "inclusion_connect.utils",
 ]
@@ -320,6 +321,15 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = "oidc_overrides.Application"
 ALLOW_ALL_REDIRECT_URIS = os.getenv("ALLOW_ALL_REDIRECT_URIS") == "True"
 
 
+# SAML 2.0 Identity Provider
+# --------------------------
+SAML_IDP_ENTITY_ID = os.getenv("SAML_IDP_ENTITY_ID", "https://connect.inclusion.beta.gouv.fr/saml/idp")
+SAML_IDP_SIGNING_KEY_FILE = os.getenv("SAML_IDP_SIGNING_KEY_FILE", "saml.key")
+SAML_IDP_SIGNING_CERT_FILE = os.getenv("SAML_IDP_SIGNING_CERT_FILE", "saml.crt")
+# xmlsec1 binary pysaml2 shells out to for signing. Empty = auto-detect on PATH.
+SAML_XMLSEC1_BINARY = os.getenv("SAML_XMLSEC1_BINARY")
+
+
 # Content Security Policy
 # -----------------------
 
@@ -355,6 +365,7 @@ if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 SIRET = "13003013300016"
+SIREN = SIRET[:9]
 
 
 # OTP

@@ -32,6 +32,8 @@ urlpatterns = [
     re_path(r"^accounts/", include("inclusion_connect.accounts.urls")),
     # OIDC provider urls
     re_path(r"^auth/", include("inclusion_connect.oidc_overrides.urls", namespace="oauth2_provider")),
+    # SAML IdP urls
+    re_path(r"^saml/", include("inclusion_connect.saml.urls", namespace="saml")),
     # security.txt page
     path(".well-known/security.txt", views.security_txt, name="security-txt"),
 ]
