@@ -2,6 +2,7 @@ import base64
 import datetime
 import logging
 import re
+import zlib
 
 import pytest
 from cryptography import x509
@@ -26,8 +27,13 @@ from saml2.saml import (
     NameID,
 )
 
-from inclusion_connect.saml.conf import ATTRIBUTE_URIS
-from inclusion_connect.saml.models import SamlServiceProvider, UserSamlServiceProviderLink
+from inclusion_connect.saml.conf import (
+    ATTRIBUTE_URIS,
+    MAX_SAML_REQUEST_B64,
+    MAX_SAML_REQUEST_XML,
+    _decode_saml_request,
+)
+from inclusion_connect.saml.models import SamlServiceProvider, UserSamlServiceProviderLink, parse_sp_metadata
 from inclusion_connect.saml.views import SAML_SESSION_KEY
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
@@ -106,7 +112,8 @@ class TestSamlServiceProvider:
 
     def test_factory_creates_valid_sp(self):
         sp = SamlServiceProviderFactory()
-        assert sp.entity_id == SamlServiceProvider.objects.get(pk=sp.pk).entity_id
+        parsed_entity_id, _ = parse_sp_metadata(sp.metadata)
+        assert sp.entity_id == parsed_entity_id
         assert sp.acs_endpoints()
 
     def test_require_signed_authn_request_defaults_off(self):
@@ -133,6 +140,20 @@ class TestSamlServiceProvider:
         sp = SamlServiceProvider(name="Bad SP", metadata=metadata)
         with pytest.raises(ValidationError):
             sp.full_clean()
+
+    def test_metadata_without_post_acs_is_rejected(self):
+        # The IdP only delivers the Response over HTTP-POST, so an SP whose ACS is not declared in
+        # that binding is unusable and must be refused at registration rather than 500 at SSO time.
+        metadata = (
+            '<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata" '
+            'entityID="https://sp.example.com/redirect-only">'
+            '<SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">'
+            '<AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" '
+            'Location="https://sp.example.com/acs" index="0"/>'
+            "</SPSSODescriptor></EntityDescriptor>"
+        )
+        with pytest.raises(ValidationError, match="HTTP-POST"):
+            SamlServiceProvider(name="Redirect-only SP", metadata=metadata).full_clean()
 
     def test_admin_can_create_sp(self, client):
         client.force_login(UserFactory(is_superuser=True, is_staff=True))
@@ -182,6 +203,28 @@ class TestSamlServiceProvider:
         assert response.status_code == 200
         assert SamlServiceProvider.objects.count() == 0
         assert "Métadonnées SAML invalides" in response.content.decode()
+
+
+class TestInboundRequestLimits:
+    """Size bounds on an untrusted SAMLRequest, guarding against a DEFLATE decompression bomb."""
+
+    def test_oversized_encoded_request_is_rejected(self):
+        with pytest.raises(ValueError):
+            _decode_saml_request("A" * (MAX_SAML_REQUEST_B64 + 1), BINDING_HTTP_POST)
+
+    def test_decompression_bomb_is_rejected(self):
+        compressor = zlib.compressobj(9, zlib.DEFLATED, -15)
+        payload = compressor.compress(b"\x00" * (MAX_SAML_REQUEST_XML + 1024)) + compressor.flush()
+        bomb = base64.b64encode(payload).decode()
+        assert len(bomb) < MAX_SAML_REQUEST_XML  # tiny encoded, huge inflated: the bomb shape
+        with pytest.raises(ValueError):
+            _decode_saml_request(bomb, BINDING_HTTP_REDIRECT)
+
+    def test_small_redirect_request_round_trips(self):
+        compressor = zlib.compressobj(9, zlib.DEFLATED, -15)
+        payload = compressor.compress(b"<x/>") + compressor.flush()
+        encoded = base64.b64encode(payload).decode()
+        assert _decode_saml_request(encoded, BINDING_HTTP_REDIRECT) == b"<x/>"
 
 
 SP_ENTITY_ID = "https://sp.example.com/saml/metadata"
@@ -728,7 +771,7 @@ class TestAuthnRequestSignatureVerification:
 
 
 class TestAssertionEncryption:
-    """Per-SP, metadata-driven assertion encryption (slice 8).
+    """Per-SP, metadata-driven assertion encryption.
 
     Encryption is layered on top of the default signed assertion only when the SP's metadata
     advertises an encryption certificate — there is no manual blanket toggle.
@@ -795,7 +838,7 @@ class TestAssertionEncryption:
 
 
 class TestLocalSlo:
-    """Local Single Logout (slice 9): an SP-initiated LogoutRequest terminates the IC session
+    """Local Single Logout: an SP-initiated LogoutRequest terminates the IC session
     and gets a LogoutResponse, with no propagation to other SPs."""
 
     def test_slo_terminates_session_and_returns_response(self, client, caplog):
@@ -940,7 +983,7 @@ class TestLocalSlo:
 
 
 class TestUserSamlServiceProviderLink:
-    """Audit link (slice 10): each successful assertion records which SP the user used and when."""
+    """Audit link: each successful assertion records which SP the user used and when."""
 
     def _run_sso(self, client, user, sp_client):
         request_id, params = authn_request_query(sp_client)

@@ -7,25 +7,43 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('saml', '0001_initial'),
+        ("saml", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserSamlServiceProviderLink',
+            name="UserSamlServiceProviderLink",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('last_login', models.DateTimeField(default=django.utils.timezone.now, verbose_name='dernière connexion')),
-                ('saml_sp', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='linked_users', to='saml.samlserviceprovider', verbose_name='service provider SAML')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='linked_saml_service_providers', to=settings.AUTH_USER_MODEL, verbose_name='utilisateur')),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "last_login",
+                    models.DateTimeField(default=django.utils.timezone.now, verbose_name="dernière connexion"),
+                ),
+                (
+                    "saml_sp",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="linked_users",
+                        to="saml.samlserviceprovider",
+                        verbose_name="service provider SAML",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="linked_saml_service_providers",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="utilisateur",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'service SAML utilisé',
-                'verbose_name_plural': 'services SAML utilisés',
-                'unique_together': {('user', 'saml_sp')},
+                "verbose_name": "service SAML utilisé",
+                "verbose_name_plural": "services SAML utilisés",
+                "unique_together": {("user", "saml_sp")},
             },
         ),
     ]

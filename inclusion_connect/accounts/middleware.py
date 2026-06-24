@@ -8,9 +8,8 @@ def post_login_actions(get_response):
     def middleware(request):
         user = request.user
 
-        # SAML SLO is whitelisted like the OIDC logout: a logout must complete even when a
-        # post-login gate (TOTP / temporary / weak password) is pending, and it issues no
-        # assertion. SAML SSO is deliberately NOT whitelisted, so those gates fire before one.
+        # SAML SLO whitelisted like the OIDC logout: it must complete even with a post-login gate
+        # pending, and issues no assertion. SAML SSO is NOT whitelisted, so gates fire before one.
         whitelisted_urls = [
             reverse("index"),
             reverse("oauth2_provider:rp-initiated-logout"),

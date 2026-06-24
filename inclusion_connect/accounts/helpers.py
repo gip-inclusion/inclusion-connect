@@ -13,12 +13,8 @@ LOGGER_NAME = "inclusion_connect.auth"
 
 
 def delete_user_sessions(user):
-    """Delete every active Django session belonging to ``user``.
-
-    Shared by the OIDC RP-initiated logout and the SAML local SLO so both protocols
-    terminate the IC session the same way (all of the user's sessions, not just the
-    current one).
-    """
+    # Delete every active Django session belonging to user. Shared by the OIDC RP-initiated logout
+    # and the SAML local SLO (all of the user's sessions, not just the current one).
     for session in Session.objects.filter(expire_date__gte=timezone.now()):
         if session.get_decoded().get("_auth_user_id") == str(user.pk):
             session.delete()
