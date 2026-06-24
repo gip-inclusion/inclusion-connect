@@ -17,6 +17,9 @@ from saml2.server import Server
 # Path of the SSO endpoint, advertised in metadata and target of inbound AuthnRequests.
 SSO_PATH = "/saml/sso"
 
+# Path of the SLO endpoint, advertised in metadata and target of inbound LogoutRequests.
+SLO_PATH = "/saml/slo"
+
 # Default attribute release set, mapped to standard URI-format (OID) names so a zero-config
 # SP receives interoperable attributes. SIRET/SIREN have no registered OID, so they use an
 # IC-namespaced URN. Per-SP overrides live on the model's `attribute_mapping` (a later slice).
@@ -85,6 +88,7 @@ def _idp_conf_dict(base_url):
     certificate/key have a lifecycle independent from `oidc.pem` and are configured via settings.
     """
     sso_location = f"{base_url}{SSO_PATH}"
+    slo_location = f"{base_url}{SLO_PATH}"
     return {
         "entityid": settings.SAML_IDP_ENTITY_ID,
         "service": {
@@ -94,6 +98,10 @@ def _idp_conf_dict(base_url):
                     "single_sign_on_service": [
                         (sso_location, BINDING_HTTP_REDIRECT),
                         (sso_location, BINDING_HTTP_POST),
+                    ],
+                    "single_logout_service": [
+                        (slo_location, BINDING_HTTP_REDIRECT),
+                        (slo_location, BINDING_HTTP_POST),
                     ],
                 },
                 "name_id_format": [NAMEID_FORMAT_PERSISTENT, NAMEID_FORMAT_EMAILADDRESS],
@@ -164,20 +172,52 @@ def verify_authn_request(base_url, sp_metadata, inbound, require_signed, attribu
     return server, request.message
 
 
-def extract_issuer(saml_request, binding):
-    """Read the issuer entityID from an untrusted ``SAMLRequest`` on the given inbound binding.
+def verify_logout_request(base_url, sp_metadata, inbound, require_signed):
+    """Authoritatively parse ``inbound``'s LogoutRequest against ``sp_metadata`` and verify its
+    signature. Returns ``(server, message)``; raises ``IncorrectlySigned`` on a bad signature and
+    other pysaml2 errors on malformed/expired/replayed input (the caller maps both to a 400).
+
+    Same signature rules as ``verify_authn_request``: pysaml2 always checks a POST enveloped
+    signature, but only verifies a Redirect query-string signature when the request is "required
+    to be signed", so force that whenever a Redirect signature is present (else a bad one would
+    slip by) or when the SP is configured to always sign its requests.
+    """
+    must = require_signed or (inbound.binding == BINDING_HTTP_REDIRECT and inbound.signature is not None)
+    server = build_idp_server(base_url, sp_metadata, want_authn_requests_signed=must)
+    request = server.parse_logout_request(
+        inbound.saml_request,
+        inbound.binding,
+        relay_state=inbound.relay_state,
+        sigalg=inbound.sigalg,
+        signature=inbound.signature,
+    )
+    return server, request.message
+
+
+def _decode_saml_request(saml_request, binding):
+    """Decode an untrusted ``SAMLRequest`` to raw XML for the given inbound binding.
 
     The two inbound bindings encode the request differently: Redirect base64s a DEFLATE-compressed
-    body, POST base64s the raw XML. Decode accordingly before reading the issuer.
+    body, POST base64s the raw XML. Raises on undecodable input.
+    """
+    if binding == BINDING_HTTP_REDIRECT:
+        return decode_base64_and_inflate(saml_request)
+    return base64.b64decode(saml_request)
+
+
+def extract_issuer(saml_request, binding):
+    """Read the issuer entityID from an untrusted AuthnRequest on the given inbound binding.
 
     Used only to look up the registered SP; that SP's own pysaml2 ``Server`` then re-parses and
     validates the request authoritatively before any assertion is issued. Cheap on purpose — no
     Server, no signing context — so unknown/garbage requests are rejected without touching xmlsec1.
     Raises on undecodable input.
     """
-    if binding == BINDING_HTTP_REDIRECT:
-        xml = decode_base64_and_inflate(saml_request)
-    else:
-        xml = base64.b64decode(saml_request)
-    request = samlp.authn_request_from_string(xml)
+    request = samlp.authn_request_from_string(_decode_saml_request(saml_request, binding))
+    return request.issuer.text if request and request.issuer else None
+
+
+def extract_logout_issuer(saml_request, binding):
+    """Read the issuer entityID from an untrusted LogoutRequest, mirroring ``extract_issuer``."""
+    request = samlp.logout_request_from_string(_decode_saml_request(saml_request, binding))
     return request.issuer.text if request and request.issuer else None

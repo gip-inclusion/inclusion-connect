@@ -9,8 +9,16 @@ from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.metadata import entity_descriptor
 from saml2.response import IncorrectlySigned
 
+from inclusion_connect.accounts.helpers import delete_user_sessions
 from inclusion_connect.logging import log
-from inclusion_connect.saml.conf import AUTHN_CONTEXT, build_idp_config, extract_issuer, verify_authn_request
+from inclusion_connect.saml.conf import (
+    AUTHN_CONTEXT,
+    build_idp_config,
+    extract_issuer,
+    extract_logout_issuer,
+    verify_authn_request,
+    verify_logout_request,
+)
 from inclusion_connect.saml.models import SamlServiceProvider
 
 
@@ -36,6 +44,24 @@ class InboundRequest:
     binding: str
     sigalg: str | None = None
     signature: str | None = None
+
+    @classmethod
+    def from_source(cls, source, binding):
+        """Build from a request's GET (Redirect) or POST params.
+
+        Redirect-binding signatures ride in the query string (SigAlg/Signature); the POST binding
+        carries an enveloped signature inside the XML, so those stay None there. RelayState defaults
+        to None (not "") when absent: it is part of the Redirect-binding signed octet string, so an
+        injected empty value would break signature verification.
+        """
+        redirect = binding == BINDING_HTTP_REDIRECT
+        return cls(
+            saml_request=source["SAMLRequest"],
+            relay_state=source.get("RelayState"),
+            binding=binding,
+            sigalg=source.get("SigAlg") if redirect else None,
+            signature=source.get("Signature") if redirect else None,
+        )
 
     @classmethod
     def from_session(cls, stashed):
@@ -187,22 +213,9 @@ class SsoView(_BaseSsoView):
         return self._dispatch_from(request, request.POST, BINDING_HTTP_POST)
 
     def _dispatch_from(self, request, source, binding):
-        saml_request = source.get("SAMLRequest")
-        if not saml_request:
+        if not source.get("SAMLRequest"):
             return self._request_error(request, "missing_request")
-        # Redirect-binding signatures ride in the query string (SigAlg/Signature); the POST binding
-        # carries an enveloped signature inside the XML, so these stay None there. RelayState
-        # defaults to None (not "") when absent: it is part of the Redirect-binding signed octet
-        # string, so an injected empty value would break signature verification.
-        redirect = binding == BINDING_HTTP_REDIRECT
-        inbound = InboundRequest(
-            saml_request=saml_request,
-            relay_state=source.get("RelayState"),
-            binding=binding,
-            sigalg=source.get("SigAlg") if redirect else None,
-            signature=source.get("Signature") if redirect else None,
-        )
-        return self._dispatch(request, inbound)
+        return self._dispatch(request, InboundRequest.from_source(source, binding))
 
 
 class ContinueSsoView(_BaseSsoView):
@@ -218,3 +231,108 @@ class ContinueSsoView(_BaseSsoView):
         if not stashed:
             return self._request_error(request, "missing_request")
         return self._dispatch(request, InboundRequest.from_session(stashed))
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class SloView(View):
+    """Local Single Logout: terminate the IC session on an SP-initiated LogoutRequest.
+
+    "Local" means we end the user's IC session (every session of theirs, mirroring the OIDC
+    RP-initiated logout) and return a ``LogoutResponse`` to the requesting SP — we do NOT
+    propagate the logout to any other SP the user is signed in to (deferred). Because the IC
+    session is shared with OIDC, this also logs the user out of the OIDC surface, so a later
+    SSO attempt requires re-authentication.
+
+    Accepted on both inbound bindings (Redirect = GET, POST = form). CSRF-exempt for the same
+    reason as ``SsoView``: the SP auto-submits cross-site without a Django token; authenticity is
+    governed by the SAML layer (issuer lookup + per-SP signature policy).
+    """
+
+    def get(self, request, *args, **kwargs):
+        return self._handle(request, request.GET, BINDING_HTTP_REDIRECT)
+
+    def post(self, request, *args, **kwargs):
+        return self._handle(request, request.POST, BINDING_HTTP_POST)
+
+    def _handle(self, request, source, binding):
+        if not source.get("SAMLRequest"):
+            return self._request_error(request, "missing_request")
+        inbound = InboundRequest.from_source(source, binding)
+
+        try:
+            issuer = extract_logout_issuer(inbound.saml_request, inbound.binding)
+        except Exception:
+            issuer = None
+        if not issuer:
+            return self._request_error(request, "invalid_request")
+
+        sp = SamlServiceProvider.objects.filter(entity_id=issuer).first()
+        if sp is None:
+            return self._request_error(request, "unknown_sp", service_provider=issuer)
+
+        user = request.user if request.user.is_authenticated else None
+        log(
+            LOGGER_NAME,
+            request,
+            event="slo_request",
+            service_provider=sp.entity_id,
+            user=user.email if user else None,
+        )
+        return self._logout(request, sp, inbound, user)
+
+    def _logout(self, request, sp, inbound, user):
+        base_url = request.build_absolute_uri("/").rstrip("/")
+        try:
+            server, message = verify_logout_request(
+                base_url, sp.metadata, inbound, sp.require_signed_authn_request
+            )
+        except IncorrectlySigned:
+            return self._request_error(request, "invalid_signature", service_provider=sp.entity_id)
+        except Exception as exc:
+            return self._request_error(
+                request, "invalid_request", service_provider=sp.entity_id, detail=type(exc).__name__
+            )
+
+        # Build the response first, so a delivery/binding failure cannot leave a half-terminated
+        # session. pick_binding resolves the SP's SLS location + binding from its metadata; the
+        # response is unsigned, mirroring the SSO path's unsigned Response (sign_response=False).
+        rinfo = server.response_args(message, [inbound.binding])
+        response = server.create_logout_response(message, [inbound.binding], sign=False)
+        http_args = server.apply_binding(
+            rinfo["binding"],
+            str(response),
+            destination=rinfo["destination"],
+            relay_state=inbound.relay_state,
+            response=True,
+            sign=False,
+        )
+
+        # Only terminate the session when the request's Subject is the logged-in user. The endpoint
+        # is necessarily CSRF-exempt and accepts unsigned requests by default, so without this a
+        # forged LogoutRequest (any NameID, any registered SP) carried by the victim's browser would
+        # force-log-out an arbitrary user. Requiring a NameID match means the attacker must already
+        # know the victim's identifier; combine with per-SP `require_signed_authn_request` for full
+        # protection. A non-matching request still gets a valid (Success) LogoutResponse.
+        logged_out = user if user is not None and self._targets_user(sp, message, user) else None
+        if logged_out is not None:
+            delete_user_sessions(logged_out)
+
+        log(
+            LOGGER_NAME,
+            request,
+            event="slo_response",
+            service_provider=sp.entity_id,
+            user=logged_out.email if logged_out else None,
+        )
+        if rinfo["binding"] == BINDING_HTTP_REDIRECT:
+            return HttpResponseRedirect(dict(http_args["headers"])["Location"])
+        return HttpResponse(http_args["data"])
+
+    @staticmethod
+    def _targets_user(sp, message, user):
+        """Whether the LogoutRequest's Subject NameID identifies ``user`` for this SP."""
+        return message.name_id is not None and message.name_id.text == sp.name_id_for(user).text
+
+    def _request_error(self, request, reason, **extra):
+        log(LOGGER_NAME, request, event="slo_request_error", error=reason, **extra)
+        return HttpResponseBadRequest("Requête SAML invalide.")

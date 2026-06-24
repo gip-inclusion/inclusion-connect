@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib import auth
+from django.contrib.sessions.models import Session
 from django.urls import reverse
+from django.utils import timezone
 from django_otp import user_has_device
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
@@ -8,6 +10,18 @@ from inclusion_connect.logging import log
 
 
 LOGGER_NAME = "inclusion_connect.auth"
+
+
+def delete_user_sessions(user):
+    """Delete every active Django session belonging to ``user``.
+
+    Shared by the OIDC RP-initiated logout and the SAML local SLO so both protocols
+    terminate the IC session the same way (all of the user's sessions, not just the
+    current one).
+    """
+    for session in Session.objects.filter(expire_date__gte=timezone.now()):
+        if session.get_decoded().get("_auth_user_id") == str(user.pk):
+            session.delete()
 
 
 def login(request, user, backend=settings.DEFAULT_AUTH_BACKEND):

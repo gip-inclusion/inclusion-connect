@@ -17,7 +17,13 @@ from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.client import Saml2Client
 from saml2.config import SPConfig
 from saml2.mdstore import InMemoryMetaData
-from saml2.saml import NAME_FORMAT_BASIC, NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT
+from saml2.saml import (
+    NAME_FORMAT_BASIC,
+    NAME_FORMAT_URI,
+    NAMEID_FORMAT_EMAILADDRESS,
+    NAMEID_FORMAT_PERSISTENT,
+    NameID,
+)
 
 from inclusion_connect.saml.conf import ATTRIBUTE_URIS
 from inclusion_connect.saml.models import SamlServiceProvider
@@ -31,6 +37,7 @@ from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 IDP_ENTITY_ID = "http://testserver/saml/idp"
 SSO_LOCATION = "http://testserver/saml/sso"
+SLO_LOCATION = "http://testserver/saml/slo"
 
 
 def parse_idp_metadata(content):
@@ -61,6 +68,13 @@ class TestMetadata:
             assert endpoint["location"] == SSO_LOCATION
 
         assertRecords(caplog, [("inclusion_connect.saml", logging.INFO, {"event": "metadata"})])
+
+    def test_metadata_advertises_slo_endpoint(self, client):
+        mds = parse_idp_metadata(client.get(reverse("saml:metadata")).content.decode())
+        slo = mds.service(IDP_ENTITY_ID, "idpsso_descriptor", "single_logout_service")
+        assert set(slo) == {BINDING_HTTP_REDIRECT, BINDING_HTTP_POST}
+        for [endpoint] in slo.values():
+            assert endpoint["location"] == SLO_LOCATION
 
     def test_metadata_trailing_slash(self, client):
         assert client.get("/saml/metadata/").status_code == 200
@@ -171,6 +185,7 @@ class TestSamlServiceProvider:
 
 SP_ENTITY_ID = "https://sp.example.com/saml/metadata"
 SP_ACS_URL = "https://sp.example.com/saml/acs"
+SP_SLO_URL = "https://sp.example.com/saml/slo"
 
 
 def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_file=None, encryption_cert_file=None):
@@ -184,7 +199,15 @@ def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_fil
     """
     idp_metadata = client.get(reverse("saml:metadata")).content.decode()
     sp = {
-        "endpoints": {"assertion_consumer_service": [(SP_ACS_URL, BINDING_HTTP_POST)]},
+        "endpoints": {
+            "assertion_consumer_service": [(SP_ACS_URL, BINDING_HTTP_POST)],
+            # The SP's own SLS endpoint must match the Destination the IdP sets on the
+            # LogoutResponse, else pysaml2 rejects the response on the return trip.
+            "single_logout_service": [
+                (SP_SLO_URL, BINDING_HTTP_REDIRECT),
+                (SP_SLO_URL, BINDING_HTTP_POST),
+            ],
+        },
         "want_assertions_signed": want_assertions_signed,
         "want_response_signed": False,
         "allow_unsolicited": False,
@@ -233,10 +256,15 @@ def parsed_assertion_attributes(assertion):
     }
 
 
-def register_sp(key_file=None, cert_file=None, encryption_cert_file=None, **kwargs):
+def register_sp(slo_url=None, key_file=None, cert_file=None, encryption_cert_file=None, **kwargs):
     kwargs.setdefault("name", "Demo SP")
     metadata = build_sp_metadata(
-        SP_ENTITY_ID, SP_ACS_URL, key_file=key_file, cert_file=cert_file, encryption_cert_file=encryption_cert_file
+        SP_ENTITY_ID,
+        SP_ACS_URL,
+        slo_url=slo_url,
+        key_file=key_file,
+        cert_file=cert_file,
+        encryption_cert_file=encryption_cert_file,
     )
     return SamlServiceProvider.objects.create(metadata=metadata, **kwargs)
 
@@ -748,6 +776,166 @@ class TestAssertionEncryption:
         SamlServiceProvider.objects.all().delete()
         without_cert = register_sp()
         assert without_cert.encrypts_assertions() is False
+
+
+class TestLocalSlo:
+    """Local Single Logout (slice 9): an SP-initiated LogoutRequest terminates the IC session
+    and gets a LogoutResponse, with no propagation to other SPs."""
+
+    def _logout_request(self, sp_client, name_id_text, binding=BINDING_HTTP_REDIRECT, relay_state=""):
+        idp_slo = sp_client.metadata.single_logout_service(IDP_ENTITY_ID, binding, "idpsso")[0]["location"]
+        name_id = NameID(format=NAMEID_FORMAT_PERSISTENT, text=name_id_text)
+        request_id, request = sp_client.create_logout_request(idp_slo, IDP_ENTITY_ID, name_id=name_id)
+        http_args = sp_client.apply_binding(binding, str(request), idp_slo, relay_state, response=False)
+        if binding == BINDING_HTTP_REDIRECT:
+            return request_id, get_url_params(dict(http_args["headers"])["Location"])
+        form = http_args["data"]
+        params = {"SAMLRequest": form_field(form, "SAMLRequest")}
+        if relay_state:
+            params["RelayState"] = form_field(form, "RelayState")
+        return request_id, params
+
+    def test_slo_terminates_session_and_returns_response(self, client, caplog):
+        user = UserFactory()
+        register_sp(slo_url=SP_SLO_URL)
+        sp_client = build_sp_client(client)
+        _, params = self._logout_request(sp_client, str(user.username), relay_state="/back")
+
+        client.force_login(user)
+        caplog.clear()
+        response = client.get(reverse("saml:slo"), params)
+
+        # The LogoutResponse is delivered back to the SP's SLS over the Redirect binding.
+        assert response.status_code == 302
+        assert response.url.startswith(SP_SLO_URL)
+        return_params = get_url_params(response.url)
+        assert return_params["RelayState"] == "/back"
+
+        logout_response = sp_client.parse_logout_request_response(
+            return_params["SAMLResponse"], BINDING_HTTP_REDIRECT
+        )
+        assert logout_response.status_ok()
+
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "slo_request", "service_provider": SP_ENTITY_ID, "user": user.email},
+                ),
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "slo_response", "service_provider": SP_ENTITY_ID, "user": user.email},
+                ),
+            ],
+        )
+
+    def test_slo_over_post_binding(self, client):
+        user = UserFactory()
+        register_sp(slo_url=SP_SLO_URL)
+        sp_client = build_sp_client(client)
+        _, params = self._logout_request(sp_client, str(user.username), binding=BINDING_HTTP_POST, relay_state="/back")
+
+        client.force_login(user)
+        content = client.post(reverse("saml:slo"), params).content.decode()
+
+        # POST binding: the response comes back as an auto-POST form to the SP's SLS.
+        assert f'action="{SP_SLO_URL}"' in content
+        assert form_field(content, "RelayState") == "/back"
+        logout_response = sp_client.parse_logout_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST
+        )
+        assert logout_response.status_ok()
+
+    def test_re_sso_requires_reauth_after_slo(self, client):
+        user = UserFactory()
+        register_sp(slo_url=SP_SLO_URL)
+        sp_client = build_sp_client(client)
+        _, params = self._logout_request(sp_client, str(user.username))
+
+        client.force_login(user)
+        assert client.get(reverse("saml:slo"), params).status_code == 302
+
+        # The session is gone, so a fresh SSO attempt bounces to login instead of issuing an assertion.
+        _, authn_params = authn_request_query(sp_client)
+        response = client.get(reverse("saml:sso"), authn_params)
+        assert response.status_code == 302
+        assert response.url.startswith(reverse("accounts:login"))
+
+    def test_slo_unknown_service_provider_is_rejected(self, client, caplog):
+        user = UserFactory()
+        # No SamlServiceProvider registered for this issuer.
+        sp_client = build_sp_client(client)
+        _, params = self._logout_request(sp_client, str(user.username))
+
+        client.force_login(user)
+        caplog.clear()
+        response = client.get(reverse("saml:slo"), params)
+        assert response.status_code == 400
+        caplog.records[:] = [r for r in caplog.records if r.name == "inclusion_connect.saml"]
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.saml",
+                    logging.INFO,
+                    {"event": "slo_request_error", "error": "unknown_sp", "service_provider": SP_ENTITY_ID},
+                )
+            ],
+        )
+
+    def test_slo_for_other_subject_does_not_terminate_session(self, client):
+        # A forged LogoutRequest naming a different (or unknown) NameID must NOT log out the
+        # browser's user: the endpoint is CSRF-exempt and accepts unsigned requests, so without the
+        # NameID check any registered SP could force-log-out an arbitrary user. A valid Success
+        # LogoutResponse is still returned, but the session stays alive.
+        user = UserFactory()
+        register_sp(slo_url=SP_SLO_URL)
+        sp_client = build_sp_client(client)
+        _, params = self._logout_request(sp_client, "someone-else")
+
+        client.force_login(user)
+        response = client.get(reverse("saml:slo"), params)
+        assert response.status_code == 302
+        logout_response = sp_client.parse_logout_request_response(
+            get_url_params(response.url)["SAMLResponse"], BINDING_HTTP_REDIRECT
+        )
+        assert logout_response.status_ok()
+
+        # The session survives: a fresh SSO issues an assertion without bouncing to login.
+        request_id, authn_params = authn_request_query(sp_client)
+        content = client.get(reverse("saml:sso"), authn_params).content.decode()
+        authn_response = sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        assert authn_response.name_id.text == str(user.username)
+
+    def test_slo_missing_request_is_rejected(self, client):
+        client.force_login(UserFactory())
+        assert client.get(reverse("saml:slo")).status_code == 400
+
+    def test_slo_completes_despite_pending_post_login_gate(self, client):
+        # A logout must go through even when a post-login gate (here a temporary password) is still
+        # pending: SLO is whitelisted in post_login_actions, so the request reaches the view and
+        # terminates the session instead of bouncing to the gate.
+        user = UserFactory(password_is_temporary=True)
+        register_sp(slo_url=SP_SLO_URL)
+        sp_client = build_sp_client(client)
+        _, params = logout_request(sp_client, str(user.username))
+
+        client.force_login(user, device=TOTPDevice.objects.create(user=user, confirmed=True))
+        response = client.get(reverse("saml:slo"), params)
+
+        # Redirected to the SP's SLS with a LogoutResponse, not to the change-password gate.
+        assert response.status_code == 302
+        assert response.url.startswith(SP_SLO_URL)
+        logout_response = sp_client.parse_logout_request_response(
+            get_url_params(response.url)["SAMLResponse"], BINDING_HTTP_REDIRECT
+        )
+        assert logout_response.status_ok()
+        assert "_auth_user_id" not in client.session
 
 
 def _write_self_signed_cert(cert_path, key_path):

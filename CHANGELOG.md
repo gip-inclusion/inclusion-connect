@@ -10,6 +10,7 @@
 - Réglages `SAML_IDP_ENTITY_ID`, `SAML_IDP_SIGNING_KEY_FILE` et `SAML_IDP_SIGNING_CERT_FILE` (certificat de signature dédié, cycle de vie indépendant de `oidc.pem`).
 - Réglage `SAML_XMLSEC1_BINARY` (chemin du binaire `xmlsec1`, sinon détection automatique sur le `PATH`).
 - Fournisseur d'identité SAML 2.0 : vérification de la signature des AuthnRequest (signature de la query string en binding HTTP-Redirect, signature XML enveloppée en HTTP-POST) ; option par SP `require_signed_authn_request` pour rendre la signature obligatoire.
+- Fournisseur d'identité SAML 2.0 : déconnexion locale (Single Logout) initiée par le SP (`/saml/slo`, bindings HTTP-Redirect et HTTP-POST) terminant la session IC et renvoyant un `LogoutResponse` ; endpoint SLS annoncé dans les métadonnées.
 
 ### Modifié
 

@@ -1,4 +1,3 @@
-from django.contrib.sessions.models import Session
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
@@ -6,7 +5,7 @@ from oauth2_provider import views as oauth2_views
 from oauth2_provider.exceptions import InvalidIDTokenError, InvalidOIDCClientError, OAuthToolkitError
 from oauth2_provider.signals import app_authorized
 
-from inclusion_connect.accounts.helpers import get_next_url
+from inclusion_connect.accounts.helpers import delete_user_sessions, get_next_url
 from inclusion_connect.logging import log
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.users.models import UserApplicationLink
@@ -145,12 +144,7 @@ class LogoutView(oauth2_views.RPInitiatedLogoutView):
         user = token_user or self.request.user
         response = super().do_logout(application, post_logout_redirect_uri, state, token_user)
 
-        # Clear sessions
-        [
-            s.delete()
-            for s in Session.objects.filter(expire_date__gte=timezone.now())
-            if s.get_decoded().get("_auth_user_id") == str(user.pk)
-        ]
+        delete_user_sessions(user)
         self.log(self.EVENT_NAME, application, user)
 
         return response
