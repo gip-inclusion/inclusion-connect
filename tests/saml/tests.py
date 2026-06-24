@@ -270,6 +270,21 @@ def register_sp(slo_url=None, key_file=None, cert_file=None, encryption_cert_fil
     return SamlServiceProvider.objects.create(metadata=metadata, **kwargs)
 
 
+def logout_request(sp_client, name_id_text, binding=BINDING_HTTP_REDIRECT, relay_state=""):
+    """Build an SP-initiated LogoutRequest and return (request_id, request params) for ``binding``."""
+    idp_slo = sp_client.metadata.single_logout_service(IDP_ENTITY_ID, binding, "idpsso")[0]["location"]
+    name_id = NameID(format=NAMEID_FORMAT_PERSISTENT, text=name_id_text)
+    request_id, request = sp_client.create_logout_request(idp_slo, IDP_ENTITY_ID, name_id=name_id)
+    http_args = sp_client.apply_binding(binding, str(request), idp_slo, relay_state, response=False)
+    if binding == BINDING_HTTP_REDIRECT:
+        return request_id, get_url_params(dict(http_args["headers"])["Location"])
+    form = http_args["data"]
+    params = {"SAMLRequest": form_field(form, "SAMLRequest")}
+    if relay_state:
+        params["RelayState"] = form_field(form, "RelayState")
+    return request_id, params
+
+
 class TestSso:
     def _run_sso(self, client, user, sp_client, relay_state=""):
         """Drive the SP-initiated round trip; return (page_content, parsed authn_response)."""
@@ -783,24 +798,11 @@ class TestLocalSlo:
     """Local Single Logout (slice 9): an SP-initiated LogoutRequest terminates the IC session
     and gets a LogoutResponse, with no propagation to other SPs."""
 
-    def _logout_request(self, sp_client, name_id_text, binding=BINDING_HTTP_REDIRECT, relay_state=""):
-        idp_slo = sp_client.metadata.single_logout_service(IDP_ENTITY_ID, binding, "idpsso")[0]["location"]
-        name_id = NameID(format=NAMEID_FORMAT_PERSISTENT, text=name_id_text)
-        request_id, request = sp_client.create_logout_request(idp_slo, IDP_ENTITY_ID, name_id=name_id)
-        http_args = sp_client.apply_binding(binding, str(request), idp_slo, relay_state, response=False)
-        if binding == BINDING_HTTP_REDIRECT:
-            return request_id, get_url_params(dict(http_args["headers"])["Location"])
-        form = http_args["data"]
-        params = {"SAMLRequest": form_field(form, "SAMLRequest")}
-        if relay_state:
-            params["RelayState"] = form_field(form, "RelayState")
-        return request_id, params
-
     def test_slo_terminates_session_and_returns_response(self, client, caplog):
         user = UserFactory()
         register_sp(slo_url=SP_SLO_URL)
         sp_client = build_sp_client(client)
-        _, params = self._logout_request(sp_client, str(user.username), relay_state="/back")
+        _, params = logout_request(sp_client, str(user.username), relay_state="/back")
 
         client.force_login(user)
         caplog.clear()
@@ -835,7 +837,7 @@ class TestLocalSlo:
         user = UserFactory()
         register_sp(slo_url=SP_SLO_URL)
         sp_client = build_sp_client(client)
-        _, params = self._logout_request(sp_client, str(user.username), binding=BINDING_HTTP_POST, relay_state="/back")
+        _, params = logout_request(sp_client, str(user.username), binding=BINDING_HTTP_POST, relay_state="/back")
 
         client.force_login(user)
         content = client.post(reverse("saml:slo"), params).content.decode()
@@ -852,7 +854,7 @@ class TestLocalSlo:
         user = UserFactory()
         register_sp(slo_url=SP_SLO_URL)
         sp_client = build_sp_client(client)
-        _, params = self._logout_request(sp_client, str(user.username))
+        _, params = logout_request(sp_client, str(user.username))
 
         client.force_login(user)
         assert client.get(reverse("saml:slo"), params).status_code == 302
@@ -867,7 +869,7 @@ class TestLocalSlo:
         user = UserFactory()
         # No SamlServiceProvider registered for this issuer.
         sp_client = build_sp_client(client)
-        _, params = self._logout_request(sp_client, str(user.username))
+        _, params = logout_request(sp_client, str(user.username))
 
         client.force_login(user)
         caplog.clear()
@@ -893,7 +895,7 @@ class TestLocalSlo:
         user = UserFactory()
         register_sp(slo_url=SP_SLO_URL)
         sp_client = build_sp_client(client)
-        _, params = self._logout_request(sp_client, "someone-else")
+        _, params = logout_request(sp_client, "someone-else")
 
         client.force_login(user)
         response = client.get(reverse("saml:slo"), params)
@@ -981,6 +983,76 @@ class TestUserSamlServiceProviderLink:
         client.force_login(user)
         assert client.get(reverse("saml:sso"), params).status_code == 400
         assert UserSamlServiceProviderLink.objects.count() == 0
+
+
+class TestErrorHandling:
+    """Slice 11: every invalid/untrusted request renders a clear local error page, is logged in the
+    structured `inclusion_connect.saml` format, and is never reflected back to an SP's ACS."""
+
+    ERROR_MARKER = "Connexion impossible"
+
+    def _assert_error_page(self, response, status=400):
+        assert response.status_code == status
+        assert response["Content-Type"].startswith("text/html")
+        content = response.content.decode()
+        assert self.ERROR_MARKER in content
+        assert "SAMLResponse" not in content
+        assert SP_ACS_URL not in content
+        return content
+
+    def _saml_logs(self, caplog):
+        return [r.msg for r in caplog.records if r.name == "inclusion_connect.saml"]
+
+    def test_unknown_sp_renders_error_page_and_logs(self, client, caplog):
+        user = UserFactory()
+        _, params = authn_request_query(build_sp_client(client))  # issuer not registered
+        client.force_login(user)
+        caplog.clear()
+        self._assert_error_page(client.get(reverse("saml:sso"), params))
+        assert {
+            "event": "sso_request_error",
+            "error": "unknown_sp",
+            "service_provider": SP_ENTITY_ID,
+            "ip_address": "127.0.0.1",
+        } in self._saml_logs(caplog)
+
+    @pytest.mark.parametrize(
+        "params,reason",
+        [
+            pytest.param({}, "missing_request", id="missing"),
+            pytest.param({"SAMLRequest": "not-a-real-saml-request"}, "invalid_request", id="malformed"),
+        ],
+    )
+    def test_invalid_sso_request_renders_error_page_and_logs(self, client, caplog, params, reason):
+        register_sp()
+        client.force_login(UserFactory())
+        caplog.clear()
+        self._assert_error_page(client.get(reverse("saml:sso"), params))
+        assert any(
+            log.get("event") == "sso_request_error" and log.get("error") == reason for log in self._saml_logs(caplog)
+        )
+
+    def test_slo_unknown_sp_renders_error_page(self, client):
+        user = UserFactory()
+        _, params = logout_request(build_sp_client(client), str(user.username))
+        client.force_login(user)
+        self._assert_error_page(client.get(reverse("saml:slo"), params))
+
+    def test_redirect_to_login_is_logged(self, client, caplog):
+        register_sp()
+        _, params = authn_request_query(build_sp_client(client))
+        caplog.clear()
+        response = client.get(reverse("saml:sso"), params)
+        login_url = reverse("accounts:login")
+        assert response.status_code == 302
+        assert response.url.startswith(login_url)
+        assert {
+            "event": "redirect",
+            "service_provider": SP_ENTITY_ID,
+            "user": None,
+            "url": login_url,
+            "ip_address": "127.0.0.1",
+        } in self._saml_logs(caplog)
 
 
 def _write_self_signed_cert(cert_path, key_path):

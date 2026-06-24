@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -29,6 +30,15 @@ LOGGER_NAME = "inclusion_connect.saml"
 # resume after login. Kept separate from the OIDC session key — the two protocols never share
 # an in-flight request.
 SAML_SESSION_KEY = "saml_request"
+
+
+def saml_error_response(request, status=400):
+    """Render a generic error page for an invalid/untrusted SAML request.
+
+    Shown locally and never reflected back to an ACS: the SP could not be validated, so POSTing to
+    its endpoint would be a response-to-untrusted-endpoint risk. The message echoes no input.
+    """
+    return render(request, "saml_error.html", status=status)
 
 
 @dataclass(frozen=True)
@@ -143,13 +153,15 @@ class _BaseSsoView(View):
             # The whole app routes post-login resumption through session ``next_url`` (see
             # OIDCSessionMixin / get_next_url), so set it directly rather than via a ?next= param.
             request.session["next_url"] = reverse("saml:sso_continue")
-            return HttpResponseRedirect(reverse("accounts:login"))
+            login_url = reverse("accounts:login")
+            log(LOGGER_NAME, request, event="redirect", service_provider=sp.entity_id, user=None, url=login_url)
+            return HttpResponseRedirect(login_url)
 
         return self._issue_assertion(request, sp, inbound)
 
     def _request_error(self, request, reason, **extra):
         log(LOGGER_NAME, request, event="sso_request_error", error=reason, **extra)
-        return HttpResponseBadRequest("Requête SAML invalide.")
+        return saml_error_response(request)
 
     def _issue_assertion(self, request, sp, inbound):
         base_url = request.build_absolute_uri("/").rstrip("/")
@@ -188,7 +200,7 @@ class _BaseSsoView(View):
         # a list of lines instead of a Response — refuse to POST that garbage to the SP.
         if isinstance(response, list):
             log(LOGGER_NAME, request, event="sso_assertion_error", service_provider=sp.entity_id, user=user.email)
-            return HttpResponseServerError("Échec de génération de l'assertion SAML.")
+            return saml_error_response(request, status=500)
 
         http_args = server.apply_binding(
             BINDING_HTTP_POST, str(response), destination=acs_url, relay_state=inbound.relay_state, response=True
@@ -338,4 +350,4 @@ class SloView(View):
 
     def _request_error(self, request, reason, **extra):
         log(LOGGER_NAME, request, event="slo_request_error", error=reason, **extra)
-        return HttpResponseBadRequest("Requête SAML invalide.")
+        return saml_error_response(request)
