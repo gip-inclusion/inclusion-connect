@@ -7,6 +7,14 @@ from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMA
 from inclusion_connect.saml.conf import ATTRIBUTE_URIS, default_attribute_policy
 
 
+def _metadata_store(xml):
+    """Parse SP metadata XML into a pysaml2 ``InMemoryMetaData`` store (the same parser an SP
+    uses to consume metadata). Single parse path shared by every metadata reader on the model."""
+    mds = InMemoryMetaData(None, None)
+    mds.parse(xml.encode())
+    return mds
+
+
 def parse_sp_metadata(xml):
     """Parse an SP's SAML metadata, returning ``(entity_id, acs_endpoints)``.
 
@@ -16,9 +24,8 @@ def parse_sp_metadata(xml):
     """
     if not xml or not xml.strip():
         raise ValidationError("Les métadonnées SAML sont vides.")
-    mds = InMemoryMetaData(None, None)
     try:
-        mds.parse(xml.encode())
+        mds = _metadata_store(xml)
     except Exception as exc:
         raise ValidationError("Métadonnées SAML invalides : le XML n'a pas pu être analysé.") from exc
     entity_ids = list(mds.keys())
@@ -68,11 +75,6 @@ class SamlServiceProvider(models.Model):
         default=NameIdFormat.PERSISTENT,
     )
     sign_assertion = models.BooleanField("signer l'assertion", default=True)
-    encrypt_assertion = models.BooleanField(
-        "chiffrer l'assertion",
-        default=False,
-        help_text="N'a d'effet que si les métadonnées du SP publient un certificat de chiffrement.",
-    )
     require_signed_authn_request = models.BooleanField(
         "exiger des AuthnRequest signées",
         default=False,
@@ -135,6 +137,17 @@ class SamlServiceProvider(models.Model):
         """The SP's AssertionConsumerService endpoints parsed from the metadata."""
         _, acs = parse_sp_metadata(self.metadata)
         return [endpoint["location"] for endpoints in acs.values() for endpoint in endpoints]
+
+    def encrypts_assertions(self):
+        """Whether assertions to this SP are encrypted, decided solely by its metadata.
+
+        An SP that publishes a ``KeyDescriptor use="encryption"`` receives an assertion encrypted
+        to that certificate (in addition to the default signature); one that does not receives the
+        normal signed cleartext assertion. There is no manual per-SP toggle — the SP's metadata is
+        the single source of truth, mirroring pysaml2's ``has_encrypt_cert_in_metadata`` gate that
+        the SSO view relies on at issue time.
+        """
+        return bool(_metadata_store(self.metadata).certs(self.entity_id, "spsso", "encryption"))
 
     def name_id_for(self, user):
         """Build the SAML NameID for ``user`` according to this SP's configured format.

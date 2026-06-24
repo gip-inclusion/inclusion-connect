@@ -1,3 +1,4 @@
+import base64
 import datetime
 import logging
 import re
@@ -172,13 +173,14 @@ SP_ENTITY_ID = "https://sp.example.com/saml/metadata"
 SP_ACS_URL = "https://sp.example.com/saml/acs"
 
 
-def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_file=None):
+def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_file=None, encryption_cert_file=None):
     """A pysaml2 SP configured as the test counterparty.
 
     It loads our published IdP metadata (fetched via `client`) so it discovers the SSO endpoint,
     sends AuthnRequests there, and verifies the signature on the assertion we return. Passing a
     key/cert makes it sign its AuthnRequests (query-string signature on Redirect, enveloped XML
-    signature on POST).
+    signature on POST). Passing ``encryption_cert_file`` gives the SP the matching keypair so it
+    can decrypt an assertion the IdP encrypted to that cert.
     """
     idp_metadata = client.get(reverse("saml:metadata")).content.decode()
     sp = {
@@ -196,6 +198,8 @@ def build_sp_client(client, want_assertions_signed=True, key_file=None, cert_fil
         sp["authn_requests_signed"] = True
         conf_dict["key_file"] = key_file
         conf_dict["cert_file"] = cert_file
+    if encryption_cert_file:
+        conf_dict["encryption_keypairs"] = [{"key_file": key_file, "cert_file": encryption_cert_file}]
     conf = SPConfig()
     conf.load(conf_dict)
     return Saml2Client(config=conf)
@@ -229,9 +233,11 @@ def parsed_assertion_attributes(assertion):
     }
 
 
-def register_sp(key_file=None, cert_file=None, **kwargs):
+def register_sp(key_file=None, cert_file=None, encryption_cert_file=None, **kwargs):
     kwargs.setdefault("name", "Demo SP")
-    metadata = build_sp_metadata(SP_ENTITY_ID, SP_ACS_URL, key_file=key_file, cert_file=cert_file)
+    metadata = build_sp_metadata(
+        SP_ENTITY_ID, SP_ACS_URL, key_file=key_file, cert_file=cert_file, encryption_cert_file=encryption_cert_file
+    )
     return SamlServiceProvider.objects.create(metadata=metadata, **kwargs)
 
 
@@ -675,6 +681,73 @@ class TestAuthnRequestSignatureVerification:
             form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
         )
         assert authn_response.name_id.text == str(user.username)
+
+
+class TestAssertionEncryption:
+    """Per-SP, metadata-driven assertion encryption (slice 8).
+
+    Encryption is layered on top of the default signed assertion only when the SP's metadata
+    advertises an encryption certificate — there is no manual blanket toggle.
+    """
+
+    def _run_sso(self, client, user, sp_client):
+        request_id, params = authn_request_query(sp_client)
+        client.force_login(user)
+        content = client.get(reverse("saml:sso"), params).content.decode()
+        saml_response = form_field(content, "SAMLResponse")
+        authn_response = sp_client.parse_authn_request_response(
+            saml_response, BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+        return saml_response, authn_response
+
+    def test_assertion_encrypted_when_metadata_advertises_cert(self, client, tmp_path):
+        # SP metadata carries an encryption cert → the assertion is encrypted to it. The SP holds
+        # the matching key, decrypts, and recovers an intact, signed assertion (NameID + attributes).
+        user = UserFactory()
+        enc_key, enc_cert = _make_keypair(tmp_path, "enc")
+        register_sp(key_file=enc_key, encryption_cert_file=enc_cert)
+        sp_client = build_sp_client(client, key_file=enc_key, encryption_cert_file=enc_cert)
+
+        raw_response, authn_response = self._run_sso(client, user, sp_client)
+
+        # The wire response carries an EncryptedAssertion, not a cleartext one.
+        decoded = base64.b64decode(raw_response).decode()
+        assert "EncryptedAssertion" in decoded
+        assert "AttributeStatement" not in decoded
+
+        assert authn_response.assertion.signature is not None
+        assert authn_response.name_id.format == NAMEID_FORMAT_PERSISTENT
+        assert authn_response.name_id.text == str(user.username)
+        assert parsed_assertion_attributes(authn_response.assertion) == {
+            ATTRIBUTE_URIS["email"]: ([user.email], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["given_name"]: ([user.first_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["family_name"]: ([user.last_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["uid"]: ([str(user.pk)], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siret"]: ([settings.SIRET], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siren"]: ([settings.SIREN], NAME_FORMAT_URI),
+        }
+
+    def test_no_encryption_without_cert_in_metadata(self, client):
+        # No encryption cert advertised → the SP receives the normal signed (cleartext) assertion.
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+
+        raw_response, authn_response = self._run_sso(client, user, sp_client)
+
+        decoded = base64.b64decode(raw_response).decode()
+        assert "EncryptedAssertion" not in decoded
+        assert authn_response.assertion.signature is not None
+        assert authn_response.name_id.text == str(user.username)
+
+    def test_metadata_drives_encryption_flag(self, client, tmp_path):
+        _, enc_cert = _make_keypair(tmp_path, "enc")
+        with_cert = register_sp(encryption_cert_file=enc_cert)
+        assert with_cert.encrypts_assertions() is True
+
+        SamlServiceProvider.objects.all().delete()
+        without_cert = register_sp()
+        assert without_cert.encrypts_assertions() is False
 
 
 def _write_self_signed_cert(cert_path, key_path):

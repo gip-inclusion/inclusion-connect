@@ -57,14 +57,6 @@ class Migration(migrations.Migration):
                 ),
                 ("sign_assertion", models.BooleanField(default=True, verbose_name="signer l'assertion")),
                 (
-                    "encrypt_assertion",
-                    models.BooleanField(
-                        default=False,
-                        help_text="N'a d'effet que si les métadonnées du SP publient un certificat de chiffrement.",
-                        verbose_name="chiffrer l'assertion",
-                    ),
-                ),
-                (
                     "require_signed_authn_request",
                     models.BooleanField(
                         default=False,

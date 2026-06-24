@@ -153,6 +153,9 @@ class _BaseSsoView(View):
             authn=AUTHN_CONTEXT,
             sign_assertion=sp.sign_assertion,
             sign_response=False,
+            # Decide off the parsed metadata, not pysaml2's own gate: asked to encrypt with no cert,
+            # pysaml2 cancels encryption *and* drops the assertion signature, yielding an unsigned one.
+            encrypt_assertion=server.has_encrypt_cert_in_metadata(sp.entity_id),
         )
         # On a signing failure (e.g. xmlsec1 missing) pysaml2 returns the error response split into
         # a list of lines instead of a Response — refuse to POST that garbage to the SP.
