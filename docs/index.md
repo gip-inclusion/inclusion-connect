@@ -3,6 +3,7 @@
 ## Pour utiliser Inclusion Connect
 
 - [Le protocole OpenID Connect](openid_connect.md)
+- [Le protocole SAML 2.0](saml.md)
 - [Détails end-points d'Inclusion Connect](inclusion_connect.md)
 - [Parcours utilisateurs](user_journey.md)
 
