@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from saml2.mdstore import InMemoryMetaData
 from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT, NameID
 
@@ -188,3 +189,35 @@ class SamlServiceProvider(models.Model):
             (key, override.get("name") or ATTRIBUTE_URIS[key], override.get("name_format") or NAME_FORMAT_URI)
             for key, override in self.attribute_mapping.items()
         ]
+
+
+class UserSamlServiceProviderLink(models.Model):
+    """Audit trail of which SAML SPs a user has signed into, and when.
+
+    Written per successful assertion (update-or-create, refreshing ``last_login``), mirroring the
+    OIDC ``UserApplicationLink`` so admins can support/audit SAML logins the same way. Distinct
+    from the OIDC link because the relying-party type differs (``SamlServiceProvider`` vs the OIDC
+    ``Application``).
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="utilisateur",
+        related_name="linked_saml_service_providers",
+        on_delete=models.CASCADE,
+    )
+    saml_sp = models.ForeignKey(
+        SamlServiceProvider,
+        verbose_name="service provider SAML",
+        related_name="linked_users",
+        on_delete=models.CASCADE,
+    )
+    last_login = models.DateTimeField("dernière connexion", default=timezone.now)
+
+    class Meta:
+        verbose_name = "service SAML utilisé"
+        verbose_name_plural = "services SAML utilisés"
+        unique_together = ("user", "saml_sp")
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.saml_sp}"

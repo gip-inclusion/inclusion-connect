@@ -11,6 +11,7 @@ from cryptography.x509.oid import NameOID
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django.utils import timezone
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from pytest_django.asserts import assertRedirects
 from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
@@ -26,7 +27,7 @@ from saml2.saml import (
 )
 
 from inclusion_connect.saml.conf import ATTRIBUTE_URIS
-from inclusion_connect.saml.models import SamlServiceProvider
+from inclusion_connect.saml.models import SamlServiceProvider, UserSamlServiceProviderLink
 from inclusion_connect.saml.views import SAML_SESSION_KEY
 from inclusion_connect.utils.urls import get_url_params
 from tests.asserts import assertRecords
@@ -811,9 +812,7 @@ class TestLocalSlo:
         return_params = get_url_params(response.url)
         assert return_params["RelayState"] == "/back"
 
-        logout_response = sp_client.parse_logout_request_response(
-            return_params["SAMLResponse"], BINDING_HTTP_REDIRECT
-        )
+        logout_response = sp_client.parse_logout_request_response(return_params["SAMLResponse"], BINDING_HTTP_REDIRECT)
         assert logout_response.status_ok()
 
         assertRecords(
@@ -936,6 +935,52 @@ class TestLocalSlo:
         )
         assert logout_response.status_ok()
         assert "_auth_user_id" not in client.session
+
+
+class TestUserSamlServiceProviderLink:
+    """Audit link (slice 10): each successful assertion records which SP the user used and when."""
+
+    def _run_sso(self, client, user, sp_client):
+        request_id, params = authn_request_query(sp_client)
+        client.force_login(user)
+        content = client.get(reverse("saml:sso"), params).content.decode()
+        return sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+
+    def test_successful_sso_writes_link(self, client):
+        user = UserFactory()
+        sp = register_sp()
+        before = timezone.now()
+        self._run_sso(client, user, build_sp_client(client))
+
+        link = UserSamlServiceProviderLink.objects.get()
+        assert link.user == user
+        assert link.saml_sp == sp
+        assert link.last_login >= before
+
+    def test_repeat_sso_updates_last_login_without_duplicating(self, client):
+        user = UserFactory()
+        register_sp()
+        sp_client = build_sp_client(client)
+
+        self._run_sso(client, user, sp_client)
+        link = UserSamlServiceProviderLink.objects.get()
+        stale = timezone.now() - datetime.timedelta(days=1)
+        UserSamlServiceProviderLink.objects.update(last_login=stale)
+
+        self._run_sso(client, user, build_sp_client(client))
+
+        assert UserSamlServiceProviderLink.objects.count() == 1
+        link.refresh_from_db()
+        assert link.last_login > stale
+
+    def test_no_link_written_without_assertion(self, client):
+        user = UserFactory()
+        _, params = authn_request_query(build_sp_client(client))
+        client.force_login(user)
+        assert client.get(reverse("saml:sso"), params).status_code == 400
+        assert UserSamlServiceProviderLink.objects.count() == 0
 
 
 def _write_self_signed_cert(cert_path, key_path):

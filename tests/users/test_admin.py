@@ -8,6 +8,19 @@ from tests.helpers import assertRecords
 from tests.users.factories import UserFactory
 
 
+def empty_inline_formsets():
+    """Empty management-form data for the read-only audit inlines on UserAdmin (OIDC + SAML)."""
+    data = {}
+    for prefix in ("linked_applications", "linked_saml_service_providers"):
+        data |= {
+            f"{prefix}-TOTAL_FORMS": "0",
+            f"{prefix}-INITIAL_FORMS": "0",
+            f"{prefix}-MIN_NUM_FORMS": "0",
+            f"{prefix}-MAX_NUM_FORMS": "0",
+        }
+    return data
+
+
 class TestUserAdmin:
     def test_admin_detail(self, client):
         user = UserFactory(is_superuser=True, is_staff=True)
@@ -23,10 +36,7 @@ class TestUserAdmin:
             {
                 "email": "user@example.com",
                 "is_active": "on",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
+                **empty_inline_formsets(),
                 "_save": "Enregistrer",
             },
         )
@@ -54,10 +64,7 @@ class TestUserAdmin:
                 "email": "manny.calavera@mailinator.com",
                 "is_active": "on",
                 "is_staff": "on",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
+                **empty_inline_formsets(),
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )
@@ -96,10 +103,7 @@ class TestUserAdmin:
                 "email": "manny.calavera@mailinator.com",
                 "is_active": "on",
                 "is_staff": "on",
-                "linked_applications-TOTAL_FORMS": "0",
-                "linked_applications-INITIAL_FORMS": "0",
-                "linked_applications-MIN_NUM_FORMS": "0",
-                "linked_applications-MAX_NUM_FORMS": "0",
+                **empty_inline_formsets(),
                 "_continue": "Enregistrer+et+continuer+les+modifications",
             },
         )

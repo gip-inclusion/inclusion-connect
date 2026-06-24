@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -19,7 +20,7 @@ from inclusion_connect.saml.conf import (
     verify_authn_request,
     verify_logout_request,
 )
-from inclusion_connect.saml.models import SamlServiceProvider
+from inclusion_connect.saml.models import SamlServiceProvider, UserSamlServiceProviderLink
 
 
 LOGGER_NAME = "inclusion_connect.saml"
@@ -193,6 +194,10 @@ class _BaseSsoView(View):
             BINDING_HTTP_POST, str(response), destination=acs_url, relay_state=inbound.relay_state, response=True
         )
 
+        UserSamlServiceProviderLink.objects.update_or_create(
+            user=user, saml_sp=sp, defaults={"last_login": timezone.now()}
+        )
+
         log(LOGGER_NAME, request, event="sso_assertion", service_provider=sp.entity_id, user=user.email)
         return HttpResponse(http_args["data"])
 
@@ -283,9 +288,7 @@ class SloView(View):
     def _logout(self, request, sp, inbound, user):
         base_url = request.build_absolute_uri("/").rstrip("/")
         try:
-            server, message = verify_logout_request(
-                base_url, sp.metadata, inbound, sp.require_signed_authn_request
-            )
+            server, message = verify_logout_request(base_url, sp.metadata, inbound, sp.require_signed_authn_request)
         except IncorrectlySigned:
             return self._request_error(request, "invalid_signature", service_provider=sp.entity_id)
         except Exception as exc:
