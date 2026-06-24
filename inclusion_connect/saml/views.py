@@ -129,7 +129,9 @@ class _BaseSsoView(View):
         # Authoritative parse + signature verification against the SP's metadata. pysaml2 raises a
         # wide range of errors on malformed/expired/replayed input — never 500 or reflect them.
         try:
-            server, message = verify_authn_request(base_url, sp.metadata, inbound, sp.require_signed_authn_request)
+            server, message = verify_authn_request(
+                base_url, sp.metadata, inbound, sp.require_signed_authn_request, sp.released_attributes()
+            )
         except IncorrectlySigned:
             return self._request_error(request, "invalid_signature", service_provider=sp.entity_id)
         except Exception as exc:

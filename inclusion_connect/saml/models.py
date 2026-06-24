@@ -2,7 +2,9 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from saml2.mdstore import InMemoryMetaData
-from saml2.saml import NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT, NameID
+from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT, NameID
+
+from inclusion_connect.saml.conf import ATTRIBUTE_URIS, default_attribute_policy
 
 
 def parse_sp_metadata(xml):
@@ -96,6 +98,30 @@ class SamlServiceProvider(models.Model):
             raise ValidationError(
                 {"metadata": f"Un service provider avec l'entityID « {self.entity_id} » est déjà enregistré."}
             )
+        self._validate_attribute_mapping()
+
+    def _validate_attribute_mapping(self):
+        """Reject a malformed ``attribute_mapping`` at the admin boundary rather than letting it
+        surface as a confusing failure at assertion time. The mapping is operator-supplied JSON, so
+        each key must name a canonical attribute and each value be an optional ``name`` /
+        ``name_format`` override object.
+        """
+        if self.attribute_mapping in (None, {}):
+            return
+        if not isinstance(self.attribute_mapping, dict):
+            raise ValidationError({"attribute_mapping": "Le mapping d'attributs doit être un objet JSON."})
+        errors = []
+        for key, override in self.attribute_mapping.items():
+            if key not in ATTRIBUTE_URIS:
+                errors.append(f"Attribut inconnu « {key} ». Attributs disponibles : {', '.join(ATTRIBUTE_URIS)}.")
+                continue
+            if not isinstance(override, dict):
+                errors.append(f"La configuration de « {key} » doit être un objet (name / name_format).")
+                continue
+            if unknown := set(override) - {"name", "name_format"}:
+                errors.append(f"Clés non supportées pour « {key} » : {', '.join(sorted(unknown))}.")
+        if errors:
+            raise ValidationError({"attribute_mapping": errors})
 
     def save(self, *args, **kwargs):
         # Derive entity_id for programmatic creates (factories, data migrations) that skip
@@ -120,10 +146,11 @@ class SamlServiceProvider(models.Model):
         return NameID(format=self.nameid_format, sp_name_qualifier=self.entity_id, text=value)
 
     def identity_for(self, user):
-        """The canonical default attribute set released to this SP, by friendly name.
+        """The canonical source attribute set, by friendly name.
 
-        Mirrors the OIDC claims; mapped to URI-format names at issue time. SIRET/SIREN are
-        static from settings. Per-SP subsetting/renaming via ``attribute_mapping`` is a later slice.
+        Mirrors the OIDC claims; SIRET/SIREN are static from settings. The per-SP
+        ``released_attributes`` policy selects the subset and the emitted name/NameFormat at
+        issue time, so this stays the full superset of values the policy can draw from.
         """
         return {
             "email": user.email,
@@ -133,3 +160,18 @@ class SamlServiceProvider(models.Model):
             "siret": settings.SIRET,
             "siren": settings.SIREN,
         }
+
+    def released_attributes(self):
+        """Resolve this SP's release policy into ``(canonical_key, emitted_name, name_format)`` tuples.
+
+        Empty ``attribute_mapping`` = zero-config default: the full canonical set under the standard
+        URI/OID names. A non-empty mapping selects the released subset (its keys) and, per attribute,
+        overrides the emitted ``name`` and/or ``name_format``; unspecified overrides fall back to the
+        URI default. Consumed by ``conf._ReleasePolicyConverter`` when building the assertion.
+        """
+        if not self.attribute_mapping:
+            return default_attribute_policy()
+        return [
+            (key, override.get("name") or ATTRIBUTE_URIS[key], override.get("name_format") or NAME_FORMAT_URI)
+            for key, override in self.attribute_mapping.items()
+        ]

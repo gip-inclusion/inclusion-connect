@@ -16,7 +16,7 @@ from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT
 from saml2.client import Saml2Client
 from saml2.config import SPConfig
 from saml2.mdstore import InMemoryMetaData
-from saml2.saml import NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT
+from saml2.saml import NAME_FORMAT_BASIC, NAME_FORMAT_URI, NAMEID_FORMAT_EMAILADDRESS, NAMEID_FORMAT_PERSISTENT
 
 from inclusion_connect.saml.conf import ATTRIBUTE_URIS
 from inclusion_connect.saml.models import SamlServiceProvider
@@ -430,6 +430,82 @@ class TestSso:
         client.force_login(UserFactory())
         response = client.get(reverse("saml:sso"), {"SAMLRequest": "not-a-real-saml-request"})
         assert response.status_code == 400
+
+
+class TestAttributeReleasePolicy:
+    def _run_sso(self, client, user, sp_client):
+        request_id, params = authn_request_query(sp_client)
+        client.force_login(user)
+        content = client.get(reverse("saml:sso"), params).content.decode()
+        return sp_client.parse_authn_request_response(
+            form_field(content, "SAMLResponse"), BINDING_HTTP_POST, outstanding={request_id: "/"}
+        )
+
+    def test_released_subset_only(self, client):
+        # Only the keys present in the mapping are released; the rest of the canonical set is withheld.
+        user = UserFactory()
+        register_sp(name="Subset SP", attribute_mapping={"email": {}, "given_name": {}})
+        authn_response = self._run_sso(client, user, build_sp_client(client))
+
+        assert parsed_assertion_attributes(authn_response.assertion) == {
+            ATTRIBUTE_URIS["email"]: ([user.email], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["given_name"]: ([user.first_name], NAME_FORMAT_URI),
+        }
+
+    def test_name_and_name_format_overrides(self, client):
+        # Per-attribute name and NameFormat overrides are honored; an entry with no override keeps
+        # the default URI name/format.
+        user = UserFactory()
+        register_sp(
+            name="Override SP",
+            attribute_mapping={
+                "email": {"name": "mail", "name_format": NAME_FORMAT_BASIC},
+                "given_name": {"name": "firstName"},
+                "family_name": {"name_format": NAME_FORMAT_BASIC},
+            },
+        )
+        authn_response = self._run_sso(client, user, build_sp_client(client))
+
+        assert parsed_assertion_attributes(authn_response.assertion) == {
+            "mail": ([user.email], NAME_FORMAT_BASIC),
+            "firstName": ([user.first_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["family_name"]: ([user.last_name], NAME_FORMAT_BASIC),
+        }
+
+    def test_empty_mapping_keeps_default_uri_release(self, client):
+        # Zero-config: no mapping → the full canonical set under the default URI/OID names.
+        user = UserFactory()
+        register_sp(name="Default SP", attribute_mapping={})
+        authn_response = self._run_sso(client, user, build_sp_client(client))
+
+        assert parsed_assertion_attributes(authn_response.assertion) == {
+            ATTRIBUTE_URIS["email"]: ([user.email], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["given_name"]: ([user.first_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["family_name"]: ([user.last_name], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["uid"]: ([str(user.pk)], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siret"]: ([settings.SIRET], NAME_FORMAT_URI),
+            ATTRIBUTE_URIS["siren"]: ([settings.SIREN], NAME_FORMAT_URI),
+        }
+
+    @pytest.mark.parametrize(
+        "mapping,message",
+        [
+            pytest.param({"unknown": {}}, "Attribut inconnu", id="unknown-key"),
+            pytest.param({"email": "mail"}, "doit être un objet", id="value-not-object"),
+            pytest.param({"email": {"format": "x"}}, "Clés non supportées", id="unknown-override-key"),
+            pytest.param([], None, id="not-a-dict"),
+        ],
+    )
+    def test_invalid_mapping_is_rejected(self, mapping, message):
+        sp = SamlServiceProvider(
+            name="Bad mapping",
+            metadata=build_sp_metadata(SP_ENTITY_ID, SP_ACS_URL),
+            attribute_mapping=mapping,
+        )
+        with pytest.raises(ValidationError) as exc:
+            sp.full_clean()
+        if message:
+            assert message in str(exc.value)
 
 
 class TestSsoHttpPostBinding:

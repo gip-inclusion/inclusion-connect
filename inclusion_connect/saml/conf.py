@@ -1,10 +1,10 @@
 import base64
 
 from django.conf import settings
-from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT, samlp
+from saml2 import BINDING_HTTP_POST, BINDING_HTTP_REDIRECT, saml, samlp
 from saml2.attribute_converter import AttributeConverter
 from saml2.config import Config
-from saml2.s_utils import decode_base64_and_inflate
+from saml2.s_utils import decode_base64_and_inflate, do_ava, factory
 from saml2.saml import (
     AUTHN_PASSWORD_PROTECTED,
     NAME_FORMAT_URI,
@@ -32,6 +32,49 @@ ATTRIBUTE_URIS = {
 # Authentication context advertised in the assertion: IC always authenticates with a
 # password (and enforces TOTP through the post-login middleware before issuing anything).
 AUTHN_CONTEXT = {"class_ref": AUTHN_PASSWORD_PROTECTED}
+
+
+def default_attribute_policy():
+    """The zero-config release policy: the full canonical set under the standard URI/OID names."""
+    return [(key, name, NAME_FORMAT_URI) for key, name in ATTRIBUTE_URIS.items()]
+
+
+class _ReleasePolicyConverter(AttributeConverter):
+    """Emit each released attribute under its per-SP name and NameFormat.
+
+    pysaml2's stock converter maps every attribute to a single NameFormat (the policy's name
+    form) and a single name table. This subclass instead carries the SP's resolved
+    ``(canonical_key, emitted_name, name_format)`` policy and emits each attribute individually,
+    so an SP can release only a subset, rename attributes and mix NameFormats. ``name_format``
+    stays ``NAME_FORMAT_URI`` solely so pysaml2's converter selection — which matches on the
+    policy's default name form — picks this converter; the real per-attribute formats live in
+    ``self.policy``.
+    """
+
+    def __init__(self, policy):
+        super().__init__(NAME_FORMAT_URI)
+        # The base leaves the name tables as None; we only emit (``to_``), but keep them as empty
+        # dicts so pysaml2's read-side helpers (``from_format``/``fro``) degrade to "no match"
+        # instead of dereferencing None should any path ever consult this converter.
+        self._to = {}
+        self._fro = {}
+        self.policy = policy
+
+    def to_(self, attrvals):
+        attributes = []
+        for key, name, name_format in self.policy:
+            if key not in attrvals:
+                continue
+            attributes.append(
+                factory(
+                    saml.Attribute,
+                    name=name,
+                    name_format=name_format,
+                    friendly_name=key,
+                    attribute_value=do_ava(attrvals[key]),
+                )
+            )
+        return attributes
 
 
 def _idp_conf_dict(base_url):
@@ -72,15 +115,15 @@ def build_idp_config(base_url):
     return config
 
 
-def build_idp_server(base_url, sp_metadata, want_authn_requests_signed=False):
+def build_idp_server(base_url, sp_metadata, want_authn_requests_signed=False, attribute_policy=None):
     """Build a pysaml2 ``Server`` that parses AuthnRequests from ``sp_metadata``'s SP and signs
     Responses to it.
 
     The SP's metadata XML is loaded inline so pysaml2 resolves the SP's ACS and certificates.
-    Signing requires the `xmlsec1` binary on PATH (or `SAML_XMLSEC1_BINARY`). The default URI
-    attribute converter is prepended so our canonical attribute set is always released under the
-    OID names in ``ATTRIBUTE_URIS``. ``want_authn_requests_signed`` makes a signature mandatory:
-    pysaml2 rejects a request that carries none (see ``verify_authn_request``).
+    Signing requires the `xmlsec1` binary on PATH (or `SAML_XMLSEC1_BINARY`). A
+    ``_ReleasePolicyConverter`` is prepended so the released attribute set, names and NameFormats
+    follow ``attribute_policy`` (default = the zero-config URI/OID mapping). ``want_authn_requests_signed``
+    makes a signature mandatory: pysaml2 rejects a request that carries none (see ``verify_authn_request``).
     """
     conf_dict = _idp_conf_dict(base_url)
     conf_dict["metadata"] = {"inline": [sp_metadata]}
@@ -89,13 +132,12 @@ def build_idp_server(base_url, sp_metadata, want_authn_requests_signed=False):
         conf_dict["xmlsec_binary"] = settings.SAML_XMLSEC1_BINARY
     config = Config()
     config.load(conf_dict)
-    converter = AttributeConverter(NAME_FORMAT_URI)
-    converter.from_dict({"identifier": NAME_FORMAT_URI, "to": ATTRIBUTE_URIS})
-    config.attribute_converters.insert(0, converter)
+    policy = attribute_policy if attribute_policy is not None else default_attribute_policy()
+    config.attribute_converters.insert(0, _ReleasePolicyConverter(policy))
     return Server(config=config)
 
 
-def verify_authn_request(base_url, sp_metadata, inbound, require_signed):
+def verify_authn_request(base_url, sp_metadata, inbound, require_signed, attribute_policy=None):
     """Authoritatively parse ``inbound``'s AuthnRequest against ``sp_metadata`` and verify its
     signature. Returns ``(server, message)``; raises ``IncorrectlySigned`` on a bad signature and
     other pysaml2 errors on malformed/expired/replayed input (the caller maps both to a 400).
@@ -105,10 +147,13 @@ def verify_authn_request(base_url, sp_metadata, inbound, require_signed):
     request is "required to be signed" — POST signatures are enveloped in the XML and checked
     whenever present — so force that whenever a Redirect signature is present, else a bad one
     would slip by. ``inbound`` carries the SAMLRequest, binding, RelayState and (Redirect-only)
-    sigalg/signature.
+    sigalg/signature. ``attribute_policy`` carries the SP's release policy onto the returned
+    ``server`` so the assertion it later builds honours it.
     """
     must = require_signed or (inbound.binding == BINDING_HTTP_REDIRECT and inbound.signature is not None)
-    server = build_idp_server(base_url, sp_metadata, want_authn_requests_signed=must)
+    server = build_idp_server(
+        base_url, sp_metadata, want_authn_requests_signed=must, attribute_policy=attribute_policy
+    )
     request = server.parse_authn_request(
         inbound.saml_request,
         inbound.binding,
