@@ -43,7 +43,7 @@ jobs:
         PGHOST: localhost
         PGUSER: postgres
         PGPORT: 5433
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
     - name: 💾 Create a database to check migrations
       run: createdb inclusion_connect
       env:
@@ -54,7 +54,7 @@ jobs:
     - name: ⛨ Generate test SSH private key
       run: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out oidc.pem
     - name: 💂 Install Python
-      uses: actions/setup-python@v6.2.0
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: "3.13"
         cache: pip
