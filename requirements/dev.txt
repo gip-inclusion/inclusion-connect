@@ -671,9 +671,9 @@ json-log-formatter==1.2.1 \
     # via
     #   -r base.txt
     #   django-datadog-logger
-json5==0.14.0 \
-    --hash=sha256:56cf861bab076b1178eb8c92e1311d273a9b9acea2ccc82c276abf839ebaef3a \
-    --hash=sha256:b3f492fad9f6cdbced8b7d40b28b9b1c9701c5f561bef0d33b81c2ff433fefcb
+json5==0.15.0 \
+    --hash=sha256:56636a30c0e8a4665fe2179c0212f32eae3796dea89ea6f649b9436ecdb39618 \
+    --hash=sha256:7424d1f1eb1d56da6e3d70643f53619862b4ce81440bdb8ecfd6f875e5ba4a71
     # via djlint
 jwcrypto==1.5.7 \
     --hash=sha256:70204d7cca406eda8c82352e3c41ba2d946610dafd19e54403f0a1f4f18633c6 \
