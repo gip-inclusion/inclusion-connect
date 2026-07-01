@@ -14,6 +14,8 @@ class EmailAuthenticationBackend(ModelBackend):
             return
 
         if settings.DEMO_MODE is True:
+            if not email.endswith("@inclusion.gouv.fr"):
+                return  # Only allow our own domain
             user, _created = User.objects.get_or_create(
                 email=email, defaults={"first_name": "Test", "last_name": "Account"}
             )
