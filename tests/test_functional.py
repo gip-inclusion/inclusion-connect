@@ -884,29 +884,29 @@ def test_proconnect_scopes(caplog, client, oidc_params):
     )
 
 
-@freeze_time("2023-05-05 11:11:11")
 def test_demo_mode(caplog, client, oidc_params, settings):
     settings.DEMO_MODE = True
     auth_url = reverse("oauth2_provider:authorize")
     ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory.build()  # The user doesn't exist
 
     auth_complete_url = add_url_params(auth_url, oidc_params)
     response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:login"))
+    login_url = reverse("accounts:login")
+    assertRedirects(response, login_url)
     assertRecords(caplog, [])
 
+    internal_email = "test@inclusion.gouv.fr"
     response = client.post(
-        response.url,
+        login_url,
         data={
-            "email": user.email,
+            "email": internal_email,
             "password": "any password",
         },
     )
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
 
-    user = User.objects.get(email=user.email)
+    user = User.objects.get(email=internal_email)
     assert user.linked_applications.count() == 0
     assertRecords(
         caplog,
@@ -935,10 +935,42 @@ def test_demo_mode(caplog, client, oidc_params, settings):
                     "application": "my_application",
                     "event": "redirect",
                     "user": user.email,
-                    "url": f"http://localhost/callback?code={code}&state=state",
+                    "url": f"http://testserver/callback?code={code}&state=state",
                 },
             )
         ],
     )
 
     oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
+
+
+def test_demo_mode_forbidden_emails(caplog, client, settings):
+    settings.DEMO_MODE = True
+    login_url = reverse("accounts:login")
+
+    forbidden_email = UserFactory.build().email
+    response = client.post(
+        login_url,
+        data={
+            "email": forbidden_email,
+            "password": "any password",
+        },
+    )
+    assert response.status_code == 200
+    assert get_user(client).is_authenticated is False
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {
+                    "email": forbidden_email,
+                    "event": "login_error",
+                    "errors": {
+                        "__all__": [{"message": "Adresse e-mail ou mot de passe invalide.", "code": "invalid_login"}]
+                    },
+                },
+            ),
+        ],
+    )
