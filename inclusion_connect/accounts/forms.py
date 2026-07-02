@@ -30,6 +30,14 @@ class LoginForm(forms.Form):
             self.fields["password"].widget = forms.HiddenInput()
             self.fields["password"].required = False
             # Add ffirst_name and last_name
+            self.fields["first_name"] = forms.CharField(
+                label="Prénom",
+                required=False,
+            )
+            self.fields["last_name"] = forms.CharField(
+                label="Nom",
+                required=False,
+            )
 
     def clean(self):
         email = self.cleaned_data.get("email")
@@ -40,6 +48,8 @@ class LoginForm(forms.Form):
                 self.request,
                 email=email,
                 password=password,
+                first_name=self.cleaned_data["first_name"],
+                last_name=self.cleaned_data["last_name"],
             )
             if self.user_cache is None:
                 raise ValidationError(

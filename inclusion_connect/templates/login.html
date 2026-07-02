@@ -13,6 +13,10 @@
                     {% bootstrap_form_errors form type="non_fields" %}
                     {% bootstrap_field form.email %}
                     {% password_field form.password %}
+                    {% if DEMO_MODE %}
+                        {% bootstrap_field form.first_name %}
+                        {% bootstrap_field form.last_name %}
+                    {% endif %}
                 </div>
             </div>
         </fieldset>
