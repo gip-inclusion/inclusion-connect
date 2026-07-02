@@ -970,3 +970,60 @@ def test_demo_mode_forbidden_emails(caplog, client, settings):
             ),
         ],
     )
+
+
+def test_demo_mode_update_names(caplog, client, settings):
+    settings.DEMO_MODE = True
+    login_url = reverse("accounts:login")
+    assertRecords(caplog, [])
+
+    internal_email = "test@inclusion.gouv.fr"
+    response = client.post(
+        login_url,
+        data={
+            "email": internal_email,
+        },
+    )
+    assertRedirects(response, reverse("accounts:home"))
+    assert get_user(client).is_authenticated is True
+
+    user = User.objects.get(email=internal_email)
+    assert user.first_name == "Dominique"
+    assert user.last_name == "Dupond"
+    assert user.linked_applications.count() == 0
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.email, "event": "login"},
+            ),
+        ],
+    )
+
+    response = client.post(
+        login_url,
+        data={
+            "email": internal_email,
+            "first_name": "Camille",
+            "last_name": "Dupont",
+        },
+    )
+    assertRedirects(response, reverse("accounts:home"))
+    assert get_user(client).is_authenticated is True
+
+    user.refresh_from_db()
+    assert user.first_name == "Camille"
+    assert user.last_name == "Dupont"
+    assert user.linked_applications.count() == 0
+    assertRecords(
+        caplog,
+        [
+            (
+                "inclusion_connect.auth",
+                logging.INFO,
+                {"user": user.email, "event": "login"},
+            ),
+        ],
+    )
