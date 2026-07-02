@@ -900,7 +900,6 @@ def test_demo_mode(caplog, client, oidc_params, settings):
         login_url,
         data={
             "email": internal_email,
-            "password": "any password",
         },
     )
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
@@ -953,7 +952,6 @@ def test_demo_mode_forbidden_emails(caplog, client, settings):
         login_url,
         data={
             "email": forbidden_email,
-            "password": "any password",
         },
     )
     assert response.status_code == 200
@@ -967,9 +965,7 @@ def test_demo_mode_forbidden_emails(caplog, client, settings):
                 {
                     "email": forbidden_email,
                     "event": "login_error",
-                    "errors": {
-                        "__all__": [{"message": "Adresse e-mail ou mot de passe invalide.", "code": "invalid_login"}]
-                    },
+                    "errors": {"__all__": [{"message": "Adresse e-mail invalide.", "code": "invalid_login"}]},
                 },
             ),
         ],
