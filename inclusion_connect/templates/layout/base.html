@@ -21,6 +21,13 @@
         {% block extra_head %}{% endblock %}
     </head>
     <body>
+        {% if DEMO_MODE %}
+            <div id="demo-banner">
+                <p class="mb-0">
+                    <strong>DEMO</strong>
+                </p>
+            </div>
+        {% endif %}
         {% include "layout/_header.html" %}
 
         <main id="main" role="main" class="s-main">
