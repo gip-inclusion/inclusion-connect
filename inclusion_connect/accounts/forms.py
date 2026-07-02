@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth import authenticate, forms as auth_forms
 from django.core.exceptions import ValidationError
 from django_otp import match_token
@@ -24,9 +25,27 @@ class LoginForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["email"].disabled = "email" in self.initial
 
+        if settings.DEMO_MODE:
+            # Remove password
+            self.fields["password"].widget = forms.HiddenInput()
+            self.fields["password"].required = False
+            # Add ffirst_name and last_name
+
     def clean(self):
         email = self.cleaned_data.get("email")
         password = self.cleaned_data.get("password")
+
+        if settings.DEMO_MODE:
+            self.user_cache = authenticate(
+                self.request,
+                email=email,
+                password=password,
+            )
+            if self.user_cache is None:
+                raise ValidationError(
+                    ("Adresse e-mail invalide."),
+                    code="invalid_login",
+                )
 
         if email is not None and password:
             self.user_cache = authenticate(self.request, email=email, password=password)
