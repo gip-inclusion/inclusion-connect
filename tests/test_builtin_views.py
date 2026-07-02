@@ -1,11 +1,9 @@
-from django.test import override_settings
 from django.urls import reverse
 
 from tests.conftest import Client
 from tests.helpers import parse_response_to_soup, pretty_indented
 
 
-@override_settings(ENVIRONMENT="PROD")
 def test_csrf_view(snapshot):
     client = Client(enforce_csrf_checks=True)
     response = client.post(

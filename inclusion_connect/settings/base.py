@@ -33,7 +33,6 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-ENVIRONMENT = os.getenv("IC_ENVIRONMENT")
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "connect.inclusion.beta.gouv.fr").split(",")
 
@@ -102,7 +101,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.csp",
-                "inclusion_connect.utils.context_processors.expose_settings",
             ],
         },
     },

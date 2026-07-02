@@ -21,13 +21,6 @@
         {% block extra_head %}{% endblock %}
     </head>
     <body>
-        {% if ENVIRONMENT and ENVIRONMENT != "PROD" %}
-            <div id="debug-mode-banner">
-                <p class="mb-0">
-                    <strong class="text-uppercase">DÉMO</strong>
-                </p>
-            </div>
-        {% endif %}
         {% include "layout/_header.html" %}
 
         <main id="main" role="main" class="s-main">
