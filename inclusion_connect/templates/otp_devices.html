@@ -36,9 +36,7 @@
 
                                 <button class="btn btn-sm btn-link {% if user.otp_device == device %}disabled{% else %}text-danger{% endif %}"
                                         type="button"
-                                        {% if user.otp_device == device %} data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." {% endif %}
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#delete_{{ device.pk }}_modal"
+                                        {% if user.otp_device == device %} data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." {% else %} data-bs-toggle="modal" data-bs-target="#delete_{{ device.pk }}_modal" {% endif %}
                                         aria-label="Supprimer l’appareil {{ device.name }}">
                                     <i class="ri-delete-bin-line fw-normal" aria-hidden="true"></i>
                                 </button>
