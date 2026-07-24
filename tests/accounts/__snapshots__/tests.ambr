@@ -303,7 +303,7 @@
                               </td>
                               <td>
   
-                                  <button aria-label="Supprimer l’appareil bitwarden" class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-target="#delete_[PK of device_1]_modal" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
+                                  <button aria-label="Supprimer l’appareil bitwarden" class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
                                       <i aria-hidden="true" class="ri-delete-bin-line fw-normal"></i>
                                   </button>
                               </td>
@@ -466,7 +466,7 @@
                                               </i>
                                           </td>
                                           <td>
-                                              <button aria-label="Supprimer l’appareil " class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-target="#delete_[PK of device]_modal" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
+                                              <button aria-label="Supprimer l’appareil " class="btn btn-sm btn-link disabled" data-bs-placement="top" data-bs-title="Impossible de supprimer l’appareil que vous avez utilisé pour vous connecter." data-bs-toggle="tooltip" type="button">
                                                   <i aria-hidden="true" class="ri-delete-bin-line fw-normal">
                                                   </i>
                                               </button>
