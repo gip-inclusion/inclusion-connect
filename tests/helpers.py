@@ -26,7 +26,7 @@ from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFac
 from tests.users.factories import DEFAULT_PASSWORD
 
 
-def oidc_flow_followup(
+def oidc_flow_followup(  # noqa: PLR0917 # Too many positional arguments
     client,
     auth_response_params,
     user,
@@ -95,7 +95,7 @@ def oidc_flow_followup(
     return token_json["id_token"]
 
 
-def oidc_complete_flow(
+def oidc_complete_flow(  # noqa: PLR0917 # Too many positional arguments
     client,
     user,
     oidc_params,
