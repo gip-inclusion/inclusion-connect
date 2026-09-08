@@ -591,9 +591,9 @@ django-oauth-toolkit==3.3.0 \
     --hash=sha256:2b375d14b1c0ff86e5df5e5de5d1a6d9868873304f54aca37c50158552d5b922 \
     --hash=sha256:7af1365cd80735211454b0dca810bc9e860c631e61fd17768ad0fa331737954f
     # via -r base.in
-django-otp==1.7.0 \
-    --hash=sha256:406d2d7f797dc313569270e06d6c360c7d986c9f653eab80b190d663ed5f1133 \
-    --hash=sha256:961ccf2d80a67303cb46d97427b16c476ee075acfa2b4c82a59d8f1e0745a454
+django-otp==1.7.3 \
+    --hash=sha256:3ce501173bf1b936146ffe5ff0cfdae1a0c7eb46cce1e9e3fdddd984d993c74f \
+    --hash=sha256:7d52fb0f76c4c1c86cbc71c196d3f79941b0b84aff980e45193bef89a70a7a12
     # via -r base.in
 djangorestframework==3.18.0 \
     --hash=sha256:2323a5111837e0b784dcb8323abc78ecc54fa2a5af7aff2677cf50cdd849477f \
