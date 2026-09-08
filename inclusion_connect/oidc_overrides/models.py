@@ -6,6 +6,7 @@ from oauth2_provider.models import AbstractApplication
 
 class Application(AbstractApplication):
     skip_authorization = True
+    hash_client_secret = False
 
     def check_uri(self, allowed_uris, uri, method_name):
         parsed_uri = urlparse(uri)
