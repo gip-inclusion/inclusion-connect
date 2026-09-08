@@ -26,7 +26,7 @@ from tests.helpers import (
     pretty_indented,
     token_are_revoked,
 )
-from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory
+from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD, UserFactory
 
 
@@ -534,7 +534,7 @@ def test_session_duration(client, oidc_params):
 
 
 def test_access_token_lifespan(client, oidc_params):
-    ApplicationFactory(client_id=oidc_params["client_id"])
+    app = ApplicationFactory(client_id=oidc_params["client_id"])
     user = UserFactory()
     client.force_login(user)
 
@@ -546,7 +546,7 @@ def test_access_token_lifespan(client, oidc_params):
 
         token_data = {
             "client_id": oidc_params["client_id"],
-            "client_secret": DEFAULT_CLIENT_SECRET,
+            "client_secret": app.client_secret,
             "code": params["code"],
             "grant_type": "authorization_code",
             "redirect_uri": oidc_params["redirect_uri"],

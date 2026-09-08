@@ -20,9 +20,10 @@ from pytest_django.asserts import (
     assertRedirects,
 )
 
+from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertRecords
-from tests.oidc_overrides.factories import DEFAULT_CLIENT_SECRET, ApplicationFactory, default_client_secret
+from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import DEFAULT_PASSWORD
 
 
@@ -44,9 +45,10 @@ def oidc_flow_followup(  # noqa: PLR0917 # Too many positional arguments
     }
 
     # Call TOKEN endpoint
+    app = Application.objects.get(client_id=oidc_params["client_id"])
     token_data = {
         "client_id": oidc_params["client_id"],
-        "client_secret": DEFAULT_CLIENT_SECRET,
+        "client_secret": app.client_secret,
         "code": auth_response_params["code"],
         "grant_type": "authorization_code",
         "redirect_uri": oidc_params["redirect_uri"],
@@ -74,7 +76,7 @@ def oidc_flow_followup(  # noqa: PLR0917 # Too many positional arguments
     id_token = token_json["id_token"]
     decoded_id_token = jwt.decode(
         id_token,
-        key=default_client_secret(),
+        key=app.client_secret,
         algorithms=["HS256"],
         audience=oidc_params["client_id"],
     )
