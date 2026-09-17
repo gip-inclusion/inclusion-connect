@@ -24,7 +24,10 @@
                         <tr>
                             <td>
                                 {% if user.otp_device == device %}
-                                    <i class="ri-verified-badge-fill text-success" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Vous avez utilisé cet appareil pour vous connecter."></i>
+                                    <i class="ri-verified-badge-fill text-success"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       data-bs-title="Vous avez utilisé cet appareil pour vous connecter."></i>
                                 {% endif %}
                             </td>
                             <td>{{ device.name }}</td>
@@ -67,10 +70,14 @@
                                 <p>Cette action est irréversible.</p>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal">Retour</button>
-                                <button class="btn btn-sm btn-danger" aria-label="Supprimer l’appareil {{ device.name }}" name="delete-device" value="{{ device.pk }}">
-                                    Confirmer la suppression
-                                </button>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary"
+                                        data-bs-dismiss="modal">Retour</button>
+                                <button class="btn btn-sm btn-danger"
+                                        type="submit"
+                                        aria-label="Supprimer l’appareil {{ device.name }}"
+                                        name="delete-device"
+                                        value="{{ device.pk }}">Confirmer la suppression</button>
                             </div>
                         </div>
                     </div>
