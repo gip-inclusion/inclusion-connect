@@ -44,7 +44,7 @@
                                   </div>
                               </fieldset>
                               <div>
-                                  <button class="btn btn-block btn-primary">
+                                  <button class="btn btn-block btn-primary" type="submit">
                                       Connexion
                                   </button>
                               </div>
@@ -106,7 +106,7 @@
                                   </div>
                               </fieldset>
                               <div>
-                                  <button class="btn btn-block btn-primary">
+                                  <button class="btn btn-block btn-primary" type="submit">
                                       Connexion
                                   </button>
                               </div>
@@ -147,7 +147,7 @@
                                   </div>
                               </fieldset>
                               <div>
-                                  <button class="btn btn-block btn-primary">
+                                  <button class="btn btn-block btn-primary" type="submit">
                                       Valider
                                   </button>
                               </div>
@@ -209,7 +209,7 @@
                                   </div>
                               </fieldset>
                               <div>
-                                  <button class="btn btn-block btn-primary">
+                                  <button class="btn btn-block btn-primary" type="submit">
                                       Connexion
                                   </button>
                               </div>
@@ -351,9 +351,7 @@
                               </div>
                               <div class="modal-footer">
                                   <button class="btn btn-sm btn-outline-primary" data-bs-dismiss="modal" type="button">Retour</button>
-                                  <button aria-label="Supprimer l’appareil authenticator" class="btn btn-sm btn-danger" name="delete-device" value="[PK of device_2]">
-                                      Confirmer la suppression
-                                  </button>
+                                  <button aria-label="Supprimer l’appareil authenticator" class="btn btn-sm btn-danger" name="delete-device" type="submit" value="[PK of device_2]">Confirmer la suppression</button>
                               </div>
                           </div>
                       </div>
@@ -626,7 +624,7 @@
                                   </div>
                               </fieldset>
                               <div>
-                                  <button class="btn btn-block btn-primary">
+                                  <button class="btn btn-block btn-primary" type="submit">
                                       Modifier mon mot de passe
                                   </button>
                               </div>
