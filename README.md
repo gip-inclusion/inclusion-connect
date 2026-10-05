@@ -6,7 +6,7 @@ informations d'identification (email et mot de passe) pour accéder à plusieurs
 
 Après une première utilisation pour de nombreux services de l'insertion il a été remplacé par ProConnect.
 
-Nous l'utilisons à présent comme SSO pour les membres de la Plateforme de l'Inclusion.
+Nous l'utilisons à présent comme SSO sur certains environnements de recette ou de démo.
 
 ## Documentation
 
