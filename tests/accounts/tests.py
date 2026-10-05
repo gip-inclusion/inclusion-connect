@@ -1,5 +1,6 @@
 import logging
 
+import pytest
 from django.contrib.auth import get_user
 from django.urls import reverse
 from pytest_django.asserts import (
@@ -16,10 +17,11 @@ from tests.users.factories import UserFactory
 
 
 class TestLoginView:
-    def test_login(self, caplog, client):
+    @pytest.mark.parametrize("is_active", [True, False])
+    def test_login(self, caplog, client, is_active):
         redirect_url = reverse("accounts:home")
         login_url = add_url_params(reverse("accounts:login"), {"next": redirect_url})
-        user = UserFactory()
+        user = UserFactory(is_active=is_active)
 
         response = client.get(login_url)
         response = client.post(login_url, data={"email": user.email}, follow=True)
