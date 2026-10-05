@@ -10,6 +10,6 @@ def test_csrf_view(snapshot):
     client = Client(enforce_csrf_checks=True)
     response = client.post(
         reverse("accounts:login"),
-        {"username": "doesnot", "password": "matter"},
+        {"username": "doesnotmatter"},
     )
     assert pretty_indented(parse_response_to_soup(response)) == snapshot

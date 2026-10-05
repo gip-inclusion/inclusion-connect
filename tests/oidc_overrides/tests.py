@@ -25,7 +25,7 @@ from tests.helpers import (
     token_are_revoked,
 )
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import UserFactory
 
 
 class TestRedirectUris:
@@ -500,13 +500,7 @@ def test_session_duration(client, oidc_params):
         now = timezone.now()
         response = client.get(auth_complete_url)
         assertRedirects(response, reverse("accounts:login"))
-        response = client.post(
-            response.url,
-            data={
-                "email": user.email,
-                "password": DEFAULT_PASSWORD,
-            },
-        )
+        response = client.post(response.url, data={"email": user.email})
         assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
         # call auth view to clear the session
         assert OIDC_SESSION_KEY in client.session

@@ -97,7 +97,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.csp",
-                "inclusion_connect.utils.context_processors.expose_settings",
             ],
         },
     },
@@ -348,5 +347,3 @@ if cors_allowed_origins and not CORS_ALLOW_ALL_ORIGINS:
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 SIRET = "13003013300016"
-
-DEMO_MODE = os.getenv("IC_ENVIRONMENT", "") == "STAGING"
