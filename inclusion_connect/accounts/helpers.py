@@ -1,10 +1,6 @@
 from django.conf import settings
 from django.contrib import auth
 from django.urls import reverse
-from django_otp import user_has_device
-from django_otp.plugins.otp_totp.models import TOTPDevice
-
-from inclusion_connect.logging import log
 
 
 LOGGER_NAME = "inclusion_connect.auth"
@@ -20,30 +16,7 @@ def login(request, user, backend=settings.DEFAULT_AUTH_BACKEND):
         request.session["next_url"] = next_url
 
 
-def create_new_totp_device(request):
-    """
-    Return the existing unconfirmed device for the user, or create a new one
-    """
-    device, created = TOTPDevice.objects.get_or_create(user=request.user, confirmed=False)
-
-    if created:
-        log(
-            LOGGER_NAME,
-            request,
-            user=request.user.email,
-            event="create_otp_device",
-            device=device.pk,
-        )
-    return device
-
-
 def next_action_url(request):
-    if not settings.DEMO_MODE and not request.user.is_verified():
-        if user_has_device(request.user):
-            return reverse("accounts:verify_otp")
-
-        device = create_new_totp_device(request)
-        return reverse("accounts:otp_confirm_device", args=(device.pk,))
     if request.user.password_is_temporary:
         return reverse("accounts:change_temporary_password")
     if request.user.password_is_too_weak:

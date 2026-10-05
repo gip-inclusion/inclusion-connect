@@ -10,15 +10,9 @@ from bs4 import BeautifulSoup
 from bs4.formatter import HTMLFormatter
 from django.contrib.auth import get_user
 from django.contrib.sessions.models import Session
-from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import get_random_string
-from django_otp.oath import TOTP
-from django_otp.plugins.otp_totp.models import TOTPDevice
 from oauth2_provider.models import get_access_token_model, get_id_token_model, get_refresh_token_model
-from pytest_django.asserts import (
-    assertRedirects,
-)
 
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.utils.urls import add_url_params, get_url_params
@@ -128,65 +122,16 @@ def oidc_complete_flow(  # noqa: PLR0917 # Too many positional arguments
             },
         )
 
-        if device := TOTPDevice.objects.filter(user=user, confirmed=True).first():
-            verify_otp_url = reverse("accounts:verify_otp")
-            assertRedirects(response, verify_otp_url)
-
-            totp = TOTP(device.bin_key)
-            response = client.post(verify_otp_url, {"otp_token": totp.token()})
-            assertRecords(
-                caplog,
-                [
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"application": application.client_id, "user": user.email, "event": "login"},
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {
-                            "application": application.client_id,
-                            "user": user.email,
-                            "event": "verify_otp_device",
-                            "device": device.pk,
-                        },
-                    ),
-                ],
-            )
-
-        else:
-            response, device = confirm_otp_flow(client, response)
-            assertRecords(
-                caplog,
-                [
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {"application": application.client_id, "user": user.email, "event": "login"},
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {
-                            "application": application.client_id,
-                            "user": user.email,
-                            "event": "create_otp_device",
-                            "device": device.pk,
-                        },
-                    ),
-                    (
-                        "inclusion_connect.auth",
-                        logging.INFO,
-                        {
-                            "application": application.client_id,
-                            "user": user.email,
-                            "event": "confirm_otp_device",
-                            "device": device.pk,
-                        },
-                    ),
-                ],
-            )
+        assertRecords(
+            caplog,
+            [
+                (
+                    "inclusion_connect.auth",
+                    logging.INFO,
+                    {"application": application.client_id, "user": user.email, "event": "login"},
+                ),
+            ],
+        )
 
         # The redirect cleans `next_url` from the session.
         assert "next_url" not in client.session
@@ -292,17 +237,3 @@ def call_logout(client, method, params, with_trailing_slash=False):
     elif method == "post":
         return client.post(url, data=params)
     raise ValueError
-
-
-def confirm_otp_flow(client, response):
-    device = TOTPDevice.objects.get()
-    confirm_otp_url = reverse("accounts:otp_confirm_device", args=(device.pk,))
-    assertRedirects(response, confirm_otp_url)
-
-    totp = TOTP(device.bin_key)
-    post_data = {
-        "name": "Mon appareil",
-        "otp_token": totp.token(),
-    }
-    response = client.post(confirm_otp_url, data=post_data)
-    return response, device
