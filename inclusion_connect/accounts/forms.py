@@ -1,5 +1,4 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 
@@ -13,10 +12,13 @@ class LoginForm(forms.Form):
         label="Adresse e-mail",
         widget=forms.EmailInput(attrs=EMAIL_FIELDS_WIDGET_ATTRS),
     )
-    password = forms.CharField(
-        label="Mot de passe",
-        strip=False,
-        widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": PASSWORD_PLACEHOLDER}),
+    first_name = forms.CharField(
+        label="Prénom",
+        required=False,
+    )
+    last_name = forms.CharField(
+        label="Nom",
+        required=False,
     )
 
     def __init__(self, request, *args, **kwargs):
@@ -24,45 +26,22 @@ class LoginForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["email"].disabled = "email" in self.initial
 
-        if settings.DEMO_MODE:
-            # Remove password
-            self.fields["password"].widget = forms.HiddenInput()
-            self.fields["password"].required = False
-            # Add ffirst_name and last_name
-            self.fields["first_name"] = forms.CharField(
-                label="Prénom",
-                required=False,
-            )
-            self.fields["last_name"] = forms.CharField(
-                label="Nom",
-                required=False,
-            )
-
     def clean(self):
         email = self.cleaned_data.get("email")
-        password = self.cleaned_data.get("password")
 
-        if settings.DEMO_MODE:
-            self.user_cache = authenticate(
-                self.request,
-                email=email,
-                password=password,
-                first_name=self.cleaned_data["first_name"],
-                last_name=self.cleaned_data["last_name"],
+        self.user_cache = authenticate(
+            self.request,
+            email=email,
+            password="",
+            first_name=self.cleaned_data["first_name"],
+            last_name=self.cleaned_data["last_name"],
+        )
+        if self.user_cache is None:
+            raise ValidationError(
+                ("Adresse e-mail invalide."),
+                code="invalid_login",
             )
-            if self.user_cache is None:
-                raise ValidationError(
-                    ("Adresse e-mail invalide."),
-                    code="invalid_login",
-                )
 
-        if email is not None and password:
-            self.user_cache = authenticate(self.request, email=email, password=password)
-            if self.user_cache is None:
-                raise ValidationError(
-                    ("Adresse e-mail ou mot de passe invalide."),
-                    code="invalid_login",
-                )
         return self.cleaned_data
 
     def get_user(self):

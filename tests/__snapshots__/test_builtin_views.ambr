@@ -18,6 +18,13 @@
           </script>
       </head>
       <body>
+          <div id="demo-banner">
+              <p class="mb-0">
+                  <strong>
+                      DEMO
+                  </strong>
+              </p>
+          </div>
           <header id="header" role="banner">
               <section class="s-header">
                   <div class="s-header__container container">

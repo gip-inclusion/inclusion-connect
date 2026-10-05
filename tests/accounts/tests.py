@@ -12,7 +12,7 @@ from inclusion_connect.utils.oidc import OIDC_SESSION_KEY
 from inclusion_connect.utils.urls import add_url_params
 from tests.asserts import assertRecords
 from tests.helpers import parse_response_to_soup, pretty_indented
-from tests.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import UserFactory
 
 
 class TestLoginView:
@@ -22,12 +22,10 @@ class TestLoginView:
         user = UserFactory()
 
         response = client.get(login_url)
-        response = client.post(login_url, data={"email": user.email, "password": DEFAULT_PASSWORD}, follow=True)
+        response = client.post(login_url, data={"email": user.email}, follow=True)
 
         assertRedirects(response, redirect_url)
-
         assert get_user(client).is_authenticated is True
-
         assertRecords(
             caplog,
             [
@@ -39,13 +37,12 @@ class TestLoginView:
             ],
         )
 
-    def test_failed_bad_email_or_password(self, caplog, client):
+    def test_failed_bad_email(self, caplog, client):
         url = add_url_params(reverse("accounts:login"), {"next": "anything"})
-        user = UserFactory()
 
-        response = client.post(url, data={"email": user.email, "password": "V€r¥--$3©®€7"})
+        response = client.post(url, data={"email": "bad@email.com"})
         assertTemplateUsed(response, "login.html")
-        assertContains(response, "Adresse e-mail ou mot de passe invalide.")
+        assertContains(response, "Adresse e-mail invalide.")
         assert not get_user(client).is_authenticated
         assertRecords(
             caplog,
@@ -54,68 +51,12 @@ class TestLoginView:
                     "inclusion_connect.auth",
                     logging.INFO,
                     {
-                        "email": user.email,
+                        "email": "bad@email.com",
                         "event": "login_error",
                         "errors": {
                             "__all__": [
                                 {
-                                    "message": "Adresse e-mail ou mot de passe invalide.",
-                                    "code": "invalid_login",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-        response = client.post(url, data={"email": "wrong@email.com", "password": DEFAULT_PASSWORD})
-        assertTemplateUsed(response, "login.html")
-        assertContains(response, "Adresse e-mail ou mot de passe invalide.")
-        assert not get_user(client).is_authenticated
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": "wrong@email.com",
-                        "event": "login_error",
-                        "errors": {
-                            "__all__": [
-                                {
-                                    "message": "Adresse e-mail ou mot de passe invalide.",
-                                    "code": "invalid_login",
-                                }
-                            ]
-                        },
-                    },
-                )
-            ],
-        )
-
-        # If user is inactive
-        user.is_active = False
-        user.save()
-        response = client.post(url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-        assertTemplateUsed(response, "login.html")
-        assertContains(response, "Adresse e-mail ou mot de passe invalide.")
-        assert not get_user(client).is_authenticated
-        assert client.session["next_url"] == "anything"
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "email": user.email,
-                        "event": "login_error",
-                        "errors": {
-                            "__all__": [
-                                {
-                                    "message": "Adresse e-mail ou mot de passe invalide.",
+                                    "message": "Adresse e-mail invalide.",
                                     "code": "invalid_login",
                                 }
                             ]
@@ -139,21 +80,6 @@ class TestLoginView:
 
         response = client.get(url)
         assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
-
-        # Email is simply ignored.
-        response = client.post(url, data={"email": "evil@mailinator.com", "password": DEFAULT_PASSWORD})
-        assertRedirects(response, redirect_url)
-        assert get_user(client).is_authenticated is True
-        assertRecords(
-            caplog,
-            [
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {"user": user.email, "event": "login"},
-                ),
-            ],
-        )
 
     def test_empty_login_hint(self, client, snapshot):
         url = add_url_params(reverse("accounts:login"), {"login_hint": ""})

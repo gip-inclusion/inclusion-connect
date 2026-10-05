@@ -20,7 +20,7 @@ from tests.helpers import (
     token_are_revoked,
 )
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import DEFAULT_PASSWORD, UserFactory
+from tests.users.factories import UserFactory
 
 
 LINK_PATTERN = re.compile(r"^http://testserver(?P<path>.+/)$")
@@ -51,13 +51,7 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(caplog, [])
 
-    response = client.post(
-        response.url,
-        data={
-            "email": user.email,
-            "password": DEFAULT_PASSWORD,
-        },
-    )
+    response = client.post(response.url, data={"email": user.email})
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)
@@ -122,7 +116,7 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(caplog, [])
 
-    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+    response = client.post(response.url, data={"email": user.email})
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
@@ -198,7 +192,7 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         assertRedirects(response, reverse("accounts:login"))
         assertRecords(caplog, [])
 
-        response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        response = client.post(response.url, data={"email": user.email})
         assert get_user(client).is_authenticated is True
 
         assertRecords(
@@ -281,7 +275,7 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(caplog, [])
 
-    response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+    response = client.post(response.url, data={"email": user.email})
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
@@ -372,7 +366,7 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         assertRedirects(response, reverse("accounts:login"))
         assertRecords(caplog, [])
 
-        response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
+        response = client.post(response.url, data={"email": user.email})
         assert get_user(client).is_authenticated is True
         assertRecords(
             caplog,
@@ -494,13 +488,7 @@ def test_proconnect_scopes(caplog, client, oidc_params):
     assertRedirects(response, reverse("accounts:login"))
     assertRecords(caplog, [])
 
-    response = client.post(
-        response.url,
-        data={
-            "email": user.email,
-            "password": DEFAULT_PASSWORD,
-        },
-    )
+    response = client.post(response.url, data={"email": user.email})
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)
@@ -619,7 +607,7 @@ def test_demo_mode_forbidden_emails(caplog, client, settings):
     settings.DEMO_MODE = True
     login_url = reverse("accounts:login")
 
-    forbidden_email = UserFactory.build().email
+    forbidden_email = "email@other.domain"
     response = client.post(
         login_url,
         data={

@@ -18,7 +18,6 @@ from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertRecords
 from tests.oidc_overrides.factories import ApplicationFactory
-from tests.users.factories import DEFAULT_PASSWORD
 
 
 def oidc_flow_followup(  # noqa: PLR0917 # Too many positional arguments
@@ -114,13 +113,7 @@ def oidc_complete_flow(  # noqa: PLR0917 # Too many positional arguments
     response = client.get(auth_complete_url)
     if not get_user(client).is_authenticated:
         assert client.session["next_url"] == auth_complete_url
-        response = client.post(
-            response.url,
-            data={
-                "email": user.email,
-                "password": DEFAULT_PASSWORD,
-            },
-        )
+        response = client.post(response.url, data={"email": user.email})
 
         assertRecords(
             caplog,

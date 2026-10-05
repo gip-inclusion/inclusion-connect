@@ -1,17 +1,10 @@
-import functools
-
 import factory
 from django.contrib.auth.hashers import make_password
 
 from inclusion_connect.users.models import User
 
 
-DEFAULT_PASSWORD = "P4ssw0rd!***"
-
-
-@functools.cache
-def default_password():
-    return make_password(DEFAULT_PASSWORD)
+UNUSABLE_PASSWORD = make_password(None)
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -23,5 +16,5 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
-    email = factory.Sequence("email{}@domain.com".format)
-    password = factory.LazyFunction(default_password)
+    email = factory.Sequence("email{}@inclusion.gouv.fr".format)
+    password = UNUSABLE_PASSWORD
