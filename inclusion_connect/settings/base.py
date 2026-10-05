@@ -76,7 +76,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "inclusion_connect.middleware.never_cache",
-    "inclusion_connect.accounts.middleware.post_login_actions",
     # Final logger
     "django_datadog_logger.middleware.request_log.RequestLoggingMiddleware",
 ]
@@ -144,7 +143,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-    {"NAME": "inclusion_connect.utils.password_validation.CnilCompositionPasswordValidator"},
 ]
 
 # Internationalization

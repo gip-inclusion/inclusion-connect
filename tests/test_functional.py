@@ -4,7 +4,6 @@ import re
 
 import pytest
 from django.contrib.auth import get_user
-from django.contrib.auth.hashers import make_password
 from django.urls import reverse
 from freezegun import freeze_time
 from pytest_django.asserts import assertRedirects
@@ -448,83 +447,6 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
         assertRecords(caplog, [])
 
 
-def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many statements
-    user = UserFactory(first_name="Manuel", last_name="Calavera", email="manny.calavera@mailinator.com")
-    change_password_url = reverse("accounts:change_password")
-
-    # User is redirected to login
-    response = client.get(change_password_url)
-    assertRedirects(
-        response,
-        add_url_params(reverse("accounts:login"), {"next": change_password_url}),
-    )
-    response = client.post(
-        response.url,
-        data={"email": user.email, "password": DEFAULT_PASSWORD},
-    )
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"user": user.email, "event": "login"},
-            ),
-        ],
-    )
-
-    # The redirect cleans `next_url` from the session.
-    assert "next_url" not in client.session
-
-    assertRedirects(response, change_password_url)
-    response = client.get(response.url, follow=True)
-    assert pretty_indented(parse_response_to_soup(response, "#main")) == snapshot
-
-    response = client.post(
-        change_password_url,
-        data={
-            "old_password": DEFAULT_PASSWORD,
-            "new_password1": "V€r¥--$3©®€7",
-            "new_password2": "V€r¥--$3©®€7",
-        },
-    )
-    assert get_user(client).is_authenticated is True
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "change_password",
-                    "user": user.email,
-                },
-            )
-        ],
-    )
-
-    client.logout()
-    assert get_user(client).is_authenticated is False
-
-    # User may login with new password
-    response = client.post(
-        reverse("accounts:login"),
-        data={"email": user.email, "password": "V€r¥--$3©®€7"},
-        follow=True,
-    )
-    assert get_user(client).is_authenticated is True
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"user": user.email, "event": "login"},
-            )
-        ],
-    )
-
-
 @freeze_time("2023-05-05 11:11:11")
 def test_login_with_multiple_applications(client, oidc_params, caplog):
     user = UserFactory()
@@ -534,89 +456,6 @@ def test_login_with_multiple_applications(client, oidc_params, caplog):
     application_2 = ApplicationFactory()
     oidc_params["client_id"] = application_2.client_id
     oidc_complete_flow(client, user, oidc_params, caplog, application=application_2)
-
-
-@freeze_time("2023-05-05 11:11:11")
-def test_login_weak_password(caplog, client, oidc_params):
-    auth_url = reverse("oauth2_provider:authorize")
-    ApplicationFactory(client_id=oidc_params["client_id"])
-    user = UserFactory(password=make_password("weak_password"))
-
-    auth_complete_url = add_url_params(auth_url, oidc_params)
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:login"))
-    assertRecords(caplog, [])
-
-    response = client.post(
-        response.url,
-        data={
-            "email": user.email,
-            "password": "weak_password",
-        },
-    )
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-        ],
-    )
-
-    # assert redirects to update weak password page
-    assertRedirects(response, reverse("accounts:change_weak_password"))
-    assert get_user(client).is_authenticated is True
-    user = User.objects.get(email=user.email)
-    assert user.linked_applications.count() == 0
-
-    # User can't bypass password update
-    response = client.get(auth_complete_url)
-    assertRedirects(response, reverse("accounts:change_weak_password"))
-
-    response = client.post(
-        reverse("accounts:change_weak_password"),
-        data={"new_password1": DEFAULT_PASSWORD, "new_password2": DEFAULT_PASSWORD},
-    )
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "event": "change_weak_password",
-                    "user": user.email,
-                },
-            )
-        ],
-    )
-
-    response = client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.email,
-                    "url": f"http://testserver/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
 
 
 def test_base_url_redirect(client):

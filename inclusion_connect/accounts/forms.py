@@ -1,6 +1,6 @@
 from django import forms
 from django.conf import settings
-from django.contrib.auth import authenticate, forms as auth_forms
+from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 
 
@@ -67,22 +67,3 @@ class LoginForm(forms.Form):
 
     def get_user(self):
         return self.user_cache
-
-
-class SetPasswordForm(auth_forms.SetPasswordForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for key in ["new_password1", "new_password2"]:
-            self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
-
-    def save(self, commit=True):
-        self.user.password_is_temporary = False
-        return super().save(commit)
-
-
-class PasswordChangeForm(auth_forms.PasswordChangeForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for key in ["old_password", "new_password1", "new_password2"]:
-            self.fields[key].widget.attrs["placeholder"] = PASSWORD_PLACEHOLDER
-        self.fields["old_password"].label = "Mot de passe actuel"
