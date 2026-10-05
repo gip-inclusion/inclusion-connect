@@ -1,7 +1,5 @@
 import pytest
 from django.test import TestCase, client as django_client
-from django_otp import DEVICE_ID_SESSION_KEY
-from django_otp.plugins.otp_totp.models import TOTPDevice
 
 
 pytest.register_assert_rewrite("tests.asserts", "tests.helpers")
@@ -51,14 +49,7 @@ Default = type("Default", (), dict(__repr__=lambda self: "Default"))()
 
 
 class Client(ExecuteOnCommitCallbacksClient, NoInlineClient):
-    def force_login(self, user, device=Default, backend=None):
-        super().force_login(user, backend=backend)
-        if device is not None:
-            if device == Default:
-                device = TOTPDevice.objects.filter(user=user).first() or TOTPDevice.objects.create(user=user)
-            session = self.session
-            session[DEVICE_ID_SESSION_KEY] = device.persistent_id
-            session.save()
+    pass
 
 
 @pytest.fixture

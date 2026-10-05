@@ -1,20 +1,14 @@
-from base64 import b32encode
-
-import segno
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout, views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, TemplateView
-from django_otp import devices_for_user, login as otp_login
-from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from inclusion_connect.accounts import forms
-from inclusion_connect.accounts.helpers import create_new_totp_device, get_next_url, login
+from inclusion_connect.accounts.helpers import get_next_url, login
 from inclusion_connect.logging import log
 from inclusion_connect.oidc_overrides.models import Application
 from inclusion_connect.oidc_overrides.views import OIDCSessionMixin
@@ -152,10 +146,6 @@ class MyAccountMixin(LoginRequiredMixin):
                 "url": reverse("accounts:change_password"),
                 "active": False,
             },
-            "otp": {
-                "url": reverse("accounts:otp_devices"),
-                "active": False,
-            },
         }
 
     def get_object(self, queryset=None):
@@ -220,96 +210,3 @@ class ChangeWeakPassword(ChangeTemporaryPassword):
     def form_valid(self, form):
         form.user.password_is_too_weak = False
         return super().form_valid(form)
-
-
-class OtpDevices(MyAccountMixin, TemplateView):
-    template_name = "otp_devices.html"
-
-    def post(self, request, *args, **kwargs):
-        if request.POST.get("action") == "new":
-            device = create_new_totp_device(request)
-            return HttpResponseRedirect(reverse("accounts:otp_confirm_device", kwargs={"device_id": device.pk}))
-
-        if device_id := request.POST.get("delete-device"):
-            device = get_object_or_404(TOTPDevice.objects.filter(user=request.user), pk=device_id)
-            if device != request.user.otp_device:
-                messages.success(request, "L’appareil a été supprimé.")
-                log(
-                    LOGGER_NAME,
-                    self.request,
-                    user=self.request.user.email,
-                    event="delete_otp_device",
-                    device=device.pk,
-                )
-                device.delete()
-            else:
-                messages.error(request, "Impossible de supprimer l’appareil qui a été utilisé pour se connecter.")
-            return self.get(request)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["devices"] = sorted(devices_for_user(self.request.user), key=lambda device: device.created_at)
-        return context
-
-
-class OtpConfirmDevice(MyAccountMixin, FormView):
-    form_class = forms.ConfirmTOTPDeviceForm
-    template_name = "otp_confirm_device.html"
-    EVENT_NAME = "confirm_otp_device"
-
-    def setup(self, request, device_id, *args, **kwargs):
-        super().setup(request, *args, **kwargs)
-        self.device = get_object_or_404(TOTPDevice.objects.filter(user=request.user, confirmed=False), pk=device_id)
-
-    def get_form_kwargs(self):
-        return super().get_form_kwargs() | {"device": self.device}
-
-    def form_valid(self, form):
-        self.device.confirmed = True
-        self.device.name = form.cleaned_data["name"]
-        self.device.save(update_fields=["name", "confirmed"])
-        messages.success(self.request, "Votre nouvel appareil est confirmé", extra_tags="toast")
-        log(
-            LOGGER_NAME,
-            self.request,
-            user=self.request.user.email,
-            event=self.EVENT_NAME,
-            device=self.device.pk,
-        )
-        # Mark the user as verified
-        otp_login(self.request, self.device)
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return get_next_url(self.request, fallback_url=reverse("accounts:otp_devices"))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["otp_secret"] = b32encode(self.device.bin_key).decode()
-        # Generate svg data uri qrcode
-        context["qrcode"] = segno.make(self.device.config_url).svg_data_uri()
-        context["otp_verified"] = False
-        return context
-
-
-class VerifyOTPView(FormView):
-    template_name = "verify_otp.html"
-    form_class = forms.VerifyOTPForm
-    EVENT_NAME = "verify_otp_device"
-
-    def get_form_kwargs(self):
-        return super().get_form_kwargs() | {"user": self.request.user}
-
-    def form_valid(self, form):
-        otp_login(self.request, self.request.user.otp_device)
-        log(
-            LOGGER_NAME,
-            self.request,
-            user=self.request.user.email,
-            event=self.EVENT_NAME,
-            device=self.request.user.otp_device.pk,
-        )
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return get_next_url(self.request)

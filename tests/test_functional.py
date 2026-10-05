@@ -14,7 +14,6 @@ from inclusion_connect.utils.urls import add_url_params, get_url_params
 from tests.asserts import assertRecords
 from tests.helpers import (
     call_logout,
-    confirm_otp_flow,
     oidc_complete_flow,
     oidc_flow_followup,
     parse_response_to_soup,
@@ -60,7 +59,6 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
             "password": DEFAULT_PASSWORD,
         },
     )
-    response, device = confirm_otp_flow(client, response)
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)
@@ -72,26 +70,6 @@ def test_login_endpoint(auth_url, caplog, client, oidc_params):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
@@ -146,7 +124,6 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
     assertRecords(caplog, [])
 
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
-    response, device = confirm_otp_flow(client, response)
     assert get_user(client).is_authenticated is True
     assertRecords(
         caplog,
@@ -155,26 +132,6 @@ def test_logout_no_confirmation(caplog, client, oidc_params):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
@@ -245,7 +202,6 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
         response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is True
 
-        response, device = confirm_otp_flow(client, response)
         assertRecords(
             caplog,
             [
@@ -256,26 +212,6 @@ def test_logout_no_confirmation_when_session_and_tokens_already_expired_with_id_
                         "application": "my_application",
                         "user": user.email,
                         "event": "login",
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": "my_application",
-                        "user": user.email,
-                        "event": "create_otp_device",
-                        "device": device.pk,
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": "my_application",
-                        "user": user.email,
-                        "event": "confirm_otp_device",
-                        "device": device.pk,
                     },
                 ),
             ],
@@ -348,7 +284,6 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
 
     response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
     assert get_user(client).is_authenticated is True
-    response, device = confirm_otp_flow(client, response)
     assertRecords(
         caplog,
         [
@@ -356,26 +291,6 @@ def test_logout_with_confirmation(caplog, client, oidc_params, snapshot):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
@@ -460,7 +375,6 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
 
         response = client.post(response.url, data={"email": user.email, "password": DEFAULT_PASSWORD})
         assert get_user(client).is_authenticated is True
-        response, device = confirm_otp_flow(client, response)
         assertRecords(
             caplog,
             [
@@ -471,26 +385,6 @@ def test_logout_with_confirmation_when_session_and_tokens_already_expired_with_c
                         "application": "my_application",
                         "user": user.email,
                         "event": "login",
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": "my_application",
-                        "user": user.email,
-                        "event": "create_otp_device",
-                        "device": device.pk,
-                    },
-                ),
-                (
-                    "inclusion_connect.auth",
-                    logging.INFO,
-                    {
-                        "application": "my_application",
-                        "user": user.email,
-                        "event": "confirm_otp_device",
-                        "device": device.pk,
                     },
                 ),
             ],
@@ -568,7 +462,6 @@ def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many st
         response.url,
         data={"email": user.email, "password": DEFAULT_PASSWORD},
     )
-    response, device = confirm_otp_flow(client, response)
     assertRecords(
         caplog,
         [
@@ -576,24 +469,6 @@ def test_change_password(caplog, client, snapshot):  # noqa: PLR0915 Too many st
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
@@ -679,7 +554,6 @@ def test_login_weak_password(caplog, client, oidc_params):
             "password": "weak_password",
         },
     )
-    response, device = confirm_otp_flow(client, response)
     assertRecords(
         caplog,
         [
@@ -687,26 +561,6 @@ def test_login_weak_password(caplog, client, oidc_params):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
@@ -808,7 +662,6 @@ def test_proconnect_scopes(caplog, client, oidc_params):
             "password": DEFAULT_PASSWORD,
         },
     )
-    response, device = confirm_otp_flow(client, response)
     assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
     assert get_user(client).is_authenticated is True
     user = User.objects.get(email=user.email)
@@ -820,26 +673,6 @@ def test_proconnect_scopes(caplog, client, oidc_params):
                 "inclusion_connect.auth",
                 logging.INFO,
                 {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "create_otp_device",
-                    "device": device.pk,
-                },
-            ),
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "user": user.email,
-                    "event": "confirm_otp_device",
-                    "device": device.pk,
-                },
             ),
         ],
     )
