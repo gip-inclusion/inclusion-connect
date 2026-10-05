@@ -14,6 +14,7 @@ class EmailAuthenticationBackend(ModelBackend):
             return  # Only allow our own domain
         # Keep
         update_data = {field: value for field, value in kwargs.items() if value}
+        update_data["is_active"] = True
         create_data = {
             "first_name": update_data.get("first_name", "Dominique"),
             "last_name": update_data.get("last_name", "Dupond"),
