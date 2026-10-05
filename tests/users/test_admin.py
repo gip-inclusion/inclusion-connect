@@ -1,7 +1,7 @@
 import logging
 
 from django.urls import reverse
-from pytest_django.asserts import assertContains, assertQuerySetEqual, assertRedirects
+from pytest_django.asserts import assertQuerySetEqual, assertRedirects
 
 from inclusion_connect.users.models import User
 from tests.helpers import assertRecords
@@ -123,53 +123,6 @@ class TestUserAdmin:
                 )
             ],
         )
-
-    def test_admin_password_status_with_usable_password(self, client):
-        staff_user = UserFactory(is_superuser=True, is_staff=True)
-        client.force_login(staff_user)
-
-        user = UserFactory()
-        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
-        assert response.status_code == 200
-        assertContains(response, "Mot de passe valide")
-        assertContains(response, "Invalider le mot de passe")
-
-    def test_admin_password_status_without_usable_password(self, client):
-        staff_user = UserFactory(is_superuser=True, is_staff=True)
-        client.force_login(staff_user)
-
-        user = UserFactory()
-        user.set_unusable_password()
-        user.save()
-        response = client.get(reverse("admin:users_user_change", kwargs={"object_id": user.pk}))
-        assert response.status_code == 200
-        assertContains(response, "Sans mot de passe")
-        assertContains(response, "Copier le lien de réinitialisation")
-
-    def test_admin_invalidate_password(self, client):
-        staff_user = UserFactory(is_superuser=True, is_staff=True)
-        client.force_login(staff_user)
-
-        user = UserFactory()
-        assert user.has_usable_password()
-
-        invalidate_url = reverse("admin:users_user_invalidate_password", args=[user.pk])
-        response = client.get(invalidate_url)
-        assert response.status_code == 200
-        assertContains(response, "Confirmer")
-
-        response = client.post(invalidate_url)
-        assertRedirects(response, reverse("admin:users_user_change", args=[user.pk]))
-        user.refresh_from_db()
-        assert not user.has_usable_password()
-
-    def test_non_staff_user_cannot_invalidate_password(self, client):
-        non_staff_user = UserFactory()
-        client.force_login(non_staff_user)
-        target_user = UserFactory()
-        invalidate_url = reverse("admin:users_user_invalidate_password", args=[target_user.pk])
-        response = client.get(invalidate_url)
-        assertRedirects(response, reverse("admin:login") + f"?next={invalidate_url}")
 
     def test_logout(self, client):
         user = UserFactory(is_superuser=True, is_staff=True)

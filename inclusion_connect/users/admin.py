@@ -1,13 +1,8 @@
 import copy
 
 from django import forms
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.auth import admin as auth_admin, forms as auth_forms
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
-from django.template.response import TemplateResponse
-from django.urls import path, reverse
-from django.utils.html import format_html
 
 from inclusion_connect.logging import log
 
@@ -81,7 +76,6 @@ class UserAdmin(auth_admin.UserAdmin):
         "username",
         "date_joined",
         "last_login",
-        "password_status",
     ]
     list_filter = auth_admin.UserAdmin.list_filter
     inlines = [UserApplicationLinkInline]
@@ -91,54 +85,11 @@ class UserAdmin(auth_admin.UserAdmin):
         "email",
         "first_name",
         "last_name",
-        "has_usable_password_display",
         "is_staff",
     )
 
     class Media:
         js = ["js/admin_clipboard.js"]
-
-    @admin.display(description="Mot de passe valide", boolean=True)
-    def has_usable_password_display(self, obj):
-        return obj.has_usable_password()
-
-    def password_status(self, obj):
-        if obj.has_usable_password():
-            invalidate_url = reverse("admin:users_user_invalidate_password", args=[obj.pk])
-            return format_html(
-                'Mot de passe valide · <a href="{}">Invalider le mot de passe</a>',
-                invalidate_url,
-            )
-        reset_url = obj.get_password_reset_url_path()
-        return format_html(
-            'Sans mot de passe · <a href="{}" data-copy-to-clipboard>Copier le lien de réinitialisation</a>',
-            reset_url,
-        )
-
-    password_status.short_description = "Mot de passe"
-
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path(
-                "<pk>/invalidate_password/",
-                self.admin_site.admin_view(self.invalidate_password_view),
-                name="users_user_invalidate_password",
-            ),
-        ]
-        return custom_urls + urls
-
-    def invalidate_password_view(self, request, pk):
-        user = get_object_or_404(User, pk=pk)
-        if request.method == "POST":
-            user.set_unusable_password()
-            user.save()
-            messages.success(request, "Le mot de passe a été invalidé.")
-            return HttpResponseRedirect(reverse("admin:users_user_change", args=[pk]))
-        context = self.admin_site.each_context(request)
-        context["user_obj"] = user
-        context["opts"] = self.model._meta
-        return TemplateResponse(request, "admin/users/user/invalidate_password_confirm.html", context)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -168,10 +119,7 @@ class UserAdmin(auth_admin.UserAdmin):
         if is_change_form:
             fieldsets = list(copy.deepcopy(fieldsets))
             assert fieldsets[0] == (None, {"fields": ("username", "password")})
-            if not self.has_change_permission(request, obj):
-                fieldsets[0][1]["fields"] = ("username",)
-            else:
-                fieldsets[0][1]["fields"] = ("username", "password_status")
+            fieldsets[0][1]["fields"] = ("username",)
 
             assert fieldsets[1] == ("Informations personnelles", {"fields": ("first_name", "last_name", "email")})
 
