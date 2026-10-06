@@ -28,7 +28,3 @@ updates:
     allow:
       # Allow both direct and indirect updates for all packages
       - dependency-type: all
-    groups:
-      # All patch updates together, may be merged when CI is green.
-      patch-updates:
-        update-types: [ "patch" ]
