@@ -81,7 +81,7 @@ populate_db:
 .PHONY: coverage test
 
 test: $(VIRTUAL_ENV)
-	pytest --numprocesses=logical --create-db --verbosity=2 $(TARGET)
+	pytest --create-db --verbosity=2 $(TARGET)
 
 coverage: $(VIRTUAL_ENV)
 	pytest --cov=inclusion_connect --create-db --cov-report html
