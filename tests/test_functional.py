@@ -1,6 +1,5 @@
 # Functional tests for all documented customer processes
 import logging
-import re
 
 import pytest
 from django.contrib.auth import get_user
@@ -21,16 +20,6 @@ from tests.helpers import (
 )
 from tests.oidc_overrides.factories import ApplicationFactory
 from tests.users.factories import UserFactory
-
-
-LINK_PATTERN = re.compile(r"^http://testserver(?P<path>.+/)$")
-
-
-def get_verification_link(body):
-    lines = body.split("\n")
-    for line in lines:
-        if match := LINK_PATTERN.match(line):
-            return match.group("path")
 
 
 @freeze_time("2023-05-05 11:11:11")
@@ -544,67 +533,8 @@ def test_proconnect_scopes(caplog, client, oidc_params):
     )
 
 
-def test_demo_mode(caplog, client, oidc_params, settings):
-    settings.DEMO_MODE = True
-    auth_url = reverse("oauth2_provider:authorize")
-    ApplicationFactory(client_id=oidc_params["client_id"])
-
-    auth_complete_url = add_url_params(auth_url, oidc_params)
-    response = client.get(auth_complete_url)
-    login_url = reverse("accounts:login")
-    assertRedirects(response, login_url)
-    assertRecords(caplog, [])
-
-    internal_email = "test@inclusion.gouv.fr"
-    response = client.post(
-        login_url,
-        data={
-            "email": internal_email,
-        },
-    )
-    assertRedirects(response, auth_complete_url, fetch_redirect_response=False)
-    assert get_user(client).is_authenticated is True
-
-    user = User.objects.get(email=internal_email)
-    assert user.linked_applications.count() == 0
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.auth",
-                logging.INFO,
-                {"application": "my_application", "user": user.email, "event": "login"},
-            ),
-        ],
-    )
-
-    response = client.get(auth_complete_url)
-    assert response.status_code == 302
-    assert response.url.startswith(oidc_params["redirect_uri"])
-    auth_response_params = get_url_params(response.url)
-    assert user.linked_applications.count() == 1
-    code = auth_response_params["code"]
-    assertRecords(
-        caplog,
-        [
-            (
-                "inclusion_connect.oidc",
-                logging.INFO,
-                {
-                    "application": "my_application",
-                    "event": "redirect",
-                    "user": user.email,
-                    "url": f"http://testserver/callback?code={code}&state=state",
-                },
-            )
-        ],
-    )
-
-    oidc_flow_followup(client, auth_response_params, user, oidc_params, caplog)
-
-
-def test_demo_mode_forbidden_emails(caplog, client, settings):
-    settings.DEMO_MODE = True
+def test_forbidden_emails(caplog, client):
+    # Only accept emails with @inclusion.gouv.fr
     login_url = reverse("accounts:login")
 
     forbidden_email = "email@other.domain"
@@ -632,8 +562,7 @@ def test_demo_mode_forbidden_emails(caplog, client, settings):
     )
 
 
-def test_demo_mode_update_names(caplog, client, settings):
-    settings.DEMO_MODE = True
+def test_update_names(caplog, client):
     login_url = reverse("accounts:login")
     assertRecords(caplog, [])
 
