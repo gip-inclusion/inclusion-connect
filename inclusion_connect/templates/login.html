@@ -12,6 +12,13 @@
                 <div class="col-12">
                     {% bootstrap_form_errors form type="non_fields" %}
                     {% bootstrap_field form.email %}
+                    <div class="c-info">
+                        <span class="c-info__summary">Seul l'adresse e-mail est nécessaire pour voue connecter sur cet environnement.</span>
+                        <div class="c-info__detail">
+                            <p>Si vous choisissez un Prénom et un Nom, ces informations seront sauvegardées et utilisées pour les prochaines connexion avec cette adresse e-mail.</p>
+                            <p>Si vous laissez les champs vide, les Prénoms et Noms ceux sauvegardés précédemment, ou des valeurs aléatoire si c'est la première connexion avec cette adresse-email.</p>
+                        </div>
+                    </div>
                     {% bootstrap_field form.first_name %}
                     {% bootstrap_field form.last_name %}
                 </div>

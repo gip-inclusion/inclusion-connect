@@ -23,6 +23,19 @@
                                               </label>
                                               <input autocomplete="email" class="form-control" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email"/>
                                           </div>
+                                          <div class="c-info">
+                                              <span class="c-info__summary">
+                                                  Seul l'adresse e-mail est nécessaire pour voue connecter sur cet environnement.
+                                              </span>
+                                              <div class="c-info__detail">
+                                                  <p>
+                                                      Si vous choisissez un Prénom et un Nom, ces informations seront sauvegardées et utilisées pour les prochaines connexion avec cette adresse e-mail.
+                                                  </p>
+                                                  <p>
+                                                      Si vous laissez les champs vide, les Prénoms et Noms ceux sauvegardés précédemment, ou des valeurs aléatoire si c'est la première connexion avec cette adresse-email.
+                                                  </p>
+                                              </div>
+                                          </div>
                                           <div class="mb-3">
                                               <label class="form-label" for="id_first_name">
                                                   Prénom
@@ -79,6 +92,19 @@
                                                   Adresse e-mail
                                               </label>
                                               <input autocomplete="email" class="form-control" disabled="" id="id_email" maxlength="320" name="email" placeholder="nom@domaine.fr" required="" type="email" value="me@mailinator.com"/>
+                                          </div>
+                                          <div class="c-info">
+                                              <span class="c-info__summary">
+                                                  Seul l'adresse e-mail est nécessaire pour voue connecter sur cet environnement.
+                                              </span>
+                                              <div class="c-info__detail">
+                                                  <p>
+                                                      Si vous choisissez un Prénom et un Nom, ces informations seront sauvegardées et utilisées pour les prochaines connexion avec cette adresse e-mail.
+                                                  </p>
+                                                  <p>
+                                                      Si vous laissez les champs vide, les Prénoms et Noms ceux sauvegardés précédemment, ou des valeurs aléatoire si c'est la première connexion avec cette adresse-email.
+                                                  </p>
+                                              </div>
                                           </div>
                                           <div class="mb-3">
                                               <label class="form-label" for="id_first_name">
