@@ -1,5 +1,7 @@
 psycopg[binary]  # https://github.com/psycopg/psycopg
 
+gunicorn  # https://github.com/benoitc/gunicorn/
+
 # Django
 # ------------------------------------------------------------------------------
 
