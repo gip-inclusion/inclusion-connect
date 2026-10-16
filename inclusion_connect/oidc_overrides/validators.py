@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from oauth2_provider.oauth2_validators import OAuth2Validator
 
@@ -32,5 +34,6 @@ class CustomOAuth2Validator(OAuth2Validator):
         for k, v in data.items():
             if k in request.scopes and k not in claims:
                 claims[k] = v
-        claims["acr"] = "eidas2"  # We enfore 2FA TOTP and have a HR process to create accounts
+        # claims["acr"] = "eidas2"  # We enfore 2FA TOTP and have a HR process to create accounts
+        claims["acr"] = os.getenv("EIDAS_LEVEL", "eidas2")
         return claims
