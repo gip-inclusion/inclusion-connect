@@ -17,7 +17,7 @@ jobs:
       cancel-in-progress: true
     services:
       postgres:
-        image: postgres:14
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: password
         ports:
